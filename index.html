@@ -105,7 +105,22 @@
   .char .noimg{font-size:48px;padding:16px 0}
   .char b{font-size:17px}
   .char span{font-size:11.5px;color:var(--ink-soft);line-height:1.2;text-align:center}
-  @media (max-width:640px){ #chars{grid-template-columns:repeat(2,1fr)} }
+  #chars{grid-template-columns:repeat(5,1fr)}
+  .char.mine{border-style:dashed}
+  .char.mine.sel{border-style:solid}
+  #maker{background:#fbf8ff;border:3px solid #ece4ff;border-radius:18px;padding:12px 14px;margin:-6px 0 16px;text-align:left}
+  #maker[hidden]{display:none}
+  #maker .mrow{display:flex;align-items:center;gap:10px;margin:6px 0;flex-wrap:wrap}
+  #maker .mlab{width:84px;flex:none;font-weight:600;font-size:14px}
+  #maker .opts{display:flex;flex-wrap:wrap;gap:6px;flex:1;align-items:center}
+  #maker .sw{width:26px;height:26px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #ddd2f5;cursor:pointer;padding:0}
+  #maker .sw.sel{box-shadow:0 0 0 3px #9b7bff}
+  #maker .pill{font-family:inherit;font-size:14px;color:var(--ink);background:#fff;border:2px solid #ddd2f5;border-radius:14px;padding:4px 11px;cursor:pointer}
+  #maker .pill.sel{border-color:#9b7bff;background:#f1eaff;font-weight:600}
+  #makerName{font-family:inherit;font-size:15px;color:var(--ink);border:3px solid #ece4ff;border-radius:12px;padding:5px 10px;width:min(200px,50vw);outline:none;user-select:text;-webkit-user-select:text}
+  #makerName:focus{border-color:#b48cff}
+  #makerWarn{color:#d0386b;font-size:13px;font-weight:600}
+  @media (max-width:640px){ #chars{grid-template-columns:repeat(3,1fr)} #maker .mlab{width:100%} }
   /* potions & brewing */
   #ingRow{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
   #ingRow .ing{display:inline-flex;align-items:center;gap:2px;color:var(--ink);font-weight:600}
@@ -156,6 +171,22 @@
     #hint{bottom:178px;font-size:14px}
     .card h1{font-size:34px}
   }
+  /* fishing */
+  #fishing{position:absolute;left:50%;bottom:132px;transform:translateX(-50%);padding:10px 16px;display:none;flex-direction:column;align-items:center;gap:8px;width:min(330px,calc(100vw - 24px))}
+  #fishMsg{font-size:16px;font-weight:600;text-align:center;display:flex;align-items:center;gap:6px}
+  #fishMsg .ic{width:20px;height:20px}
+  #fishBar{position:relative;width:100%;height:22px;border-radius:12px;background:#dceeff;overflow:hidden;border:2px solid #fff;display:none}
+  #fishZone{position:absolute;top:0;bottom:0;background:linear-gradient(90deg,#7fe0a8,#3ccf7f);border-radius:8px}
+  #fishMark{position:absolute;top:-2px;bottom:-2px;width:6px;margin-left:-3px;background:#5a3f8f;border-radius:4px;box-shadow:0 0 0 2px #fff}
+  #fishBtn{font-family:inherit;font-weight:600;font-size:16px;border:none;border-radius:14px;padding:8px 18px;cursor:pointer;color:#fff;background:linear-gradient(90deg,#5cc1e8,#9b7bff)}
+  #fishBtn.go{background:linear-gradient(90deg,#ffb000,#ff6fae);animation:shake .35s infinite}
+  #fishbook{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(90,140,200,.45);z-index:11;padding:16px}
+  #fishbook.hidden{display:none}
+  #fishbook h2{margin:0;font-size:30px;display:flex;align-items:center;justify-content:center;gap:8px}
+  #fishbook h2 .ic{width:34px;height:34px}
+  #fishList{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;text-align:left}
+  .rar{font-size:11px;font-weight:700;font-style:normal;border-radius:8px;padding:1px 6px;color:#fff;margin-left:6px;vertical-align:1px}
+  @media (max-width:640px){ #fishing{bottom:178px} }
 </style>
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
@@ -176,6 +207,7 @@
   <div id="topright">
     <button class="roundbtn" id="shopBtn" title="Star Shop (B)"><span class="ic" data-ic="bag"></span></button>
     <button class="roundbtn" id="muteBtn" title="Sound (M)"><span class="ic" data-ic="soundOn"></span></button>
+    <button class="roundbtn" id="fishBookBtn" title="Fish Book (F)"><span class="ic" data-ic="fish"></span></button>
     <button class="roundbtn" id="helpBtn" title="Help (H)"><span class="ic" data-ic="help"></span></button>
   </div>
   <div id="potionBelt" class="panel"></div>
@@ -183,6 +215,11 @@
   <div id="labels"></div>
   <div id="hint" class="panel"></div>
   <div id="spellbar" class="panel"></div>
+  <div id="fishing" class="panel">
+    <div id="fishMsg"></div>
+    <div id="fishBar"><div id="fishZone"></div><div id="fishMark"></div></div>
+    <button id="fishBtn">Reel in</button>
+  </div>
 </div>
 
 <div id="shop" class="hidden">
@@ -212,10 +249,19 @@
   </div>
 </div>
 
+<div id="fishbook" class="hidden">
+  <div class="card panel">
+    <h2><span class="ic" data-ic="fish"></span> Fish Book</h2>
+    <p class="shopsub" id="fishSub"></p>
+    <div id="fishList"></div>
+    <button class="bigbtn ghost" id="fishBookClose">Close</button>
+  </div>
+</div>
+
 <div id="overlay">
   <div class="card panel">
     <h1><span class="ic big" data-ic="sparkle"></span> Starvale <span class="ic big" data-ic="sparkle"></span></h1>
-    <p>Welcome, little wizard! <b>Nikki</b>, <b>Kevin</b>, <b>Ryan</b> and <b>Dusty</b> (with her corgi <b>Dexter</b>) each have their own house on this floating island. Magical critters live here too: hopping bunnies with a little horn, glowing spirits and tiny dragons. Help the other wizards with their quests, earn stars and spend them in the Star Shop!</p>
+    <p>Welcome, little wizard! <b>Nikki</b> (with her black cat <b>Nunu</b>), <b>Kevin</b>, <b>Ryan</b> and <b>Dusty</b> (with her corgi <b>Dexter</b>) each have their own house on this floating island. Magical critters live here too: hopping bunnies with a little horn, glowing spirits and tiny dragons. Help the other wizards with their quests, earn stars and spend them in the Star Shop! Or make <b>your own wizard</b>: then every resident has quests for you.</p>
     <div class="controls">
       <span><kbd>W A S D</kbd> / arrows</span><span>walk &nbsp;·&nbsp; <kbd>Shift</kbd> run</span>
       <span><kbd>Space</kbd></span><span>jump</span>
@@ -226,12 +272,14 @@
       <span><kbd>B</kbd></span><span>Star Shop</span>
       <span>Sky islands</span><span>cast <b>Rainbow</b> near the edge for a bridge, or <b>Levitate</b> yourself</span>
       <span><kbd>E</kbd> at the cauldron</span><span>brew potions from ingredients you find</span>
+      <span><kbd>E</kbd> at the end of the pier</span><span>go fishing · <kbd>F</kbd> Fish Book</span>
       <span><kbd>Q</kbd> / tap a potion</span><span>drink a potion</span>
       <span>Friends online</span><span>open the same link together · <kbd>E</kbd> near a player = wave</span>
       <span><kbd>M</kbd> / <kbd>H</kbd></span><span>sound on/off · help</span>
     </div>
     <div id="pickTitle">Who are you?</div>
     <div id="chars"></div>
+    <div id="maker" hidden></div>
     <label id="nickWrap" for="nick">Your name <input id="nick" maxlength="16" autocomplete="off" spellcheck="false" placeholder="So friends know it's you"></label>
     <button class="bigbtn" id="startBtn">Start the adventure!</button>
   </div>
@@ -288,6 +336,8 @@ const ICON = {
 };
 const potionSVG = (col) => svg(`<rect x="9.6" y="1.8" width="4.8" height="2.6" rx=".9" fill="#c9906a" stroke="#9c6b48" stroke-width="1"/><path d="M10.2 4.4v4.4a6.4 6.4 0 1 0 3.6 0V4.4z" fill="#ffffff" fill-opacity=".8" stroke="#8a73b8" stroke-width="1.4"/><path d="M6.02 14.5A6 6 0 1 0 17.98 14.5Z" fill="${col}" stroke="${col}" stroke-width=".8"/><ellipse cx="9.4" cy="12.6" rx="1" ry="1.8" fill="#fff" opacity=".8"/><circle cx="14" cy="17" r=".9" fill="#fff" opacity=".7"/>`);
 ICON.potion = potionSVG('#c9a0ff');
+const fishSVG = (col, line = '#5a3f8f') => svg(`<path d="M3.2 12c2.6-4.4 6.4-6 10-5.4 2.6.4 4.4 2.4 5.4 5.4-1 3-2.8 5-5.4 5.4-3.6.6-7.4-1-10-5.4z" fill="${col}" stroke="${line}" stroke-width="1.3" stroke-opacity=".7"/><path d="M18.4 12l3.2-3.6v7.2z" fill="${col}" stroke="${line}" stroke-width="1.3" stroke-opacity=".7"/><path d="M10.5 7.2c.6 1.6.6 3.2 0 4.8" stroke="#ffffff" stroke-width="1.2" opacity=".7"/><circle cx="7.4" cy="11" r="1.15" fill="#2b1d3a"/><circle cx="7.8" cy="10.6" r=".4" fill="#fff"/>`);
+ICON.fish = fishSVG('#8fd0ff');
 const iconHTML = (name, cls = 'ic') => `<span class="${cls}">${ICON[name] || ''}</span>`;
 document.querySelectorAll('[data-ic]').forEach(el => { el.innerHTML = ICON[el.dataset.ic] || ''; });
 
@@ -386,6 +436,30 @@ scene.add(sun);
 const ISLAND_R = 45;
 const HOUSE = { x: 0, z: -20, hw: 5, hd: 4, wh: 4.2, t: 0.35 };
 const POND = { x: -16, z: 8, r: 5 };
+// a wooden pier from the shore that faces the island centre, straight into the pond (u = along it, v = sideways)
+const PIER = (() => {
+  const l = Math.hypot(POND.x, POND.z), dx = POND.x / l, dz = POND.z / l;
+  return { dx, dz, px: -dz, pz: dx, sx: POND.x - dx * 6, sz: POND.z - dz * 6, len: 5, hw: 1, y: .45 };
+})();
+function pierUV(x, z) { const ox = x - PIER.sx, oz = z - PIER.sz; return [ox * PIER.dx + oz * PIER.dz, ox * PIER.px + oz * PIER.pz]; }
+function onPier(x, z, m = 0) { const [u, v] = pierUV(x, z); return u >= -m && u <= PIER.len + m && Math.abs(v) <= PIER.hw + m; }
+const pierPoint = (u, v = 0, y = 0) => new THREE.Vector3(PIER.sx + PIER.dx * u + PIER.px * v, y, PIER.sz + PIER.dz * u + PIER.pz * v);
+// the player may walk on the pier but not into the water around it
+function pondPush(P) {
+  const dx = P.x - POND.x, dz = P.z - POND.z, d = Math.hypot(dx, dz), lim = POND.r + .65;
+  if (d >= lim) return;
+  const [u, v] = pierUV(P.x, P.z), um = PIER.len - .35, vm = PIER.hw - .4;
+  if (u >= 0 && u <= um && Math.abs(v) <= vm) return;
+  const ox = POND.x + dx / (d || 1) * lim, oz = POND.z + dz / (d || 1) * lim;
+  const q = pierPoint(clamp(u, 0, um), clamp(v, -vm, vm));
+  if (Math.hypot(P.x - q.x, P.z - q.z) < Math.hypot(P.x - ox, P.z - oz)) { P.x = q.x; P.z = q.z; }
+  else { P.x = ox; P.z = oz; }
+}
+// gentle little waves on the pond
+function waveH(x, z, t) {
+  const e = clamp((POND.r - Math.hypot(x - POND.x, z - POND.z)) / 1.4, 0, 1);
+  return .08 + e * (.035 * Math.sin(x * 1.3 + t * 1.6) + .028 * Math.sin(z * 1.7 - t * 1.25) + .016 * Math.sin((x + z) * 2.6 + t * 2.4));
+}
 const circles = [];        // {x,z,r}
 const playerBoxes = [];    // {x0,x1,z0,z1}
 const houseFoot = { x0: HOUSE.x - HOUSE.hw - 0.5, x1: HOUSE.x + HOUSE.hw + 0.5, z0: HOUSE.z - HOUSE.hd - 0.5, z1: HOUSE.z + HOUSE.hd + 0.6 };
@@ -446,6 +520,7 @@ function findSpot(r, opts) {
 
 function collide(p, r, boxes, free = false) {
   for (const c of circles) {
+    if (free && c.pond) continue;   // the player uses pondPush, so they can walk onto the pier
     const dx = p.x - c.x, dz = p.z - c.z, d = Math.hypot(dx, dz), m = r + c.r;
     if (d < m && d > 1e-5) { p.x = c.x + dx / d * m; p.z = c.z + dz / d * m; }
   }
@@ -517,13 +592,83 @@ for (let i = 0; i < 10; i++) {
 
 // pond
 {
-  mk(new THREE.CircleGeometry(POND.r, 40), toon('#7cc8ff', { transparent: true, opacity: .9 }), POND.x, .04, POND.z, scene, false).rotation.x = -Math.PI / 2;
-  mk(new THREE.CircleGeometry(POND.r * .55, 30), toon('#a8dcff', { transparent: true, opacity: .7 }), POND.x + 1, .05, POND.z - 1, scene, false).rotation.x = -Math.PI / 2;
+  // a pond bed underneath, and wavy water on top (moved every frame in updatePond)
+  mk(new THREE.CircleGeometry(POND.r, 40), toon('#4f9fe0'), POND.x, -.12, POND.z, scene, false).rotation.x = -Math.PI / 2;
+  const geo = new THREE.RingGeometry(.001, POND.r + .05, 56, 12);
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(geo.attributes.position.count * 3), 3));
+  const water = mk(geo, toon('#ffffff', { vertexColors: true, transparent: true, opacity: .88 }), POND.x, 0, POND.z, scene, false);
+  water.rotation.x = -Math.PI / 2; water.receiveShadow = true;
   const rim = mk(new THREE.TorusGeometry(POND.r, .38, 8, 40), toon('#d8d0e6', { flatShading: true }), POND.x, .02, POND.z);
   rim.rotation.x = Math.PI / 2;
-  circles.push({ x: POND.x, z: POND.z, r: POND.r + .2 });
+  circles.push({ x: POND.x, z: POND.z, r: POND.r + .2, pond: true });
   placed.push({ x: POND.x, z: POND.z, r: POND.r + 1 });
+  POND.water = water;
 }
+// the pier: planks on little posts, with a lantern at the end
+const pier = new THREE.Group(); pier.position.set(PIER.sx, 0, PIER.sz); pier.rotation.y = Math.atan2(PIER.dx, PIER.dz); scene.add(pier);
+const pierLampMat = glow(toon('#fff3c4', { emissive: '#ffcb5c', emissiveIntensity: .2 }), .2, 2.2);
+{
+  const plankMats = [toon('#c08a5c'), toon('#b07a4e'), toon('#c99668')], postMat = toon('#8c5e3c');
+  for (let i = 0, u = .25; u < PIER.len; i++, u += .5) {
+    const p = mk(Box(PIER.hw * 2 + Math.sin(i * 2.7) * .08, .1, .44), plankMats[i % 3], Math.sin(i * 1.9) * .04, PIER.y - .05, u, pier);
+    p.rotation.y = Math.sin(i * 3.1) * .03;
+  }
+  for (const u of [.3, 2.6, PIER.len - .2]) for (const sx of [-1, 1]) {
+    mk(new THREE.CylinderGeometry(.11, .13, 1.1, 8), postMat, sx * (PIER.hw + .02), .15, u, pier);
+    mk(new THREE.CylinderGeometry(.13, .11, .06, 8), toon('#a8714a'), sx * (PIER.hw + .02), .72, u, pier, false);
+  }
+  // rope railing along the water part
+  for (const sx of [-1, 1]) {
+    const pts = [];
+    for (let i = 0; i <= 12; i++) { const t = i / 12; pts.push(new THREE.Vector3(sx * (PIER.hw + .02), .68 - Math.sin(t * Math.PI) * .14, lerp(2.6, PIER.len - .2, t))); }
+    pier.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: '#e8d2a8' })));
+  }
+  // lantern post at the tip
+  mk(new THREE.CylinderGeometry(.06, .06, 1.6, 6), postMat, PIER.hw - .15, 1.2, PIER.len - .2, pier);
+  mk(Box(.5, .06, .06), postMat, PIER.hw - .35, 1.98, PIER.len - .2, pier);
+  const lamp = mk(new THREE.OctahedronGeometry(.17), pierLampMat, PIER.hw - .55, 1.78, PIER.len - .2, pier, false);
+  lamp.scale.y = 1.4;
+  // a little sign: fishing spot
+  const sign = new THREE.Group(); sign.position.set(-PIER.hw - .6, 0, -.3); sign.rotation.y = Math.PI - .3; pier.add(sign);
+  mk(Box(.9, .45, .06), toon('#fff4d6'), 0, 1.05, 0, sign);
+  mk(new THREE.CylinderGeometry(.05, .05, .9, 6), postMat, 0, .45, -.04, sign);
+  const tex = canvasTex(256, 128, g => {
+    g.fillStyle = '#fff4d6'; g.fillRect(0, 0, 256, 128);
+    g.fillStyle = '#5cc1e8'; g.beginPath(); g.ellipse(70, 64, 34, 20, 0, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.moveTo(100, 64); g.lineTo(124, 44); g.lineTo(124, 84); g.fill();
+    g.fillStyle = '#2b1d3a'; g.beginPath(); g.arc(56, 58, 5, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#5a3f8f'; g.font = 'bold 34px Fredoka, sans-serif'; g.fillText('Fish!', 136, 76);
+  });
+  mk(new THREE.PlaneGeometry(.84, .4), new THREE.MeshBasicMaterial({ map: tex }), 0, 1.05, .035, sign, false);
+}
+// an invisible deck so you can tap the pier to walk onto it
+const pierHit = mk(Box(PIER.hw * 2, .1, PIER.len), new THREE.MeshBasicMaterial(), 0, PIER.y - .05, PIER.len / 2, pier, false);
+pierHit.visible = false;
+// the rowing boat, tied to the pier
+const boat = new THREE.Group(); scene.add(boat);
+{
+  const hullMat = toon('#ff9ec4'), woodMat = toon('#c08a5c');
+  const hull = mk(new THREE.SphereGeometry(1, 22, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), hullMat, 0, .25, 0, boat);
+  hull.scale.set(.62, .42, 1.25);
+  const inner = mk(new THREE.CircleGeometry(1, 22), woodMat, 0, .2, 0, boat, false);
+  inner.rotation.x = -Math.PI / 2; inner.scale.set(.54, 1.12, 1);
+  const rimT = mk(new THREE.TorusGeometry(1, .06, 6, 30), toon('#ffffff'), 0, .26, 0, boat, false);
+  rimT.rotation.x = Math.PI / 2; rimT.scale.set(.62, 1.25, 1);
+  mk(Box(1.1, .07, .3), woodMat, 0, .3, .15, boat);
+  for (const sx of [-1, 1]) {   // oars resting in the boat
+    const oar = new THREE.Group(); oar.position.set(sx * .3, .38, -.2); oar.rotation.set(0, sx * .25, sx * .15); boat.add(oar);
+    mk(new THREE.CylinderGeometry(.03, .03, 1.5, 6), woodMat, 0, 0, 0, oar, false).rotation.x = Math.PI / 2;
+    ball(woodMat, 0, 0, -.75, .1, .02, .22, oar, false);
+  }
+  // tiny star flag on the stern
+  mk(new THREE.CylinderGeometry(.025, .025, .7, 5), woodMat, 0, .6, -1.05, boat, false);
+  const flag = mk(new THREE.PlaneGeometry(.3, .2), toon('#ffd84d', { side: THREE.DoubleSide }), .15, .85, -1.05, boat, false);
+  flag.rotation.y = Math.PI / 2;
+  boat.userData = { flag, home: pierPoint(3.2, PIER.hw + 1.2, 0), bow: new THREE.Vector3(0, .3, 1.2) };
+  boat.position.copy(boat.userData.home); boat.rotation.y = pier.rotation.y + .25;
+}
+const boatRope = new THREE.Line(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 10 }, () => new THREE.Vector3())), new THREE.LineBasicMaterial({ color: '#e8d2a8' }));
+boatRope.frustumCulled = false; scene.add(boatRope);
 const lilies = [];
 for (let i = 0; i < 5; i++) {
   const a = R(0, 6.28), d = R(1, 3.8);
@@ -532,6 +677,14 @@ for (let i = 0; i < 5; i++) {
   pad.rotation.x = -Math.PI / 2;
   if (i % 2 === 0) { ball(toon('#ffb3d9'), .1, .12, .05, .18, .12, .18, g, false); ball(toon('#fff09a'), .1, .2, .05, .07, .07, .07, g, false); }
   lilies.push({ g, ph: R(0, 6) });
+  // keep the lily pads out of the way of the pier, the boat and the fishing spot
+  for (let k = 0; k < 8; k++) {
+    const p = g.position, [u, v] = pierUV(p.x, p.z);
+    const bad = (u > -.5 && u < PIER.len + 3 && Math.abs(v) < PIER.hw + .9) || p.distanceTo(boat.position.clone().setY(p.y)) < 2;
+    if (!bad) break;
+    const a2 = Math.atan2(p.z - POND.z, p.x - POND.x) + .7;
+    p.x = POND.x + Math.cos(a2) * 3.4; p.z = POND.z + Math.sin(a2) * 3.4;
+  }
 }
 
 // trees
@@ -1357,8 +1510,8 @@ function face(parent, y, z, spread, size) {
 const CHARACTERS = {
   Nikki: {
     robe: '#9476ff', hat: '#6a45e0', band: '#ffd84d', fluff: '#ffd1f0', shoes: '#ff8fb8', hair: '#8a4b2a', style: 'medium', tip: '#ffd1f0', glow: '#ff9ee0',
-    house: 'Cozy cottage with a bubbling cauldron', spawn: [0, 5, Math.PI], home: [0, -10.5, 4.5],
-    lines: ['Welcome to my cottage! Did you see my bubbling cauldron?', 'The bunnies love the Star Shot spell!', 'Try the rainbow spell, it is so pretty!'],
+    house: 'Cozy cottage with Nunu the black cat', spawn: [0, 5, Math.PI], home: [0, -10.5, 4.5],
+    lines: ['Have you met Nunu? My little black cat loves naps in the sun!', 'Welcome to my cottage! Did you see my bubbling cauldron?', 'The bunnies love the Star Shot spell!', 'Try the rainbow spell, it is so pretty!'],
   },
   Kevin: {
     robe: '#3d4660', hat: '#2b2f3d', band: '#29d9ff', fluff: '#9fefff', shoes: '#2b2f3d', hair: '#6b4226', style: 'short', glasses: true, tip: '#c9f6ff', glow: '#29d9ff',
@@ -1380,7 +1533,7 @@ const robeProfile = [[0, .1], [.36, .1], [.47, .16], [.53, .3], [.52, .46], [.46
 const robeGeo = new THREE.LatheGeometry(robeProfile, 28);
 function makeWizard(L) {
   const root = new THREE.Group(), bodyG = new THREE.Group(); root.add(bodyG);
-  const robeM = toon(L.robe), skinM = toon('#ffe0c7'), hatM = toon(L.hat), goldM = toon('#ffd84d', { emissive: '#ffb800', emissiveIntensity: .25 });
+  const robeM = toon(L.robe), skinM = toon(L.skin || '#ffe0c7'), hatM = toon(L.hat), goldM = toon('#ffd84d', { emissive: '#ffb800', emissiveIntensity: .25 });
   const bandM = toon(L.band, { emissive: L.band, emissiveIntensity: .25 }), fluffM = toon(L.fluff), shoeM = toon(L.shoes), hairM = toon(L.hair);
   // chibi body: round bell-shaped robe, tiny feet, little arms, big head
   const feetA = [];
@@ -1466,15 +1619,15 @@ function animateWizard(w, walkT, k, time, grounded) {
   w.body.scale.set(1 + (grounded ? 0 : -.04), 1 + (grounded ? Math.abs(Math.sin(walkT)) * .04 * k : .06), 1);
   w.tipGlow.material.opacity = .6 + Math.sin(time * 6) * .25;
 }
-let W = null, playerName = 'Nikki';
+let W = null, playerName = 'Nikki', playerLook = CHARACTERS.Nikki, playerIsCustom = false;
 const pVel = new THREE.Vector3();
 const pState = { vy: 0, grounded: true, heading: Math.PI, walkT: 0, castT: 0, inside: false, where: null };
-function setPlayerCharacter(name) {
+function setPlayerCharacter(name, L = CHARACTERS[name]) {
   if (W) player.remove(W.root);
-  playerName = name;
-  W = makeWizard(CHARACTERS[name]);
+  playerName = name; playerLook = L; playerIsCustom = L !== CHARACTERS[name];
+  W = makeWizard(L);
   player.add(W.root);
-  const [x, z, h] = CHARACTERS[name].spawn;
+  const [x, z, h] = L.spawn;
   player.position.set(x, 0, z); player.rotation.y = pState.heading = h;
   pVel.set(0, 0, 0);
 }
@@ -1538,23 +1691,64 @@ function nearestNPC(maxD) {
   return best;
 }
 // little portrait images of every wizard for the character picker
+// (one renderer stays alive until the game starts, so the wizard maker can redraw its preview)
+let portraitR = null;
+function portraitOf(L) {
+  try {
+    if (!portraitR) {
+      const pr = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+      pr.setSize(200, 220); pr.setPixelRatio(1);
+      const ps = new THREE.Scene();
+      ps.add(new THREE.HemisphereLight('#ffffff', '#c9b8ff', 1.6));
+      const dl = new THREE.DirectionalLight('#fff1dc', 2.2); dl.position.set(2, 4, 5); ps.add(dl);
+      const pc = new THREE.PerspectiveCamera(32, 200 / 220, .1, 50); pc.position.set(0, 1.55, 6.2); pc.lookAt(0, 1.25, 0);
+      portraitR = { pr, ps, pc };
+    }
+    const { pr, ps, pc } = portraitR;
+    const w = makeWizard(L); w.root.rotation.y = -.35; w.wandArm.rotation.x = -.9;
+    ps.add(w.root); pr.render(ps, pc); const url = pr.domElement.toDataURL(); ps.remove(w.root);
+    return url;
+  } catch (e) { return null; /* portraits are optional */ }
+}
 function wizardPortraits() {
   const out = {};
-  try {
-    const pr = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-    pr.setSize(200, 220); pr.setPixelRatio(1);
-    const ps = new THREE.Scene();
-    ps.add(new THREE.HemisphereLight('#ffffff', '#c9b8ff', 1.6));
-    const dl = new THREE.DirectionalLight('#fff1dc', 2.2); dl.position.set(2, 4, 5); ps.add(dl);
-    const pc = new THREE.PerspectiveCamera(32, 200 / 220, .1, 50); pc.position.set(0, 1.55, 6.2); pc.lookAt(0, 1.25, 0);
-    for (const name of Object.keys(CHARACTERS)) {
-      const w = makeWizard(CHARACTERS[name]); w.root.rotation.y = -.35; w.wandArm.rotation.x = -.9;
-      ps.add(w.root); pr.render(ps, pc); out[name] = pr.domElement.toDataURL(); ps.remove(w.root);
-    }
-    pr.dispose(); pr.forceContextLoss();
-  } catch (e) { /* portraits are optional */ }
+  for (const name of Object.keys(CHARACTERS)) { const u = portraitOf(CHARACTERS[name]); if (u) out[name] = u; }
   return out;
 }
+function closePortraits() { if (portraitR) { portraitR.pr.dispose(); portraitR.pr.forceContextLoss(); portraitR = null; } }
+
+// ---------- make your own wizard ----------
+const MAKER = {
+  robe: ['#9476ff', '#5b8cff', '#33b5a5', '#4caf50', '#ff9f43', '#ff6f91', '#e53950', '#3d4660', '#f6efdc', '#2b2f3d'],
+  hat: ['#6a45e0', '#2f5bd3', '#1f8a7a', '#2e7d32', '#e8772e', '#e0457b', '#b71c1c', '#2b2f3d', '#f2c94c', '#8a5a3a'],
+  hair: ['#2b1d16', '#5a3a22', '#8a4b2a', '#d2452c', '#f2c46b', '#f8ecd0', '#a7a7b5', '#ff8fc7', '#6fb7ff', '#a17cff'],
+  skin: ['#ffe0c7', '#f6caa4', '#e0a77e', '#b8784f', '#87553a', '#5e3a28'],
+  magic: ['#ffd84d', '#29d9ff', '#ff4d6d', '#9ff0c8', '#c9a0ff', '#ff9a3d', '#ffffff'],
+  style: [['short', 'Short'], ['medium', 'Medium'], ['long', 'Long'], ['spiky', 'Spiky']],
+};
+const HEX = /^#[0-9a-f]{6}$/i;
+const cleanName = v => typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e]/g, '').trim().slice(0, 16) : '';
+const tint = (hex, k) => '#' + new THREE.Color(hex).lerp(new THREE.Color('#ffffff'), k).getHexString();
+function sanitizeMaker(d) {
+  d = d && typeof d === 'object' ? d : {};
+  const col = (v, list) => typeof v === 'string' && HEX.test(v) ? v : list[0];
+  return {
+    name: cleanName(d.name), robe: col(d.robe, MAKER.robe), hat: col(d.hat, MAKER.hat), hair: col(d.hair, MAKER.hair),
+    skin: col(d.skin, MAKER.skin), magic: col(d.magic, MAKER.magic),
+    style: MAKER.style.some(([k]) => k === d.style) ? d.style : 'medium', glasses: d.glasses === true,
+  };
+}
+// turn the few choices into a full wizard look (the small details follow the magic colour)
+function makerLook(d) {
+  return {
+    robe: d.robe, hat: d.hat, band: d.magic, fluff: tint(d.magic, .72), shoes: d.hat, hair: d.hair, skin: d.skin, style: d.style, glasses: d.glasses,
+    tip: tint(d.magic, .6), glow: d.magic, house: 'Your very own wizard', spawn: [0, 3, Math.PI],
+  };
+}
+const RESERVED = Object.keys(CHARACTERS).map(n => n.toLowerCase());
+const makerName = d => d.name || 'Little Wizard';
+const myWizard = (() => { try { return sanitizeMaker(JSON.parse(localStorage.getItem('starvale-custom') || 'null')); } catch (e) { return sanitizeMaker(null); } })();
+function storeWizard() { try { localStorage.setItem('starvale-custom', JSON.stringify(myWizard)); } catch (e) { /* ignore */ } }
 
 // ================= creatures =================
 function makeBunny(col) {
@@ -1613,6 +1807,7 @@ const CREATURE_DEFS = [
   ['spirit', 'Glimmer', '#8fd8ff'], ['spirit', 'Lumi', '#ffb3e6'], ['spirit', 'Twinkle', '#fff09a'],
   ['dragon', 'Droplet', '#7fd6a8', '#fff3c4'], ['dragon', 'Sparky', '#ff9f8a', '#ffe6b8'], ['dragon', 'Pip', '#a99cff', '#ffe0f3'],
   ['corgi', 'Dexter', '#e8a15a'],
+  ['cat', 'Nunu', '#26222e'],
 ];
 // Dexter, Dusty's corgi: stays close to his doghouse
 function makeCorgi() {
@@ -1640,6 +1835,38 @@ function makeCorgi() {
   ball(toon('#ffd84d', { emissive: '#ffb800', emissiveIntensity: .3 }), 0, .55, .56, .05, .05, .02, body);
   return { g, body, legs, ears, butt, head, baseY: 0, speed: 2.4, home: { x: 10, z: 14.5, r: 5.5 } };
 }
+// Nunu, Nikki's black cat: prowls around the cottage garden
+function makeCat() {
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const fur = toon('#2a2533'), pink = toon('#ff9ec7'), eye = new THREE.MeshBasicMaterial({ color: '#c6ff4d' });
+  ball(fur, 0, .38, 0, .24, .22, .42, body);
+  ball(fur, 0, .4, -.32, .22, .21, .2, body);
+  const legs = [];
+  for (const [x, z] of [[-.12, .24], [.12, .24], [-.12, -.3], [.12, -.3]]) legs.push(ball(fur, x, .13, z, .07, .14, .07, body));
+  for (const [x, z] of [[-.12, .3], [.12, .3]]) ball(toon('#3a3445'), x, .03, z, .075, .04, .085, body, false);
+  // tail: a little chain of balls curling up, swished as a whole
+  const tail = new THREE.Group(); tail.position.set(0, .45, -.5); body.add(tail);
+  for (let i = 0; i < 7; i++) { const t = i / 6; ball(fur, 0, Math.sin(t * 1.7) * .62, -Math.sin(t * 1.4) * .32 + t * t * .12, .065, .065, .065, tail); }
+  const head = new THREE.Group(); head.position.set(0, .72, .36); body.add(head);
+  ball(fur, 0, 0, 0, .27, .24, .24, head);
+  ball(fur, 0, -.07, .16, .13, .09, .1, head);
+  ball(pink, 0, -.03, .25, .035, .025, .02, head, false);
+  for (const sx of [-1, 1]) {
+    ball(eye, sx * .1, .04, .2, .065, .075, .03, head, false);
+    ball(eyeMat, sx * .1, .04, .225, .022, .06, .015, head, false);
+    ball(whiteMat, sx * .1 + .025, .075, .232, .016, .016, .01, head, false);
+    for (const dy of [-.02, .02]) { const w = mk(Box(.2, .008, .008), toon('#e8e4f0'), sx * .2, -.06 + dy, .2, head, false); w.rotation.z = sx * dy * 6; }
+  }
+  const ears = [];
+  for (const sx of [-1, 1]) {
+    const e = mk(new THREE.ConeGeometry(.1, .2, 4), fur, sx * .15, .22, -.02, head); e.rotation.z = -sx * .3; ears.push(e);
+    mk(new THREE.ConeGeometry(.05, .12, 4), pink, sx * .145, .2, .025, head, false).rotation.z = -sx * .3;
+  }
+  // Nikki-purple collar with a golden bell
+  mk(new THREE.TorusGeometry(.16, .035, 8, 20), toon('#9476ff'), 0, .58, .3, body).rotation.x = Math.PI / 2 - .5;
+  ball(toon('#ffd84d', { emissive: '#ffb800', emissiveIntensity: .3 }), 0, .47, .43, .05, .05, .05, body);
+  return { g, body, legs, ears, tail, head, baseY: 0, speed: 2.1, home: { x: -3.5, z: -11, r: 5.5 } };
+}
 function randomTarget(c) {
   if (c && c.home) {
     for (let i = 0; i < 30; i++) {
@@ -1660,7 +1887,7 @@ function randomTarget(c) {
 }
 const labelsEl = document.getElementById('labels');
 const creatures = CREATURE_DEFS.map(([type, name, col, col2], i) => {
-  const c = type === 'bunny' ? makeBunny(col) : type === 'spirit' ? makeSpirit(col) : type === 'corgi' ? makeCorgi() : makeDragon(col, col2);
+  const c = type === 'bunny' ? makeBunny(col) : type === 'spirit' ? makeSpirit(col) : type === 'corgi' ? makeCorgi() : type === 'cat' ? makeCat() : makeDragon(col, col2);
   Object.assign(c, { type, name, color: col, wait: Math.random() * 3, phase: Math.random() * 10, happy: 0, lev: 0, friend: false, heading: 0 });
   c.target = randomTarget(c);
   c.g.position.copy(randomTarget(c));
@@ -1670,14 +1897,14 @@ const creatures = CREATURE_DEFS.map(([type, name, col, col2], i) => {
   c.label = document.createElement('div'); c.label.className = 'label'; c.label.textContent = name; labelsEl.appendChild(c.label);
   return c;
 });
-const creatureCenter = (c, out) => out.set(c.g.position.x, c.body.position.y + (c.type === 'spirit' ? 0 : c.type === 'corgi' ? .5 : .8), c.g.position.z);
+const creatureCenter = (c, out) => out.set(c.g.position.x, c.body.position.y + (c.type === 'spirit' ? 0 : c.type === 'corgi' ? .5 : c.type === 'cat' ? .45 : .8), c.g.position.z);
 document.getElementById('friends').textContent = `0 / ${creatures.length}`;
 
 let friends = 0;
 function makeHappy(c) {
   c.happy = 2.2; c.lev = 0;
   hearts(creatureCenter(c, new THREE.Vector3()).add(new THREE.Vector3(0, .6, 0)), 7);
-  sfx(c.type === 'corgi' ? 'woof' : 'happy');
+  sfx(c.type === 'corgi' ? 'woof' : c.type === 'cat' ? 'meow' : 'happy');
   questEvent('happy');
   if (!c.friend) {
     c.friend = true; friends++;
@@ -1750,6 +1977,13 @@ function updateCreature(c, dt, time) {
     c.butt.position.x = Math.sin(time * (moving ? 14 : 5)) * .05;
     c.head.rotation.z = moving ? 0 : Math.sin(time * 1.5 + c.phase) * .15;
     c.ears.forEach((e, i) => e.rotation.x = Math.sin(time * 6 + i) * .08);
+  } else if (c.type === 'cat') {
+    c.body.position.y = moving ? Math.abs(Math.sin(c.phase * 10)) * .04 : lerp(c.body.position.y, 0, damp(10, dt));
+    c.legs.forEach((l, i) => l.rotation.x = moving ? Math.sin(c.phase * 11 + (i === 0 || i === 3 ? 0 : Math.PI)) * .6 : 0);
+    c.tail.rotation.z = Math.sin(time * (moving ? 4 : 1.6) + c.phase) * .35;
+    c.tail.rotation.x = moving ? .25 : Math.sin(time * .9 + c.phase) * .1;
+    c.head.rotation.y = moving ? 0 : Math.sin(time * .7 + c.phase) * .4;
+    c.ears.forEach((e, i) => e.rotation.x = Math.max(0, Math.sin(time * 2.3 + i * 2 + c.phase)) * .25 - .05);
   } else {
     c.body.position.y = lerp(c.body.position.y, c.baseY, damp(8, dt));
     c.body.rotation.z = moving ? Math.sin(c.phase * 10) * .12 : lerp(c.body.rotation.z, 0, damp(6, dt));
@@ -2060,6 +2294,7 @@ function sfx(name) {
     case 'zap': tone(1400, t, .2, 'square', .04, 200); break;
     case 'rocket': tone(250, t, .6, 'triangle', .05, 1100); break;
     case 'hello': seq([659, 784, 659, 988], .09, 'triangle', .09, .3); break;
+    case 'meow': tone(620, t, .32, 'triangle', .07, 880); tone(880, t + .14, .3, 'sine', .05, 520); seq([1175, 1568], .08, 'sine', .07, .3); break;
     case 'woof': tone(340, t, .13, 'square', .05, 210); tone(320, t + .2, .14, 'square', .05, 190); seq([988, 1319], .08, 'sine', .08, .3); break;
     case 'nomana': seq([330, 262], .1, 'triangle', .09, .25); break;
     case 'jump': tone(380, t, .18, 'sine', .07, 760); break;
@@ -2070,6 +2305,11 @@ function sfx(name) {
     case 'ribbit': tone(220, t, .12, 'square', .04, 160); tone(240, t + .16, .16, 'square', .04, 170); break;
     case 'fail': tone(300, t, .5, 'sawtooth', .04, 90); break;
     case 'poof': tone(900, t, .4, 'sine', .07, 200); break;
+    case 'cast': tone(1400, t, .35, 'sine', .05, 500); break;
+    case 'plop': tone(500, t, .12, 'sine', .1, 180); break;
+    case 'bite': seq([1175, 1568, 1175, 1568], .06, 'square', .04, .12); break;
+    case 'splash': for (let i = 0; i < 6; i++) tone(rr(300, 700), t + i * .04, .12, 'triangle', .05, rr(120, 250)); break;
+    case 'catch': seq([659, 784, 1047, 1319, 1568], .07, 'triangle', .1, .3); break;
   }
 }
 // soft music-box melody
@@ -2102,11 +2342,16 @@ let started = false;
 // character picker
 const charsEl = document.getElementById('chars');
 const portraits = wizardPortraits();
+const makerEl = document.getElementById('maker');
+const escText = t => String(t).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+function remember(v) { try { localStorage.setItem('starvale-pick', v); } catch (e) { /* ignore */ } }
 function pickCharacter(name) {
   setPlayerCharacter(name);
   camYaw = pState.heading + Math.PI;
   charsEl.querySelectorAll('.char').forEach(el => el.classList.toggle('sel', el.dataset.name === name));
+  makerEl.hidden = true; startBtn.disabled = false;
   startBtn.innerHTML = `Play as ${name}! ${iconHTML('wand')}`;
+  remember(name);
 }
 for (const name of Object.keys(CHARACTERS)) {
   const b = document.createElement('button'); b.className = 'char'; b.dataset.name = name;
@@ -2114,6 +2359,60 @@ for (const name of Object.keys(CHARACTERS)) {
   b.addEventListener('click', () => pickCharacter(name));
   charsEl.appendChild(b);
 }
+// the "make your own" card, with the maker panel under the cards
+const mineBtn = document.createElement('button'); mineBtn.className = 'char mine'; mineBtn.dataset.name = '*custom';
+mineBtn.innerHTML = `<img alt=""><b></b><span>Make your own wizard!</span>`;
+mineBtn.addEventListener('click', () => pickCustom());
+charsEl.appendChild(mineBtn);
+const makerRow = (label, inner) => `<div class="mrow"><span class="mlab">${label}</span><div class="opts">${inner}</div></div>`;
+const swatches = key => MAKER[key].map(c => `<button class="sw" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${key} ${c}"></button>`).join('');
+makerEl.innerHTML =
+  makerRow('Name', `<input id="makerName" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Little Wizard"><span id="makerWarn"></span>`) +
+  makerRow('Hair', MAKER.style.map(([k, t]) => `<button class="pill" data-k="style" data-v="${k}">${t}</button>`).join('')) +
+  makerRow('Hair colour', swatches('hair')) +
+  makerRow('Skin', swatches('skin')) +
+  makerRow('Robe', swatches('robe')) +
+  makerRow('Hat', swatches('hat')) +
+  makerRow('Magic', swatches('magic')) +
+  makerRow('Extras', `<button class="pill" data-k="glasses">Glasses</button><button class="pill" id="makerRandom">Surprise me!</button>`);
+const makerNameEl = document.getElementById('makerName'), makerWarn = document.getElementById('makerWarn');
+makerNameEl.value = myWizard.name;
+function refreshMaker(rebuild = true) {
+  makerEl.querySelectorAll('[data-k]').forEach(el => {
+    const k = el.dataset.k;
+    el.classList.toggle('sel', k === 'glasses' ? myWizard.glasses : myWizard[k] === el.dataset.v);
+  });
+  const L = makerLook(myWizard), url = portraitOf(L), img = mineBtn.querySelector('img');
+  if (url) img.src = url;
+  mineBtn.querySelector('b').textContent = makerName(myWizard);
+  const taken = RESERVED.includes(myWizard.name.toLowerCase());
+  makerWarn.textContent = taken ? `${myWizard.name} already lives here, pick another name!` : '';
+  if (rebuild && mineBtn.classList.contains('sel')) {
+    setPlayerCharacter(makerName(myWizard), L);
+    startBtn.disabled = taken;
+    startBtn.innerHTML = `Play as ${escText(makerName(myWizard))}! ${iconHTML('wand')}`;
+  }
+}
+function pickCustom() {
+  charsEl.querySelectorAll('.char').forEach(el => el.classList.toggle('sel', el === mineBtn));
+  makerEl.hidden = false;
+  refreshMaker();
+  camYaw = pState.heading + Math.PI;
+  remember('*custom');
+}
+makerEl.addEventListener('click', e => {
+  const el = e.target.closest('button'); if (!el) return;
+  e.preventDefault();
+  if (el.id === 'makerRandom') {
+    for (const k of ['robe', 'hat', 'hair', 'skin', 'magic']) myWizard[k] = rpick(MAKER[k]);
+    myWizard.style = rpick(MAKER.style)[0]; myWizard.glasses = Math.random() < .3;
+  } else if (el.dataset.k === 'glasses') myWizard.glasses = !myWizard.glasses;
+  else if (el.dataset.k) myWizard[el.dataset.k] = el.dataset.v;
+  storeWizard(); refreshMaker(); el.blur();
+});
+makerNameEl.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter' && !startBtn.disabled) startBtn.click(); });
+makerNameEl.addEventListener('input', () => { myWizard.name = cleanName(makerNameEl.value); storeWizard(); refreshMaker(); });
+refreshMaker(false);
 const nickEl = document.getElementById('nick');
 try { nickEl.value = localStorage.getItem('starvale-nick') || ''; } catch (e) { /* no storage */ }
 nickEl.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') startBtn.click(); });
@@ -2126,12 +2425,14 @@ startBtn.addEventListener('click', () => {
   if (!started) {
     started = true; startBtn.innerHTML = 'Keep playing ' + iconHTML('sparkle');
     document.getElementById('pickTitle').style.display = 'none'; charsEl.style.display = 'none'; document.getElementById('nickWrap').style.display = 'none';
+    makerEl.hidden = true; closePortraits();
     loadSave();
     spawnNPCs();
     refreshQuestUI();
     initPotions();
     mpStart();
-    setTimeout(() => toast(`Welcome to Starvale, ${playerName}! Your house is right in front of you.`, 4000, 'home'), 400);
+    if (playerIsCustom) setTimeout(() => toast(`Welcome to Starvale, ${playerName}! Every wizard on the island has a quest for you.`, 4000, 'wand'), 400);
+    else setTimeout(() => toast(`Welcome to Starvale, ${playerName}! Your house is right in front of you.`, 4000, 'home'), 400);
     setTimeout(() => toast('Press 1 to 6 to cast spells. Wizards with a ! have a quest for you!', 4500, 'wand'), 2600);
     setTimeout(() => toast(`Pick up ingredients around the island and brew potions in ${playerName === 'Nikki' ? 'your' : "Nikki's"} cauldron!`, 4500, 'potion'), 5200);
   }
@@ -2254,6 +2555,7 @@ function supportAt(x, z, y) {
   let best = -Infinity;
   const cand = h => { if (h <= y + STEP && h > best) best = h; };
   if (Math.hypot(x, z) <= ISLAND_R - 2) cand(0);
+  if (onPier(x, z)) cand(PIER.y);
   for (const s of skyIsles) if (Math.hypot(x - s.x, z - s.z) <= s.r - .5) cand(s.top);
   for (const b of bridges) { const h = bridgeY(b, x, z); if (h !== null) cand(h); }
   return best;
@@ -2430,6 +2732,12 @@ function updateSky(dt, time) {
 const keys = {};
 addEventListener('keydown', e => {
   if (shopOpen()) { if (e.code === 'KeyB' || e.code === 'Escape') toggleShop(); return; }
+  if (fishBookOpen()) { if (e.code === 'KeyF' || e.code === 'Escape') toggleFishBook(); return; }
+  if (fishing.state && started && overlay.classList.contains('hidden') && (e.code === 'KeyE' || e.code === 'Space')) {
+    e.preventDefault();
+    if (!e.repeat) fishAction();
+    return;
+  }
   if (brewOpen()) { if (!e.repeat && (e.code === 'KeyE' || e.code === 'Escape')) closeBrew(); return; }
   if (!started || !overlay.classList.contains('hidden')) { if (e.code === 'KeyH' && started) toggleHelp(); return; }
   keys[e.code] = true;
@@ -2443,6 +2751,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyH') toggleHelp();
   if (e.code === 'KeyB') toggleShop();
   if (e.code === 'KeyQ') drinkQuick();
+  if (e.code === 'KeyF') toggleFishBook();
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
@@ -2474,6 +2783,7 @@ cv.addEventListener('wheel', e => {
 const ray = new THREE.Raycaster();
 let moveTarget = null, petTarget = null, moveTimer = 0;
 function onTap(x, y) {
+  if (fishing.state) { fishAction(); return; }   // while fishing, a tap anywhere reels in
   ray.setFromCamera(new THREE.Vector2(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1), camera);
   // the cauldron and the recipe book in Nikki's house
   for (const [g, pos, mode] of [[cauldronG, cauldronPos, 'brew'], [bookG, bookPos, 'book']]) {
@@ -2501,6 +2811,16 @@ function onTap(x, y) {
     else { moveTarget = c.g.position.clone(); petTarget = c; moveTimer = 0; }
     return;
   }
+  // the pond and the pier: tap the water at the end of the pier to fish
+  const ph = ray.intersectObjects([POND.water, pierHit], false);
+  if (ph.length && player.position.y < 3) {
+    const hit = ph[0];
+    if (hit.object === POND.water && nearFishSpot()) { startFishing(); return; }
+    const [u] = pierUV(hit.point.x, hit.point.z);
+    moveTarget = hit.object === pierHit && u < PIER.len - 1.2 ? hit.point.clone().setY(0) : FISH_SPOT.clone();
+    petTarget = null; moveTimer = 0;
+    return;
+  }
   const gh = ray.intersectObjects([island, houseFloor, ...friendHouses.map(h => h.floor), ...skyTops], false);
   if (gh.length) {
     moveTarget = gh[0].point.clone(); moveTarget.y = 0; petTarget = null; moveTimer = 0;
@@ -2511,6 +2831,7 @@ const distXZ = p => Math.hypot(p.x - player.position.x, p.z - player.position.z)
 function tryPet() {
   const st = nearStation();
   if (st) { openBrew(st); return; }
+  if (nearFishSpot()) { startFishing(); return; }
   if (skyInteract()) return;
   const c = nearestCreature(2.8), n = nearestNPC(2.8), rp = nearestRemote(2.8);
   if (rp && (!c || distXZ(rp.g.position) < distXZ(c.g.position)) && (!n || distXZ(rp.g.position) < distXZ(n.g.position))) { waveAt(rp); return; }
@@ -2556,6 +2877,7 @@ function updatePlayer(dt, time) {
   for (let i = 0; i < steps; i++) {
     P.x += pVel.x * dt / steps; P.z += pVel.z * dt / steps;
     collide(P, .45, playerBoxes, true);
+    if (P.y < 3) pondPush(P);
   }
   if (!floating() && supportAt(P.x, P.z, P.y) === -Infinity && supportAt(ox, oz, P.y) !== -Infinity) {
     // don't walk off the edge into thin air: slide along it instead
@@ -2661,7 +2983,7 @@ function updateWorld(dt, time) {
 
   for (const c of clouds) { c.a += c.sp * dt; c.g.position.set(Math.cos(c.a) * c.r, c.y + Math.sin(time * .3 + c.r) * .6, Math.sin(c.a) * c.r); }
   for (const m of minis) { m.g.position.y = m.by + Math.sin(time * .6 + m.ph) * 1.2; m.g.rotation.y += dt * .03; }
-  for (const l of lilies) l.g.position.y = .07 + Math.sin(time * 1.5 + l.ph) * .015;
+  for (const l of lilies) l.g.position.y = waveH(l.g.position.x, l.g.position.z, time) + .01;
   for (const f of fireflies) {
     f.s.position.set(f.x + Math.sin(time * .5 + f.ph) * 1.5, f.y + Math.sin(time * 1.3 + f.ph * 2) * .4, f.z + Math.cos(time * .4 + f.ph) * 1.5);
     f.s.material.opacity = (.08 + night * .9) * (.55 + .45 * Math.sin(time * 3 + f.ph * 5));
@@ -2683,7 +3005,9 @@ function updateUI() {
   const rpNear = started ? nearestRemote(2.8) : null;
   const station = started ? nearStation() : null;
   const skyH = started && !station ? skyHint() : null;
-  if (skyH) { hintEl.style.display = 'block'; hintEl.innerHTML = skyH; }
+  if (fishing.state) hintEl.style.display = 'none';
+  else if (started && nearFishSpot()) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('fish')} Press <b>E</b> or tap the water to go fishing`; }
+  else if (skyH) { hintEl.style.display = 'block'; hintEl.innerHTML = skyH; }
   else if (station) { hintEl.style.display = 'block'; hintEl.innerHTML = station === 'brew' ? `${iconHTML('potion')} Press <b>E</b> or tap the cauldron to brew potions` : `${iconHTML('scroll')} Press <b>E</b> or tap the book to read your recipes`; }
   else if (rpNear && (!near || distXZ(rpNear.g.position) < distXZ(near.g.position))) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('wave')} Press <b>E</b> to wave at <b>${escHTML(who(rpNear))}</b>`; }
   else if (npcNear && (!near || distXZ(npcNear.g.position) < distXZ(near.g.position))) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('wave')} Press <b>E</b> or tap to talk to <b>${npcNear.name}</b>`; }
@@ -2753,11 +3077,11 @@ const SHOP = [
   { id: 'rainbowhat', icon: 'hatRainbow', name: 'Rainbow Hat', desc: 'A hat that keeps changing colour', price: 8, kind: 'hat', val: 'rainbow' },
   { id: 'galaxyrobe', icon: 'robe', name: 'Galaxy Robe', desc: 'A deep blue robe that glows like the night sky', price: 6, kind: 'robe', val: 'galaxy' },
 ];
-const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null };
+const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null, fish: {} };
 const activeQ = {};          // giver name -> { q, progress, ready, target }
 const questItems = [];       // collectible things in the world
 const bugs = [];
-const saveKey = () => 'starvale-save-' + playerName;
+const saveKey = () => 'starvale-save-' + (playerIsCustom ? '*custom' : playerName);
 function loadSave() {
   try { const d = JSON.parse(localStorage.getItem(saveKey()) || 'null'); if (d) Object.assign(save, d); } catch (e) { /* no storage, start fresh */ }
   for (const id of save.owned) { const sp = SPELLS.findIndex(s => s.id === id); if (sp >= 0) unlockSpell(sp); }
@@ -3021,7 +3345,7 @@ function buy(it) {
 }
 function applyCosmetics() {
   if (!W) return;
-  const L = CHARACTERS[playerName];
+  const L = playerLook;
   if (save.hat === 'gold') { W.hatMat.color.set('#ffc93c'); W.hatMat.emissive.set('#ffae00'); W.hatMat.emissiveIntensity = .35; }
   else { W.hatMat.color.set(L.hat); W.hatMat.emissive.set('#000000'); W.hatMat.emissiveIntensity = 0; }
   if (save.robe === 'galaxy') { W.robeMat.color.set('#232760'); W.robeMat.emissive.set('#6b4cff'); W.robeMat.emissiveIntensity = .3; }
@@ -3466,7 +3790,8 @@ function sendPresence(force) {
   if (!net || !started) return;
   const now = performance.now();
   if (!force && now - mpLastSend < net.interval) return;
-  const p = { c: playerName, n: myNick, x: r2(player.position.x), y: r2(player.position.y), z: r2(player.position.z), h: r2(pState.heading), s: r2(Math.hypot(pVel.x, pVel.z)), hat: save.hat || '', robe: save.robe || '' };
+  const p = { c: playerIsCustom ? '*' : playerName, n: myNick, x: r2(player.position.x), y: r2(player.position.y), z: r2(player.position.z), h: r2(pState.heading), s: r2(Math.hypot(pVel.x, pVel.z)), hat: save.hat || '', robe: save.robe || '' };
+  if (playerIsCustom) { const { name, ...look } = myWizard; p.w = playerName; p.L = look; }
   const key = JSON.stringify(p);
   if (!force && key === mpLastKey && now - mpLastSend < 3000) return;   // resend every 3 s as a keepalive
   mpLastSend = now; mpLastKey = key;
@@ -3474,17 +3799,20 @@ function sendPresence(force) {
 }
 function syncRemote(peer) {
   const pr = peer.presence || {};
-  const c = typeof pr.c === 'string' && CHARACTERS[pr.c] ? pr.c : null;
+  let c = null, L = null;
+  if (pr.c === '*' && pr.L && typeof pr.L === 'object') { const d = sanitizeMaker(Object.assign({}, pr.L, { name: pr.w })); c = makerName(d); L = makerLook(d); }
+  else if (typeof pr.c === 'string' && Object.hasOwn(CHARACTERS, pr.c)) { c = pr.c; L = CHARACTERS[c]; }
   if (!c) { removeRemote(peer.peer, false); return; }
+  const lk = JSON.stringify(L);
   let r = remotes.get(peer.peer);
-  if (r && r.c !== c) { removeRemote(peer.peer, false); r = null; }
+  if (r && (r.c !== c || r.lk !== lk)) { removeRemote(peer.peer, false); r = null; }
   if (!r) {
-    const w = makeWizard(CHARACTERS[c]);
+    const w = makeWizard(L);
     const g = new THREE.Group(); g.add(w.root); scene.add(g);
     g.position.set(num(pr.x), num(pr.y), num(pr.z)); g.rotation.y = num(pr.h);
     const label = document.createElement('div'); label.className = 'label mp';
     document.getElementById('labels').appendChild(label);
-    r = { peer: peer.peer, by: peer.by, c, w, g, label, name: '', nick: cleanNick(pr.n), walkT: 0, k: 0, castT: 0, waveT: 0, hat: null, robe: null };
+    r = { peer: peer.peer, by: peer.by, c, L, lk, w, g, label, name: '', nick: cleanNick(pr.n), walkT: 0, k: 0, castT: 0, waveT: 0, hat: null, robe: null };
     remotes.set(peer.peer, r);
     setRemoteLabel(r);
     if (started) { toast(`${who(r)} joined Starvale!`, 3300, 'wave'); sfx('hello'); }
@@ -3508,7 +3836,7 @@ function setRemoteLabel(r) {
   r.label.appendChild(sm);
 }
 function remoteCosmetics(r) {
-  const L = CHARACTERS[r.c], w = r.w;
+  const L = r.L, w = r.w;
   if (r.hat === 'gold') { w.hatMat.color.set('#ffc93c'); w.hatMat.emissive.set('#ffae00'); w.hatMat.emissiveIntensity = .35; }
   else { w.hatMat.color.set(L.hat); w.hatMat.emissive.set('#000000'); w.hatMat.emissiveIntensity = 0; }
   if (r.robe === 'galaxy') { w.robeMat.color.set('#232760'); w.robeMat.emissive.set('#6b4cff'); w.robeMat.emissiveIntensity = .3; }
@@ -3633,6 +3961,14 @@ function onRemoteSpell(msg) {
     }
   } else if (d.id === 'fireworks') {
     castFireworks(new THREE.Vector3(x, 0, z));
+  } else if (d.id === 'fish') {
+    const f = typeof d.f === 'string' ? FISH_BY_ID.get(d.f) : null;
+    if (!f) return;
+    if (close) {
+      burst(new THREE.Vector3(x + Math.sin(h) * 2.5, .4, z + Math.cos(h) * 2.5), 14, { speed: 3, colors: ['#bfe8ff', '#ffffff', f.color], size: .3, life: .8, gravity: 4 });
+      if (f.rarity >= 2) { toast(`${who(r)} caught a ${f.name}!`, 3200, 'fish'); sfx('splash'); }
+    }
+    return;
   } else if (d.id === 'potion') {
     const rec = typeof d.p === 'string' ? RECIPE_BY_ID.get(d.p) : null;
     if (!rec || rec.drink === false) return;
@@ -3765,6 +4101,269 @@ function updateChristmas(dt, time) {
   u.light.intensity = lerp(4, 16, night) * (.9 + .1 * Math.sin(time * 4));
 }
 
+// ================= pond life & fishing =================
+// --- the pond: waves, ripples and the bobbing boat ---
+const DEEP = new THREE.Color('#5fb0f2'), SHALLOW = new THREE.Color('#aee0ff'), CREST = new THREE.Color('#effaff');
+const ripples = [];
+const rippleGeo = new THREE.RingGeometry(.86, 1, 32);
+function ripple(x, z, size = 1) {
+  const m = mk(rippleGeo, new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .7, depthWrite: false }), x, .14, z, scene, false);
+  m.rotation.x = -Math.PI / 2; m.scale.setScalar(.12);
+  ripples.push({ m, t: 0, size });
+}
+let rippleT = 0;
+const tmpC = new THREE.Color(), boatW = new THREE.Vector3(), ropeA = new THREE.Vector3();
+function updatePond(dt, time) {
+  const w = POND.water, pos = w.geometry.attributes.position, col = w.geometry.attributes.color;
+  for (let i = 0; i < pos.count; i++) {
+    const lx = pos.getX(i), ly = pos.getY(i), h = waveH(POND.x + lx, POND.z - ly, time);
+    pos.setZ(i, h);
+    const d = Math.min(1, Math.hypot(lx, ly) / POND.r);
+    tmpC.copy(DEEP).lerp(SHALLOW, d * d);
+    if (h > .115) tmpC.lerp(CREST, Math.min(1, (h - .115) * 22));
+    col.setXYZ(i, tmpC.r, tmpC.g, tmpC.b);
+  }
+  pos.needsUpdate = col.needsUpdate = true;
+  w.geometry.computeVertexNormals();
+  rippleT -= dt;
+  if (rippleT <= 0) {
+    rippleT = rr(.5, 1.5);
+    const a = Math.random() * 6.28, d = Math.sqrt(Math.random()) * (POND.r - 1.2);
+    ripple(POND.x + Math.cos(a) * d, POND.z + Math.sin(a) * d, rr(.6, 1.1));
+  }
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const r = ripples[i]; r.t += dt;
+    const k = r.t / 1.5;
+    r.m.scale.setScalar(.12 + k * 1.5 * r.size);
+    r.m.material.opacity = .65 * (1 - k);
+    r.m.position.y = waveH(r.m.position.x, r.m.position.z, time) + .02;
+    if (k >= 1) { scene.remove(r.m); r.m.material.dispose(); ripples.splice(i, 1); }
+  }
+  // the boat rocks on the waves and tugs a little at its rope
+  const u = boat.userData;
+  boat.position.x = u.home.x + Math.sin(time * .4) * .18;
+  boat.position.z = u.home.z + Math.cos(time * .33) * .14;
+  boat.position.y = waveH(boat.position.x, boat.position.z, time) - .02;
+  boat.rotation.x = Math.sin(time * 1.3) * .05;
+  boat.rotation.z = Math.sin(time * 1.05 + 1) * .07;
+  u.flag.rotation.y = Math.PI / 2 + Math.sin(time * 4) * .35;
+  boatW.copy(u.bow); boat.localToWorld(boatW);
+  ropeA.copy(pierPoint(2.6, PIER.hw + .05, .62));
+  const rp = boatRope.geometry.attributes.position;
+  for (let i = 0; i < rp.count; i++) {
+    const t = i / (rp.count - 1);
+    rp.setXYZ(i, lerp(ropeA.x, boatW.x, t), lerp(ropeA.y, boatW.y, t) - Math.sin(t * Math.PI) * .3, lerp(ropeA.z, boatW.z, t));
+  }
+  rp.needsUpdate = true;
+}
+
+// --- the fish you can catch ---
+const RARITY = [
+  { name: 'Common', col: '#7fb2d9', w: 50, zone: .28, speed: .8, stars: 1 },
+  { name: 'Uncommon', col: '#4fb36e', w: 22, zone: .21, speed: 1.1, stars: 2 },
+  { name: 'Rare', col: '#9b7bff', w: 8, zone: .15, speed: 1.45, stars: 3 },
+  { name: 'Legendary', col: '#f0a000', w: 4, zone: .11, speed: 1.8, stars: 5 },
+];
+const FISH = [
+  { id: 'minnow', name: 'Pebble Minnow', rarity: 0, color: '#a9c4dd', col2: '#8aa8c4', desc: 'A tiny grey fish that loves hiding under the lily pads.', tip: 'Bites all the time. Just cast your line!' },
+  { id: 'guppy', name: 'Bubble Guppy', rarity: 0, color: '#8fe0ff', col2: '#5cc1e8', desc: 'It blows the bubbles that float up from the pond.', tip: 'A common pond fish.' },
+  { id: 'carp', name: 'Peachy Carp', rarity: 0, day: true, color: '#ffb38a', col2: '#ff8f6b', desc: 'Round and happy, it loves sunny days.', tip: 'Loves sunshine. Go fishing during the day!' },
+  { id: 'puffer', name: 'Star Puffer', rarity: 1, color: '#ffd84d', col2: '#ff9f4d', desc: 'It puffs up into a little star when it gets a fright.', tip: 'A bit shy. Keep trying!' },
+  { id: 'ghost', name: 'Ghost Guppy', rarity: 1, night: true, glow: true, color: '#e6f0ff', col2: '#b8d8ff', desc: 'See-through and glowing: a friendly little pond ghost.', tip: 'Only swims up in the dark. Try the Day & Night spell!' },
+  { id: 'koi', name: 'Rainbow Koi', rarity: 2, rainbow: true, color: '#ff8fc7', col2: '#7fc8ff', desc: 'Its scales shine in every colour of the rainbow.', tip: 'Only bites while a rainbow shines in the sky.' },
+  { id: 'crystal', name: 'Crystal Fin', rarity: 2, glow: true, color: '#d4b0ff', col2: '#ffffff', desc: 'Its fins are made of sparkly crystal.', tip: 'A rare one. Its fins sparkle in the water.' },
+  { id: 'moon', name: 'Moonfin', rarity: 2, night: true, glow: true, color: '#7fb2ff', col2: '#cdbaff', desc: 'It glows like the moon on the water.', tip: 'Comes out at night, when the moon is up.' },
+  { id: 'wish', name: 'Golden Wishfish', rarity: 3, glow: true, color: '#ffcc33', col2: '#fff3a0', desc: 'A real legend! Catching it fills up all your magic.', tip: 'A legend… only very patient wizards ever catch it.' },
+];
+const FISH_BY_ID = new Map(FISH.map(f => [f.id, f]));
+function makeFishMesh(f) {
+  const g = new THREE.Group();
+  const mat = toon(f.color, f.glow ? { emissive: f.color, emissiveIntensity: .45 } : {}), fin = toon(f.col2, f.glow ? { emissive: f.col2, emissiveIntensity: .45 } : {});
+  ball(mat, 0, 0, 0, .15, .2, .36, g, false);
+  const tail = mk(new THREE.ConeGeometry(.2, .28, 4), fin, 0, 0, -.44, g, false); tail.rotation.x = Math.PI / 2; tail.scale.x = .3;
+  const top = mk(new THREE.ConeGeometry(.1, .2, 4), fin, 0, .2, -.02, g, false); top.scale.z = 2; top.scale.x = .3;
+  for (const sx of [-1, 1]) { ball(whiteMat, sx * .1, .06, .22, .055, .055, .04, g, false); ball(eyeMat, sx * .12, .06, .24, .03, .03, .02, g, false); }
+  if (f.glow) {
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: f.color, transparent: true, opacity: .7, blending: THREE.AdditiveBlending, depthWrite: false }));
+    halo.scale.setScalar(1.4); g.add(halo);
+  }
+  g.scale.setScalar(1 + f.rarity * .15);
+  return g;
+}
+function chooseFish() {
+  const pool = FISH.filter(f => (!f.night || night > .5) && (!f.day || night <= .5) && (!f.rainbow || rainbow));
+  let tot = 0;
+  const ws = pool.map(f => (tot += RARITY[f.rarity].w * (f.rainbow ? 3 : 1), RARITY[f.rarity].w * (f.rainbow ? 3 : 1)));
+  let r = Math.random() * tot;
+  for (let i = 0; i < pool.length; i++) { r -= ws[i]; if (r <= 0) return pool[i]; }
+  return pool[0];
+}
+
+// --- line, bobber and the "!" when something bites ---
+const FISH_SPOT = pierPoint(PIER.len - .8);
+const fishing = { state: null, t: 0, wait: 0, nibble: 0, nibT: 0, fish: null, mark: 0, dir: 1, speed: 1, zone: .2, zc: .5, mesh: null, from: new THREE.Vector3(), to: new THREE.Vector3(), bob: new THREE.Vector3() };
+const fishLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 16 }, () => new THREE.Vector3())), new THREE.LineBasicMaterial({ color: '#fff6c8' }));
+fishLine.frustumCulled = false; fishLine.visible = false; scene.add(fishLine);
+const bobber = new THREE.Group(); bobber.visible = false; scene.add(bobber);
+ball(toon('#ff5c7a'), 0, .07, 0, .12, .1, .12, bobber, false);
+ball(toon('#ffffff'), 0, -.02, 0, .12, .07, .12, bobber, false);
+mk(new THREE.CylinderGeometry(.015, .015, .16, 5), toon('#ffffff'), 0, .22, 0, bobber, false);
+const biteTex = canvasTex(64, 64, g => {
+  g.fillStyle = '#ffffff'; g.beginPath(); g.arc(32, 32, 28, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#ff5c7a'; g.font = 'bold 44px Fredoka, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('!', 32, 35);
+});
+const biteMark = new THREE.Sprite(new THREE.SpriteMaterial({ map: biteTex, transparent: true, depthWrite: false, depthTest: false }));
+biteMark.visible = false; biteMark.renderOrder = 5; scene.add(biteMark);
+const fishEl = document.getElementById('fishing'), fishMsg = document.getElementById('fishMsg'), fishBar = document.getElementById('fishBar');
+const fishZone = document.getElementById('fishZone'), fishMark = document.getElementById('fishMark'), fishBtn = document.getElementById('fishBtn');
+fishBtn.addEventListener('click', e => { fishAction(); e.currentTarget.blur(); });
+function fishUI(msg, btn, bar = false, go = false) {
+  fishEl.style.display = 'flex';
+  fishEl.style.bottom = (spellbar.offsetHeight + 26) + 'px';   // always just above the spell bar, even when it wraps
+  fishMsg.innerHTML = `${iconHTML('fish')} ${msg}`;
+  fishBtn.textContent = btn; fishBtn.classList.toggle('go', go);
+  fishBar.style.display = bar ? 'block' : 'none';
+}
+function nearFishSpot() { return started && !fishing.state && Math.abs(player.position.y - PIER.y) < .35 && distXZ(FISH_SPOT) < 1.5; }
+const splash = (p, n = 12) => burst(p.clone().setY(p.y + .1), n, { speed: 2.5, colors: ['#bfe8ff', '#ffffff', '#8fd0ff'], size: .22, life: .7, gravity: 6 });
+
+function startFishing() {
+  if (fishing.state) return;
+  const F = fishing;
+  moveTarget = petTarget = null; pVel.set(0, 0, 0);
+  pState.heading = Math.atan2(PIER.dx, PIER.dz); pState.castT = .4;
+  F.state = 'cast'; F.t = 0; F.fish = null;
+  F.from.copy(wandWorld());
+  F.to.copy(pierPoint(PIER.len + rr(1.4, 2.6), rr(-1.3, 1.3)));
+  F.wait = rr(2.5, 6.5); F.nibble = rr(.8, 1.5); F.nibT = 0;
+  fishLine.visible = bobber.visible = true;
+  fishUI('Casting…', 'Reel in');
+  sfx('cast');
+}
+function stopFishing(msg) {
+  const F = fishing;
+  F.state = null;
+  fishLine.visible = bobber.visible = biteMark.visible = false;
+  if (F.mesh) { scene.remove(F.mesh); F.mesh = null; }
+  fishEl.style.display = 'none';
+  if (msg) toast(msg, 2800, 'fish');
+}
+function fishBite() {
+  const F = fishing, R = RARITY[(F.fish = chooseFish()).rarity];
+  F.state = 'bite'; F.t = 0;
+  F.speed = R.speed * rr(.9, 1.1); F.zone = R.zone;
+  F.zc = rr(F.zone / 2 + .08, 1 - F.zone / 2 - .08);
+  F.dir = Math.random() < .5 ? 1 : -1; F.mark = F.dir > 0 ? 0 : 1;
+  fishZone.style.left = (F.zc - F.zone / 2) * 100 + '%'; fishZone.style.width = F.zone * 100 + '%';
+  biteMark.visible = true; biteMark.material.color.set(F.fish.rarity >= 2 ? '#fff3a0' : '#ffffff');
+  splash(F.bob, 16); ripple(F.to.x, F.to.z, 1.2);
+  fishUI(F.fish.rarity >= 2 ? 'Something big is biting! Catch it in the green!' : 'A bite! Catch it when the marker is in the green!', 'Catch!', true, true);
+  sfx('bite');
+}
+function fishAction() {
+  const F = fishing;
+  if (F.state === 'wait') { stopFishing('Too early! Wait until the bobber dips and you see the "!"'); sfx('plop'); }
+  else if (F.state === 'bite') {
+    if (Math.abs(F.mark - F.zc) <= F.zone / 2 + .02) {
+      F.state = 'reel'; F.t = 0;
+      F.mesh = makeFishMesh(F.fish); F.mesh.position.copy(F.bob); scene.add(F.mesh);
+      bobber.visible = biteMark.visible = false; fishBar.style.display = 'none';
+      fishMsg.innerHTML = `${iconHTML('fish')} Reeling in…`; fishBtn.classList.remove('go');
+      pState.castT = .4; splash(F.bob, 22); sfx('splash');
+    } else { sfx('splash'); stopFishing(F.fish.rarity >= 2 ? 'Splash! The big one got away… try again!' : 'Splash! The fish got away. Try again!'); }
+  }
+}
+function finishCatch() {
+  const f = fishing.fish, R = RARITY[f.rarity], first = !save.fish[f.id];
+  save.fish[f.id] = (save.fish[f.id] || 0) + 1;
+  const at = fishing.mesh.position.clone();
+  burst(at, 24, { speed: 3.5, colors: [f.color, f.col2, '#ffffff', '#fff09a'], size: .35, life: 1, gravity: 0 });
+  hearts(player.position.clone().add(new THREE.Vector3(0, 2.4, 0)), 3);
+  stopFishing(null);
+  if (first) {
+    save.stars += R.stars; updateStarsUI();
+    toast(`New fish! You caught a ${f.name} (${R.name}) +${R.stars} ${R.stars === 1 ? 'star' : 'stars'}`, 4300, 'fish'); sfx('coin');
+    if (FISH.every(q => save.fish[q.id])) {
+      save.stars += 10; updateStarsUI();
+      setTimeout(() => { toast('You caught every fish in Starvale! +10 bonus stars', 5000, 'star'); sfx('fanfare'); }, 1200);
+    }
+  } else { toast(`You caught a ${f.name}! (${save.fish[f.id]} so far)`, 2600, 'fish'); sfx('catch'); }
+  if (f.id === 'wish') { mana = 100; setTimeout(() => toast('The Golden Wishfish grants you a wish: your magic is full!', 4000, 'sparkle'), 900); }
+  storeSave();
+  if (fishBookOpen()) renderFishBook();
+  if (net && f.rarity >= 1) Promise.resolve().then(() => net.emit('spell', { id: 'fish', f: f.id, x: r2(player.position.x), y: r2(player.position.y), z: r2(player.position.z), h: r2(player.rotation.y) })).catch(() => {});
+}
+function updateFishing(dt, time) {
+  const F = fishing;
+  if (!F.state) return;
+  const moving = keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD || keys.ArrowUp || keys.ArrowDown || keys.ArrowLeft || keys.ArrowRight;
+  if (moving || moveTarget || distXZ(FISH_SPOT) > 1.9 || !pState.grounded) { stopFishing(F.state === 'bite' ? 'You walked away and the fish swam off.' : null); return; }
+  F.t += dt;
+  const sea = waveH(F.to.x, F.to.z, time);
+  if (F.state === 'cast') {
+    const k = Math.min(1, F.t / .6);
+    F.bob.lerpVectors(F.from, F.to, k); F.bob.y = lerp(F.from.y, sea, k) + Math.sin(k * Math.PI) * 1.5;
+    if (k >= 1) { F.state = 'wait'; F.t = 0; sfx('plop'); ripple(F.to.x, F.to.z, .8); splash(F.to.clone().setY(sea), 8); fishUI('Waiting for a bite…', 'Reel in'); }
+  } else if (F.state === 'wait') {
+    F.nibble -= dt;
+    if (F.nibble <= 0) { F.nibble = rr(.9, 1.8); F.nibT = .25; ripple(F.to.x, F.to.z, .4); }   // a little nibble...
+    F.nibT = Math.max(0, F.nibT - dt);
+    F.bob.set(F.to.x, sea + .02 - Math.sin(F.nibT / .25 * Math.PI) * .06, F.to.z);
+    if (F.t >= F.wait) fishBite();
+  } else if (F.state === 'bite') {
+    F.bob.set(F.to.x, sea - .1 + Math.sin(time * 28) * .04, F.to.z);
+    F.mark += F.dir * F.speed * dt;
+    if (F.mark > 1) { F.mark = 2 - F.mark; F.dir = -1; }
+    if (F.mark < 0) { F.mark = -F.mark; F.dir = 1; }
+    fishMark.style.left = F.mark * 100 + '%';
+    biteMark.position.set(F.to.x, sea + .9 + Math.sin(time * 8) * .06, F.to.z);
+    biteMark.scale.setScalar(.65 + Math.sin(time * 14) * .06);
+    if (Math.random() < dt * 6) ripple(F.to.x + rr(-.3, .3), F.to.z + rr(-.3, .3), .5);
+    if (F.t > 5) { sfx('splash'); stopFishing('Too slow! The fish swam away.'); return; }
+  } else if (F.state === 'reel') {
+    const k = Math.min(1, F.t / .9);
+    tmpV.set(player.position.x, player.position.y + 2.5 * player.scale.x, player.position.z);
+    F.mesh.position.lerpVectors(F.to, tmpV, k); F.mesh.position.y = lerp(sea, tmpV.y, k) + Math.sin(k * Math.PI) * 2.2;
+    F.mesh.rotation.set(Math.sin(time * 20) * .4, F.t * 9, 0);
+    if (k >= 1) { finishCatch(); return; }
+  }
+  bobber.position.copy(F.bob);
+  // the line hangs from the wand tip to the bobber (or the fish)
+  const a = wandWorld(), b = F.state === 'reel' ? F.mesh.position : F.bob, p = fishLine.geometry.attributes.position;
+  const sag = F.state === 'bite' || F.state === 'reel' ? .05 : .45;
+  for (let i = 0; i < p.count; i++) {
+    const t = i / (p.count - 1);
+    p.setXYZ(i, lerp(a.x, b.x, t), lerp(a.y, b.y, t) - Math.sin(t * Math.PI) * sag, lerp(a.z, b.z, t));
+  }
+  p.needsUpdate = true;
+}
+
+// --- the Fish Book ---
+const fishBookEl = document.getElementById('fishbook');
+const fishBookOpen = () => !fishBookEl.classList.contains('hidden');
+function toggleFishBook() {
+  if (!started) return;
+  fishBookEl.classList.toggle('hidden');
+  if (fishBookOpen()) { if (fishing.state) stopFishing(null); renderFishBook(); for (const k in keys) keys[k] = false; }
+}
+function renderFishBook() {
+  const n = FISH.filter(f => save.fish[f.id]).length;
+  document.getElementById('fishSub').textContent = n === FISH.length
+    ? `You found all ${n} fish. What a great angler!`
+    : `You found ${n} of ${FISH.length} fish. Go fishing at the end of the pier by the pond!`;
+  const box = document.getElementById('fishList'); box.innerHTML = '';
+  for (const f of FISH) {
+    const c = save.fish[f.id] || 0, R = RARITY[f.rarity];
+    const row = document.createElement('div'); row.className = 'item' + (c ? '' : ' unknown');
+    row.innerHTML = `<div class="ico">${c ? fishSVG(f.color) : fishSVG('#e4dcf3', '#b9a8dc')}</div>`
+      + `<div class="txt"><b>${c ? f.name : '???'}<em class="rar" style="background:${R.col}">${R.name}</em></b><span>${c ? f.desc : f.tip}</span></div>`
+      + `<div class="cnt">${c ? '×' + c : ''}</div>`;
+    box.appendChild(row);
+  }
+}
+document.getElementById('fishBookBtn').addEventListener('click', e => { toggleFishBook(); e.currentTarget.blur(); });
+document.getElementById('fishBookClose').addEventListener('click', () => toggleFishBook());
+
 // ================= loop =================
 const clock = new THREE.Clock();
 let time = 0;
@@ -3784,6 +4383,8 @@ function frame() {
   updateRockets(dt);
   updateProjectiles(dt); updateFlowers(dt); updateButterflies(dt, time); updateRainbow(dt); updateBridges(dt);
   updateWorld(dt, time);
+  updatePond(dt, time);
+  updateFishing(dt, time);
   updateSky(dt, time);
   updateChristmas(dt, time);
   updateCamera(dt);
@@ -3793,7 +4394,8 @@ function frame() {
 }
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
 applyTime();
-pickCharacter('Nikki');
+{ let last = 'Nikki'; try { last = localStorage.getItem('starvale-pick') || 'Nikki'; } catch (e) { /* ignore */ }
+  if (last === '*custom') pickCustom(); else pickCharacter(Object.hasOwn(CHARACTERS, last) ? last : 'Nikki'); }
 frame();
 </script>
 </body>
