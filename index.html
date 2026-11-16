@@ -224,6 +224,7 @@
       <span><kbd>1</kbd> – <kbd>7</kbd></span><span>cast spells</span>
       <span><kbd>E</kbd></span><span>pet a critter · talk to a wizard</span>
       <span><kbd>B</kbd></span><span>Star Shop</span>
+      <span>Sky islands</span><span>cast <b>Rainbow</b> near the edge for a bridge, or <b>Levitate</b> yourself</span>
       <span><kbd>E</kbd> at the cauldron</span><span>brew potions from ingredients you find</span>
       <span><kbd>Q</kbd> / tap a potion</span><span>drink a potion</span>
       <span>Friends online</span><span>open the same link together · <kbd>E</kbd> near a player = wave</span>
@@ -443,7 +444,7 @@ function findSpot(r, opts) {
   return null;
 }
 
-function collide(p, r, boxes) {
+function collide(p, r, boxes, free = false) {
   for (const c of circles) {
     const dx = p.x - c.x, dz = p.z - c.z, d = Math.hypot(dx, dz), m = r + c.r;
     if (d < m && d > 1e-5) { p.x = c.x + dx / d * m; p.z = c.z + dz / d * m; }
@@ -460,6 +461,7 @@ function collide(p, r, boxes) {
       }
     }
   }
+  if (free) return;   // the player has their own edge rules (sky islands, bridges, floating)
   const d = Math.hypot(p.x, p.z), lim = ISLAND_R - 2;
   if (d > lim) { p.x *= lim / d; p.z *= lim / d; }
 }
@@ -1783,11 +1785,11 @@ function castSpell(i) {
     spellBtns[i].classList.remove('shake'); void spellBtns[i].offsetWidth; spellBtns[i].classList.add('shake');
     return;
   }
-  if (s.id === 'float' && !nearestCreature(16)) { toast('There is no critter nearby to levitate', 3000, 'balloon'); return; }
   mana -= s.cost; cds[i] = s.cd;
   pState.castT = .4;
-  const floated = s.id === 'float' ? nearestCreature(16) : null;
-  ({ star: castStar, flower: castFlowers, float: castFloat, butterfly: () => castButterflies(), rainbow: () => castRainbow(), night: castNight, fireworks: () => castFireworks() })[s.id]();
+  // Levitate lifts the nearest critter, or yourself when there is none (or a sky island is close)
+  const floated = s.id === 'float' && !nearSkyIsle(player.position, 22) && player.position.y < .3 ? nearestCreature(16) : null;
+  ({ star: castStar, flower: castFlowers, float: () => floated ? castFloat(floated) : castSelfFloat(), butterfly: () => castButterflies(), rainbow: () => castRainbow(), night: castNight, fireworks: () => castFireworks() })[s.id]();
   mpCast(s.id, floated);
   setTimeout(() => burst(wandWorld(), 10, { speed: 2.5, colors: ['#ffd1f0', '#fff09a', '#c9a0ff'], size: .3, life: .6, gravity: 0 }), 120);
 }
@@ -1882,8 +1884,7 @@ function updateFlowers(dt) {
 }
 
 // 3. levitation
-function castFloat() {
-  const c = nearestCreature(16);
+function castFloat(c) {
   c.lev = 4; c.happy = 0;
   const a = wandWorld(), b = creatureCenter(c, new THREE.Vector3());
   for (let i = 0; i <= 24; i++) {
@@ -1944,6 +1945,21 @@ function updateButterflies(dt, time) {
 let rainbow = null;
 const RAINBOW_COLS = ['#ff7a8a', '#ffad6b', '#ffe66b', '#8fe08a', '#7fc8ff', '#9b8cff', '#d39bff'];
 function castRainbow(at = null) {
+  {   // near a sky island the rainbow becomes a bridge you can walk on
+    const f = at ? new THREE.Vector3(Math.sin(at.h), 0, Math.cos(at.h)) : facingDir();
+    const ox = at ? at.x : player.position.x, oz = at ? at.z : player.position.z, oy0 = at ? at.y || 0 : player.position.y;
+    const sup = supportAt(ox, oz, oy0), oy = sup === -Infinity ? oy0 : sup;
+    const t = bridgeTarget(ox, oy, oz, f);
+    if (t) {
+      makeBridge(t);
+      if (!at) {
+        pState.heading = Math.atan2(t.bx - t.ax, t.bz - t.az);
+        toast(t.isle ? `A rainbow bridge to ${t.isle.name}! Walk across before it fades.` : 'A rainbow bridge back home to Starvale!', 3500, 'rainbow');
+      }
+      sfx('rainbow');
+      return;
+    }
+  }
   if (rainbow) scene.remove(rainbow.g);
   const g = new THREE.Group(); scene.add(g);
   const mats = RAINBOW_COLS.map((col, i) => {
@@ -2118,6 +2134,292 @@ function toggleHelp() { overlay.classList.toggle('hidden'); }
 document.getElementById('helpBtn').addEventListener('click', e => { toggleHelp(); e.currentTarget.blur(); });
 document.getElementById('muteBtn').addEventListener('click', e => { toggleMute(); e.currentTarget.blur(); });
 
+// ================= sky islands =================
+// three little islands floating off the edge: reach them with a rainbow bridge (Rainbow
+// facing one) or by levitating yourself (Levitate with no critter nearby)
+const STEP = .8;   // how high a ledge you can just walk up
+const SKY_DEFS = [
+  { id: 'chest', name: 'Treasure Isle', a: 1.0, d: 55, top: 6.5, r: 5.5 },
+  { id: 'kitty', name: 'Cloud Kitten Isle', a: 3.3, d: 55, top: 8, r: 5 },
+  { id: 'view', name: 'Lookout Isle', a: 5.0, d: 56, top: 9.5, r: 4.6 },
+];
+const skyIsles = SKY_DEFS.map((def, i) => {
+  const s = { ...def, x: Math.cos(def.a) * def.d, z: Math.sin(def.a) * def.d, baseTop: def.top, ph: i * 2.1 };
+  const g = new THREE.Group(); g.position.set(s.x, s.top - .8, s.z); scene.add(g); s.g = g;
+  s.topMesh = new THREE.Mesh(new THREE.CylinderGeometry(s.r, s.r - .4, 1.6, 30), [dirtMat, grassMat, dirtMat]);
+  s.topMesh.receiveShadow = true; g.add(s.topMesh);
+  mk(new THREE.TorusGeometry(s.r - .15, .35, 6, 40), toon('#dfe9fb'), 0, .75, 0, g, false).rotation.x = Math.PI / 2;
+  const bot = mk(new THREE.ConeGeometry(s.r - .4, s.r * 1.7, 9), toon('#a27052', { flatShading: true }), 0, -.8 - s.r * .85, 0, g, false); bot.rotation.x = Math.PI;
+  // little glowing crystals hanging underneath
+  for (let k = 0; k < 4; k++) {
+    const a = k * 1.57 + i, cr = mk(new THREE.OctahedronGeometry(.35), glow(toon(['#c9a0ff', '#8fd8ff', '#ffb3e6'][(i + k) % 3], { emissive: '#c9a0ff', emissiveIntensity: .3 }), .3, 1.6), Math.cos(a) * (s.r - .3), -1.3 - k % 2 * .5, Math.sin(a) * (s.r - .3), g, false);
+    cr.scale.y = 1.8;
+  }
+  // grass tufts & a flower or two on top
+  for (let k = 0; k < 7; k++) {
+    const a = k * .9 + i * 1.7, d = s.r * (.55 + (k % 3) * .12);
+    ball(leafMats[(k + i) % leafMats.length], Math.cos(a) * d, .85, Math.sin(a) * d, .35, .22, .35, g, false);
+  }
+  // a star marker floats above islands you have not explored yet
+  s.marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: starTex, color: '#ffe066', transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  s.marker.scale.setScalar(2.2); s.marker.position.y = 5.5; g.add(s.marker);
+  return s;
+});
+const skyBy = id => skyIsles.find(s => s.id === id);
+const skyTops = skyIsles.map(s => s.topMesh);
+
+// treasure chest
+const chestIsle = skyBy('chest');
+const chestG = new THREE.Group(); chestG.position.set(0, .8, -1.2); chestIsle.g.add(chestG);
+{
+  const wood = toon('#b9774a'), gold = toon('#ffd84d', { emissive: '#ffb300', emissiveIntensity: .15 });
+  mk(Box(1.6, .9, 1), wood, 0, .45, 0, chestG);
+  for (const sx of [-1, 1]) mk(Box(.14, .92, 1.04), gold, sx * .55, .45, 0, chestG, false);
+  const lid = new THREE.Group(); lid.position.set(0, .9, -.5); chestG.add(lid); chestG.userData.lid = lid;
+  const top = mk(new THREE.CylinderGeometry(.5, .5, 1.6, 14, 1, false, 0, Math.PI), wood, 0, 0, .5, lid);
+  top.rotation.set(0, 0, Math.PI / 2);
+  for (const sx of [-1, 1]) { const b = mk(new THREE.CylinderGeometry(.52, .52, .14, 14, 1, false, 0, Math.PI), gold, sx * .55, 0, .5, lid, false); b.rotation.set(0, 0, Math.PI / 2); }
+  ball(gold, 0, -.05, 1.02, .14, .18, .08, lid, false);
+  const shine = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#ffd84d', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+  shine.scale.setScalar(3); shine.position.y = 1.1; chestG.add(shine); chestG.userData.shine = shine;
+  for (let k = 0; k < 6; k++) mk(new THREE.CylinderGeometry(.13, .13, .04, 12), gold, rr(-.5, .5), .92, rr(-.3, .3), chestG, false);
+}
+const chestWorld = () => chestG.getWorldPosition(new THREE.Vector3());
+
+// Nimbus, the rare cloud kitten
+const kittyIsle = skyBy('kitty');
+const kitty = (() => {
+  const g = new THREE.Group(); g.position.set(0, .8, -.6); kittyIsle.g.add(g);
+  const pillow = ball(toon('#c9a0ff'), 0, .15, 0, 1.1, .25, 1.1, g); pillow.castShadow = false;
+  const body = new THREE.Group(); body.position.y = .35; g.add(body);
+  const fur = toon('#ffffff', { emissive: '#d9e6ff', emissiveIntensity: .15 }), pink = toon('#ffc4dd');
+  ball(fur, 0, .45, 0, .55, .45, .5, body);
+  for (const [x, z] of [[-.35, .2], [.35, .2], [-.3, -.25], [.3, -.25]]) ball(fur, x, .55, z, .3, .3, .3, body, false);
+  const head = new THREE.Group(); head.position.set(0, 1.05, .3); body.add(head);
+  ball(fur, 0, 0, 0, .42, .38, .38, head);
+  face(head, .02, .34, .14, .06);
+  for (const sx of [-1, 1]) {
+    const e = mk(new THREE.ConeGeometry(.15, .3, 4), fur, sx * .24, .36, 0, head); e.rotation.z = -sx * .35;
+    const ein = mk(new THREE.ConeGeometry(.08, .18, 4), pink, sx * .24, .35, .05, head, false); ein.rotation.z = -sx * .35;
+  }
+  ball(pink, 0, -.06, .38, .05, .04, .03, head, false);
+  const tail = new THREE.Group(); tail.position.set(0, .5, -.45); body.add(tail);
+  for (let k = 0; k < 4; k++) ball(fur, 0, k * .17, -k * .07, .12, .12, .12, tail, false);
+  const tip = new THREE.Sprite(new THREE.SpriteMaterial({ map: starTex, color: '#ffe066', transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  tip.scale.setScalar(.55); tip.position.set(0, .72, -.3); tail.add(tip);
+  const wingShape = new THREE.Shape(); wingShape.moveTo(0, 0); wingShape.quadraticCurveTo(.5, .55, .7, .2); wingShape.quadraticCurveTo(.45, .05, 0, -.1);
+  const wingGeo = new THREE.ShapeGeometry(wingShape), wingMat = toon('#e7f3ff', { side: THREE.DoubleSide, transparent: true, opacity: .9 });
+  const wings = [];
+  for (const sx of [-1, 1]) {
+    const pv = new THREE.Group(); pv.position.set(sx * .3, .75, -.1); body.add(pv);
+    const w = mk(wingGeo, wingMat, 0, 0, 0, pv, false); w.scale.x = sx; wings.push({ pv, sx });
+  }
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#cfe3ff', transparent: true, opacity: .35, blending: THREE.AdditiveBlending, depthWrite: false }));
+  halo.scale.setScalar(3); halo.position.y = .8; body.add(halo);
+  return { g, body, head, tail, wings, joy: 0 };
+})();
+const kittyWorld = () => kitty.g.getWorldPosition(new THREE.Vector3());
+
+// the lookout: a bench, a telescope and a little flag
+const viewIsle = skyBy('view');
+const scopeG = new THREE.Group(); viewIsle.g.add(scopeG);
+{
+  const wood = toon('#a8714a'), brass = toon('#ffd27a'), seat = new THREE.Group();
+  seat.position.set(-1.6, .8, .6); seat.rotation.y = .9; viewIsle.g.add(seat);
+  mk(Box(1.8, .12, .55), wood, 0, .5, 0, seat); mk(Box(1.8, .5, .1), wood, 0, .85, -.25, seat);
+  for (const sx of [-1, 1]) mk(Box(.12, .5, .5), wood, sx * .75, .25, 0, seat, false);
+  scopeG.position.set(1.4, .8, .4);
+  for (let k = 0; k < 3; k++) { const leg = mk(new THREE.CylinderGeometry(.04, .04, 1.3, 6), wood, Math.cos(k * 2.09) * .22, .6, Math.sin(k * 2.09) * .22, scopeG, false); leg.rotation.set(Math.sin(k * 2.09) * .3, 0, -Math.cos(k * 2.09) * .3); }
+  const tube = mk(new THREE.CylinderGeometry(.11, .16, 1.1, 12), brass, 0, 1.35, 0, scopeG); tube.rotation.x = 1.1;
+  mk(new THREE.CylinderGeometry(.04, .04, 2.6, 6), wood, -.2, 2.1, -2, viewIsle.g, false);
+  const flag = mk(new THREE.PlaneGeometry(.9, .55), toon('#ff8fbf', { side: THREE.DoubleSide }), .25, 3.05, -2, viewIsle.g, false);
+  viewIsle.flag = flag;
+}
+
+// ---- walking on things that are not the ground ----
+function bridgeY(b, x, z) {
+  const t = ((x - b.ax) * b.dx + (z - b.az) * b.dz) / b.len2;
+  if (t < 0 || t > Math.min(1, b.grow)) return null;
+  const lat = Math.abs((x - b.ax) * b.dz - (z - b.az) * b.dx) / Math.sqrt(b.len2);
+  return lat < 1.3 ? b.y0 + (b.y1 - b.y0) * t + Math.sin(Math.PI * t) * b.bump : null;
+}
+// highest surface below (or just a step above) height y; -Infinity means thin air
+function supportAt(x, z, y) {
+  let best = -Infinity;
+  const cand = h => { if (h <= y + STEP && h > best) best = h; };
+  if (Math.hypot(x, z) <= ISLAND_R - 2) cand(0);
+  for (const s of skyIsles) if (Math.hypot(x - s.x, z - s.z) <= s.r - .5) cand(s.top);
+  for (const b of bridges) { const h = bridgeY(b, x, z); if (h !== null) cand(h); }
+  return best;
+}
+function isleUnder(p) { return skyIsles.find(s => Math.hypot(p.x - s.x, p.z - s.z) <= s.r - .3 && Math.abs(p.y - s.top) < 1.2) || null; }
+
+// ---- rainbow bridges ----
+const bridges = [];
+function bridgeTarget(ox, oy, oz, f) {
+  const here = isleUnder({ x: ox, y: oy, z: oz });
+  if (here) {   // from a sky island: a bridge back home
+    const d = Math.hypot(here.x, here.z), ex = here.x - here.x / d * (here.r - 1.2), ez = here.z - here.z / d * (here.r - 1.2);
+    return { ax: ex, az: ez, y0: here.top, bx: here.x / d * (ISLAND_R - 5), bz: here.z / d * (ISLAND_R - 5), y1: 0 };
+  }
+  let best = null, bs = Infinity;
+  for (const s of skyIsles) {
+    const dx = s.x - ox, dz = s.z - oz, d = Math.hypot(dx, dz), gap = d - s.r;
+    if (gap > 26 || d < s.r) continue;
+    const facing = (dx * f.x + dz * f.z) / d;   // prefer the island you look at
+    const score = gap - facing * 12;
+    if (score < bs) { bs = score; best = s; }
+  }
+  if (!best) return null;
+  const dx = best.x - ox, dz = best.z - oz, d = Math.hypot(dx, dz);
+  return { ax: ox, az: oz, y0: oy, bx: best.x - dx / d * (best.r - 1.2), bz: best.z - dz / d * (best.r - 1.2), y1: best.top, isle: best };
+}
+function makeBridge(t) {
+  const N = 40, W = 2.4, cols = RAINBOW_COLS.map(c => new THREE.Color(c));
+  const b = { ax: t.ax, az: t.az, y0: t.y0, y1: t.y1, dx: t.bx - t.ax, dz: t.bz - t.az, t: 0, life: 32, grow: 0, N };
+  b.len2 = b.dx * b.dx + b.dz * b.dz || 1;
+  const len = Math.sqrt(b.len2);
+  b.bump = Math.min(2.5, len * .12);
+  const lx = -b.dz / len, lz = b.dx / len;
+  const pos = [], col = [];
+  const at = (u, w) => [b.ax + b.dx * u + lx * w, b.y0 + (b.y1 - b.y0) * u + Math.sin(Math.PI * u) * b.bump + .04, b.az + b.dz * u + lz * w];
+  for (let i = 0; i < N; i++) {
+    const u0 = i / N, u1 = (i + 1) / N;
+    for (let s = 0; s < 7; s++) {
+      const w0 = -W / 2 + s * W / 7, w1 = w0 + W / 7, c = cols[s];
+      const p = [at(u0, w0), at(u1, w0), at(u1, w1), at(u0, w0), at(u1, w1), at(u0, w1)];
+      for (const q of p) { pos.push(...q); col.push(c.r, c.g, c.b); }
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  geo.computeVertexNormals(); geo.setDrawRange(0, 0);
+  b.mat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: .88, side: THREE.DoubleSide });
+  b.mesh = new THREE.Mesh(geo, b.mat); scene.add(b.mesh);
+  b.at = at;
+  bridges.push(b);
+  while (bridges.length > 4) { const o = bridges.shift(); scene.remove(o.mesh); o.mesh.geometry.dispose(); }
+  return b;
+}
+function onBridge(b) { return pState.grounded && bridgeY(b, player.position.x, player.position.z) !== null && Math.abs(bridgeY(b, player.position.x, player.position.z) - player.position.y) < .3; }
+function updateBridges(dt) {
+  for (let i = bridges.length - 1; i >= 0; i--) {
+    const b = bridges[i]; b.t += dt;
+    if (b.t > b.life - 3 && started && onBridge(b)) b.t = b.life - 3;   // never vanish under your feet
+    b.grow = Math.min(1, b.t / 1.3);
+    b.mesh.geometry.setDrawRange(0, Math.floor(b.grow * b.N) * 42);
+    b.mat.opacity = .88 * (b.t > b.life - 3 ? Math.max(0, (b.life - b.t) / 3) : 1);
+    if (Math.random() < dt * 10) {
+      const u = Math.random() * b.grow, p = b.at(u, rr(-1.2, 1.2));
+      emit({ pos: new THREE.Vector3(p[0], p[1] + .2, p[2]), vel: new THREE.Vector3(0, rr(.2, .7), 0), life: 1, size: rr(.2, .4), color: rpick(RAINBOW_COLS), tex: starTex, spin: 2 });
+    }
+    if (b.t >= b.life) { scene.remove(b.mesh); b.mesh.geometry.dispose(); bridges.splice(i, 1); }
+  }
+}
+
+// ---- levitating yourself ----
+let selfLev = 0;
+const floating = () => pfx.id === 'float' || selfLev > 0;
+function castSelfFloat() {
+  selfLev = 10; pState.vy = Math.max(pState.vy, 6); pState.grounded = false;
+  burst(player.position.clone().add(new THREE.Vector3(0, .5, 0)), 24, { speed: 3, colors: ['#c9a0ff', '#8fd0ff', '#ffffff'], size: .4, life: 1, gravity: -.5 });
+  toast('You float up into the air! Hold Space to fly higher.', 3500, 'balloon');
+  sfx('float');
+}
+const nearSkyIsle = (p, m) => skyIsles.some(s => Math.hypot(p.x - s.x, p.z - s.z) < s.r + m);
+
+// ---- discoveries ----
+const skyVisited = new Set();
+function skyFind(id, line, stars) {
+  save.sky = save.sky || {};
+  if (save.sky[id]) return false;
+  save.sky[id] = true; save.stars += stars; storeSave(); updateStarsUI();
+  toast(line, 4500, 'star');
+  setTimeout(() => toast(`+${stars} stars!`, 2500, 'star'), 600);
+  sfx('fanfare');
+  if (SKY_DEFS.every(d => save.sky[d.id])) setTimeout(() => {
+    save.stars += 5; storeSave(); updateStarsUI();
+    toast('You found every secret of the sky islands! +5 bonus stars', 5000, 'sparkle'); sfx('fanfare');
+  }, 4200);
+  return true;
+}
+function openChest() {
+  const p = chestWorld().add(new THREE.Vector3(0, 1.2, 0));
+  pState.heading = Math.atan2(p.x - player.position.x, p.z - player.position.z); pState.castT = .4;
+  burst(p, 40, { speed: 5, colors: ['#ffd84d', '#fff6c2', '#ffb347'], size: .5, life: 1.6, gravity: 2 });
+  if (!skyFind('chest', 'You opened the sky treasure chest! It was full of shiny stars!', 10)) { toast('The chest is empty now, but the gold still sparkles.', 2600, 'star'); sfx('coin'); }
+  else sfx('coin');
+}
+function petKitty() {
+  const p = kittyWorld();
+  pState.heading = Math.atan2(p.x - player.position.x, p.z - player.position.z); pState.castT = .4;
+  kitty.joy = 1.4;
+  hearts(p.clone().add(new THREE.Vector3(0, 1.8, 0)), 7);
+  sfx('happy');
+  if (!skyFind('kitty', 'Nimbus the cloud kitten purrs… you found a rare sky critter!', 6)) toast('Nimbus: "Purrrr… mrrow!"', 2400, 'heart');
+}
+function skyNear() {
+  const isle = isleUnder(player.position);
+  if (!isle) return null;
+  if (isle === chestIsle && distXZ(chestWorld()) < 2.6) return 'chest';
+  if (isle === kittyIsle && distXZ(kittyWorld()) < 2.6) return 'kitty';
+  return null;
+}
+function skyInteract() {
+  const k = skyNear();
+  if (k === 'chest') openChest(); else if (k === 'kitty') petKitty();
+  return !!k;
+}
+function skyHint() {
+  const k = skyNear();
+  if (k === 'chest') return `${iconHTML('star')} Press <b>E</b> or tap to open the treasure chest`;
+  if (k === 'kitty') return `${iconHTML('heart')} Press <b>E</b> or tap to pet <b>Nimbus</b> the cloud kitten`;
+  if (pState.grounded && player.position.y < .3 && Math.hypot(player.position.x, player.position.z) > ISLAND_R - 14 && nearSkyIsle(player.position, 16)) {
+    const ri = SPELLS.findIndex(s => s.id === 'rainbow') + 1, fi = SPELLS.findIndex(s => s.id === 'float') + 1;
+    return `${iconHTML('rainbow')} A sky island! Look at it and cast <b>Rainbow (${ri})</b> for a bridge, or <b>Levitate (${fi})</b> to fly`;
+  }
+  return null;
+}
+let viewing = false;
+function updateSky(dt, time) {
+  for (const s of skyIsles) {
+    s.top = s.baseTop + Math.sin(time * .5 + s.ph) * .2;
+    s.g.position.y = s.top - .8;
+    s.g.rotation.y = Math.sin(time * .1 + s.ph) * .02;
+    const found = save.sky && save.sky[s.id];
+    s.marker.material.opacity = lerp(s.marker.material.opacity, found ? 0 : .9, damp(3, dt));
+    s.marker.position.y = 5.5 + Math.sin(time * 2 + s.ph) * .3;
+    s.marker.material.rotation = time * .6;
+  }
+  // chest lid
+  const open = !!(save.sky && save.sky.chest), lid = chestG.userData.lid;
+  lid.rotation.x = lerp(lid.rotation.x, open ? -1.9 : 0, damp(5, dt));
+  chestG.userData.shine.material.opacity = open ? .45 + Math.sin(time * 3) * .15 : 0;
+  if (!open && Math.random() < dt * 2) emit({ pos: chestWorld().add(new THREE.Vector3(rr(-.8, .8), rr(.6, 1.4), rr(-.5, .5))), vel: new THREE.Vector3(0, .5, 0), life: 1, size: .3, color: '#ffe066', tex: starTex, spin: 2 });
+  // Nimbus
+  kitty.joy = Math.max(0, kitty.joy - dt);
+  kitty.body.position.y = .35 + Math.abs(Math.sin(kitty.joy * 7)) * kitty.joy * .4;
+  kitty.body.scale.y = 1 + Math.sin(time * 2.2) * .03;
+  kitty.tail.rotation.z = Math.sin(time * 2.4) * .5;
+  for (const w of kitty.wings) w.pv.rotation.y = w.sx * (.4 + Math.sin(time * (kitty.joy > 0 ? 18 : 4)) * .35);
+  const kp = kittyWorld(), toP = Math.atan2(player.position.x - kp.x, player.position.z - kp.z) - kittyIsle.g.rotation.y;
+  const near = started && Math.hypot(player.position.x - kp.x, player.position.z - kp.z) < 9;
+  kitty.g.rotation.y = angleLerp(kitty.g.rotation.y, near ? toP : Math.sin(time * .3) * .8, damp(3, dt));
+  if (Math.random() < dt * 1.5) emit({ pos: kp.clone().add(new THREE.Vector3(rr(-.6, .6), rr(.6, 1.6), rr(-.6, .6))), vel: new THREE.Vector3(0, .4, 0), life: 1.2, size: .25, color: rpick(['#cfe3ff', '#ffffff', '#ffe066']), tex: starTex, spin: 2 });
+  viewIsle.flag.rotation.y = Math.sin(time * 3) * .3;
+  // arriving on an island
+  const here = started && pState.grounded ? isleUnder(player.position) : null;
+  if (here && !skyVisited.has(here.id)) {
+    skyVisited.add(here.id);
+    burst(player.position.clone().add(new THREE.Vector3(0, .5, 0)), 20, { speed: 3, colors: ['#fff09a', '#c9a0ff', '#ffffff'], size: .4, life: 1 });
+    if (here.id === 'view') skyFind('view', 'What a view! You can see all of Starvale from the Lookout.', 4) || toast('You are back on the Lookout. What a view!', 3000, 'sparkle');
+    else toast(here.id === 'chest' ? 'You reached Treasure Isle! Is that a chest over there?' : 'You reached Cloud Kitten Isle! Someone fluffy lives here…', 3800, 'sparkle');
+    sfx('quest');
+  }
+  viewing = here === viewIsle;
+}
+
 // ================= input =================
 const keys = {};
 addEventListener('keydown', e => {
@@ -2164,6 +2466,12 @@ function onTap(x, y) {
     if (distXZ(pos) < 3.2) { openBrew(mode); return; }
     moveTarget = pos.clone().setY(0); petTarget = null; moveTimer = 0; return;
   }
+  // the treasure chest and Nimbus on the sky islands
+  for (const [g, kind, wp] of [[chestG, 'chest', chestWorld], [kitty.g, 'kitty', kittyWorld]]) {
+    if (!ray.intersectObject(g, true).length) continue;
+    if (skyNear() === kind) { skyInteract(); return; }
+    if (isleUnder(player.position)) { moveTarget = wp().setY(0); petTarget = null; moveTimer = 0; return; }
+  }
   const nh = ray.intersectObjects(npcs.map(n => n.g), true);
   if (nh.length) {
     const n = npcs.find(q => { let o = nh[0].object; while (o) { if (o === q.g) return true; o = o.parent; } return false; });
@@ -2178,7 +2486,7 @@ function onTap(x, y) {
     else { moveTarget = c.g.position.clone(); petTarget = c; moveTimer = 0; }
     return;
   }
-  const gh = ray.intersectObjects([island, houseFloor, ...friendHouses.map(h => h.floor)], false);
+  const gh = ray.intersectObjects([island, houseFloor, ...friendHouses.map(h => h.floor), ...skyTops], false);
   if (gh.length) {
     moveTarget = gh[0].point.clone(); moveTarget.y = 0; petTarget = null; moveTimer = 0;
     burst(moveTarget.clone().setY(.2), 6, { speed: 1.5, colors: ['#ffffff', '#c9a0ff'], size: .25, life: .6, gravity: -1 });
@@ -2188,6 +2496,7 @@ const distXZ = p => Math.hypot(p.x - player.position.x, p.z - player.position.z)
 function tryPet() {
   const st = nearStation();
   if (st) { openBrew(st); return; }
+  if (skyInteract()) return;
   const c = nearestCreature(2.8), n = nearestNPC(2.8), rp = nearestRemote(2.8);
   if (rp && (!c || distXZ(rp.g.position) < distXZ(c.g.position)) && (!n || distXZ(rp.g.position) < distXZ(n.g.position))) { waveAt(rp); return; }
   if (n && (!c || distXZ(n.g.position) < distXZ(c.g.position))) talkTo(n);
@@ -2199,7 +2508,7 @@ function petCreature(c) {
   makeHappy(c);
 }
 function jump() {
-  if (pfx.id === 'float') { if (player.position.y < 12) { pState.vy = Math.max(pState.vy, 5.5); pState.grounded = false; sfx('jump'); } return; }
+  if (floating()) { if (player.position.y < 12) { pState.vy = Math.max(pState.vy, 5.5); pState.grounded = false; sfx('jump'); } return; }
   if (pState.grounded) { pState.vy = pfx.id === 'frog' ? 10 : 8; pState.grounded = false; sfx(pfx.id === 'frog' ? 'ribbit' : 'jump'); }
 }
 
@@ -2226,15 +2535,47 @@ function updatePlayer(dt, time) {
   const tvx = len > .01 ? mx / len * maxS : 0, tvz = len > .01 ? mz / len * maxS : 0;
   pVel.x = lerp(pVel.x, tvx, damp(12, dt)); pVel.z = lerp(pVel.z, tvz, damp(12, dt));
   if (len > .01) pState.heading = Math.atan2(mx, mz);
-  player.position.x += pVel.x * dt; player.position.z += pVel.z * dt;
-  collide(player.position, .45, playerBoxes);
-  if (pfx.id === 'float') {
-    // floaty potion: gentle gravity, hold Space to fly up
-    if (keys.Space && player.position.y < 12) pState.vy = Math.max(pState.vy, 4);
+  const P = player.position, ox = P.x, oz = P.z;
+  P.x += pVel.x * dt; P.z += pVel.z * dt;
+  collide(P, .45, playerBoxes, true);
+  if (!floating() && supportAt(P.x, P.z, P.y) === -Infinity && supportAt(ox, oz, P.y) !== -Infinity) {
+    // don't walk off the edge into thin air: slide along it instead
+    const nx = P.x, nz = P.z;
+    if (supportAt(nx, oz, P.y) !== -Infinity) P.z = oz;
+    else if (supportAt(ox, nz, P.y) !== -Infinity) P.x = ox;
+    else { P.x = ox; P.z = oz; }
+  }
+  for (const s of skyIsles) {   // bump into the rocky sides of the sky islands
+    const dx = P.x - s.x, dz = P.z - s.z, d = Math.hypot(dx, dz);
+    if (d < s.r + .3 && d > 1e-4 && P.y < s.top - STEP && P.y > s.top - s.r * 1.6) { P.x = s.x + dx / d * (s.r + .3); P.z = s.z + dz / d * (s.r + .3); }
+  }
+  const onIsle = isleUnder(P);
+  if (onIsle) for (const [isle, wp, r] of [[chestIsle, chestWorld, 1.35], [kittyIsle, kittyWorld, 1.2]]) {
+    if (onIsle !== isle) continue;
+    const q = wp(), dx = P.x - q.x, dz = P.z - q.z, d = Math.hypot(dx, dz);
+    if (d < r && d > 1e-4) { P.x = q.x + dx / d * r; P.z = q.z + dz / d * r; }
+  }
+  if (selfLev > 0) {
+    selfLev -= dt;
+    if (Math.random() < dt * 8) emit({ pos: P.clone().add(new THREE.Vector3(rr(-.4, .4), .1, rr(-.4, .4))), vel: new THREE.Vector3(0, -.6, 0), life: .9, size: rr(.15, .3), color: rpick(['#c9a0ff', '#ffffff']) });
+    if (selfLev <= 0 && !pState.grounded) toast('Your Levitate spell wore off!', 2200, 'balloon');
+  }
+  if (floating()) {
+    // floaty potion / Levitate: gentle gravity, hold Space to fly up
+    if (keys.Space && P.y < 12) pState.vy = Math.max(pState.vy, 4);
     pState.vy = Math.max(pState.vy - 5 * dt, -2.5);
   } else pState.vy -= 22 * dt;
-  player.position.y += pState.vy * dt;
-  if (player.position.y <= 0) { player.position.y = 0; pState.vy = 0; pState.grounded = true; }
+  P.y += pState.vy * dt;
+  const ground = supportAt(P.x, P.z, P.y);
+  if (P.y <= ground) { P.y = ground; pState.vy = 0; pState.grounded = true; }
+  else if (pState.grounded && pState.vy <= 0 && P.y - ground < .6) { P.y = ground; pState.vy = 0; }   // stick to slopes going down
+  else pState.grounded = false;
+  if (P.y < -14) {   // fell off the sky: a friendly cloud brings you back
+    const d = Math.hypot(P.x, P.z) || 1;
+    P.set(P.x / d * (ISLAND_R - 6), 4, P.z / d * (ISLAND_R - 6)); pState.vy = 0; pVel.set(0, 0, 0); selfLev = 0;
+    burst(P.clone(), 30, { speed: 4, colors: ['#ffffff', '#cfe3ff', '#c9a0ff'], size: .6, life: 1.2, gravity: -.5 });
+    toast('Whoosh! A friendly cloud carried you back to Starvale.', 3500, 'sparkle'); sfx('poof');
+  }
   player.rotation.y = angleLerp(player.rotation.y, pState.heading, damp(12, dt));
   const sp = Math.hypot(pVel.x, pVel.z), k = Math.min(1, sp / 4);
   pState.walkT += dt * sp * 1.7;
@@ -2258,11 +2599,12 @@ function updatePlayer(dt, time) {
 
 function updateCamera(dt) {
   if (!started) camYaw += dt * .08;
-  const wantP = pState.inside ? Math.max(camPitch, 1.05) : camPitch;
+  const wantP = pState.inside ? Math.max(camPitch, 1.05) : viewing ? Math.max(camPitch, .55) : camPitch;
   const ps = player.scale.x;   // potions can make you tiny or huge
-  const wantD = (pState.inside ? Math.min(camDist, 9.5) : camDist) * (.6 + .4 * ps);
+  const wantD = (pState.inside ? Math.min(camDist, 9.5) : viewing ? Math.max(camDist, 24) : camDist) * (.6 + .4 * ps);   // the Lookout pulls the camera way back
   curPitch = lerp(curPitch, wantP, damp(5, dt)); curDist = lerp(curDist, wantD, damp(5, dt));
-  camTarget.lerp(tmpV.set(player.position.x, player.position.y * .5 + 1.4 * ps, player.position.z), damp(8, dt));
+  const P = player.position, g = supportAt(P.x, P.z, P.y), base = g === -Infinity ? P.y : g;   // follow sky islands & bridges, soften jumps
+  camTarget.lerp(tmpV.set(P.x, base + (P.y - base) * .5 + 1.4 * ps, P.z), damp(8, dt));
   camera.position.set(
     camTarget.x + Math.sin(camYaw) * Math.cos(curPitch) * curDist,
     camTarget.y + Math.sin(curPitch) * curDist,
@@ -2321,7 +2663,9 @@ function updateUI() {
   const npcNear = started ? nearestNPC(2.8) : null;
   const rpNear = started ? nearestRemote(2.8) : null;
   const station = started ? nearStation() : null;
-  if (station) { hintEl.style.display = 'block'; hintEl.innerHTML = station === 'brew' ? `${iconHTML('potion')} Press <b>E</b> or tap the cauldron to brew potions` : `${iconHTML('scroll')} Press <b>E</b> or tap the book to read your recipes`; }
+  const skyH = started && !station ? skyHint() : null;
+  if (skyH) { hintEl.style.display = 'block'; hintEl.innerHTML = skyH; }
+  else if (station) { hintEl.style.display = 'block'; hintEl.innerHTML = station === 'brew' ? `${iconHTML('potion')} Press <b>E</b> or tap the cauldron to brew potions` : `${iconHTML('scroll')} Press <b>E</b> or tap the book to read your recipes`; }
   else if (rpNear && (!near || distXZ(rpNear.g.position) < distXZ(near.g.position))) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('wave')} Press <b>E</b> to wave at <b>${escHTML(who(rpNear))}</b>`; }
   else if (npcNear && (!near || distXZ(npcNear.g.position) < distXZ(near.g.position))) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('wave')} Press <b>E</b> or tap to talk to <b>${npcNear.name}</b>`; }
   else if (near && near.happy <= 0 && near.lev <= 0) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('heart')} Press <b>E</b> or tap to pet <b>${near.name}</b>`; }
@@ -2390,7 +2734,7 @@ const SHOP = [
   { id: 'rainbowhat', icon: 'hatRainbow', name: 'Rainbow Hat', desc: 'A hat that keeps changing colour', price: 8, kind: 'hat', val: 'rainbow' },
   { id: 'galaxyrobe', icon: 'robe', name: 'Galaxy Robe', desc: 'A deep blue robe that glows like the night sky', price: 6, kind: 'robe', val: 'galaxy' },
 ];
-const save = { stars: 0, qidx: {}, owned: [], hat: null, robe: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null };
+const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null };
 const activeQ = {};          // giver name -> { q, progress, ready, target }
 const questItems = [];       // collectible things in the world
 const bugs = [];
@@ -3174,7 +3518,7 @@ function updateRemotes(dt, time) {
     if (Math.hypot(r.tx - p.x, r.tz - p.z) > 12) p.set(r.tx, r.ty, r.tz); // teleport instead of sliding across the island
     else { p.x = lerp(p.x, r.tx, a); p.z = lerp(p.z, r.tz, a); p.y = lerp(p.y, r.ty, damp(16, dt)); }
     r.g.rotation.y = angleLerp(r.g.rotation.y, r.th, damp(12, dt));
-    const grounded = p.y < .05;
+    const grounded = p.y - supportAt(p.x, p.z, p.y) < .05;
     r.k = lerp(r.k, Math.min(1, r.s / 4), damp(8, dt));
     r.walkT += dt * r.s * 1.7;
     animateWizard(r.w, r.walkT, r.k, time, grounded);
@@ -3210,7 +3554,7 @@ const mpNear = (x, z, d = 28) => Math.hypot(x - player.position.x, z - player.po
 // --- sending ---
 function mpCast(id, floated) {
   if (!net) return;
-  const d = { id, x: r2(player.position.x), z: r2(player.position.z), h: r2(player.rotation.y) };
+  const d = { id, x: r2(player.position.x), y: r2(player.position.y), z: r2(player.position.z), h: r2(player.rotation.y) };
   if (id === 'night') d.t = nightTarget;
   if (id === 'float' && floated) d.n = floated.name;
   Promise.resolve().then(() => net.emit('spell', d)).catch(() => {});
@@ -3255,7 +3599,7 @@ function onRemoteSpell(msg) {
     castButterflies(r.g, wand());
     if (close) sfx('butterfly');
   } else if (d.id === 'rainbow') {
-    castRainbow({ x, z, h });
+    castRainbow({ x, z, h, y: clamp(num(d.y, r.g.position.y), -20, 20) });
     toast(`${who(r)} made a rainbow!`, 3000, 'rainbow');
   } else if (d.id === 'night') {
     const t = d.t ? 1 : 0;
@@ -3415,8 +3759,9 @@ function frame() {
   updateQuests(dt, time);
   updatePotions(dt, time);
   updateRockets(dt);
-  updateProjectiles(dt); updateFlowers(dt); updateButterflies(dt, time); updateRainbow(dt);
+  updateProjectiles(dt); updateFlowers(dt); updateButterflies(dt, time); updateRainbow(dt); updateBridges(dt);
   updateWorld(dt, time);
+  updateSky(dt, time);
   updateChristmas(dt, time);
   updateCamera(dt);
   updateParticles(dt);
