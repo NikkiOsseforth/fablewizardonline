@@ -106,6 +106,43 @@
   .char b{font-size:17px}
   .char span{font-size:11.5px;color:var(--ink-soft);line-height:1.2;text-align:center}
   @media (max-width:640px){ #chars{grid-template-columns:repeat(2,1fr)} }
+  /* potions & brewing */
+  #ingRow{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+  #ingRow .ing{display:inline-flex;align-items:center;gap:2px;color:var(--ink);font-weight:600}
+  #ingRow .ic{width:17px;height:17px}
+  #fxRow{display:none;color:#2fa36b!important;font-weight:600}
+  #potionBelt{position:absolute;top:74px;right:14px;display:none;flex-direction:column;gap:6px;padding:8px}
+  .pbtn{position:relative;width:52px;height:52px;border-radius:16px;border:3px solid #fff;background:linear-gradient(180deg,#fff,#f3ecff);cursor:pointer;padding:5px;box-shadow:0 3px 0 #e2d6ff;transition:transform .12s}
+  .pbtn:hover{transform:scale(1.07)}
+  .pbtn svg{width:100%;height:100%;display:block}
+  .pbtn .n{position:absolute;right:-5px;bottom:-5px;min-width:20px;height:20px;border-radius:10px;background:var(--pink);color:#fff;font-size:12px;font-weight:700;line-height:20px;text-align:center;font-family:inherit;border:2px solid #fff}
+  .pbtn .q{position:absolute;top:-6px;left:-6px;font-size:11px;font-weight:700;color:#fff;background:var(--lilac);border-radius:8px;padding:0 5px;font-family:inherit}
+  #brew{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(120,90,190,.45);z-index:11;padding:16px}
+  #brew.hidden{display:none}
+  #brew h2{margin:0;font-size:30px;display:flex;align-items:center;justify-content:center;gap:8px}
+  #brew h2 .ic{width:34px;height:34px}
+  .brewlabel{font-weight:600;font-size:16px;margin:12px 0 6px;text-align:left}
+  .brewlabel small{font-weight:400;color:var(--ink-soft)}
+  #ingTiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .ingtile{font-family:inherit;color:var(--ink);background:#fff;border:3px solid #ece4ff;border-radius:16px;padding:6px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;transition:transform .12s,border-color .12s}
+  .ingtile:hover:not(:disabled){transform:translateY(-2px);border-color:#b48cff}
+  .ingtile:disabled{opacity:.45;cursor:default}
+  .ingtile .ico{width:36px;height:36px}
+  .ingtile .ico svg{width:100%;height:100%}
+  .ingtile b{font-size:12.5px;line-height:1.1;text-align:center}
+  .ingtile span{font-size:12px;color:var(--ink-soft)}
+  #potSlots{display:flex;justify-content:center;gap:12px;margin-bottom:12px}
+  .slot{width:58px;height:58px;border-radius:50%;border:3px dashed #d6c6ff;background:#faf7ff;display:flex;align-items:center;justify-content:center;padding:9px;cursor:pointer;font-family:inherit}
+  .slot.full{border-style:solid;border-color:#b48cff;background:#fff}
+  .slot svg{width:100%;height:100%}
+  #recipeList{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;text-align:left}
+  .item .mix{display:inline-flex;gap:2px;vertical-align:middle;margin-left:4px}
+  .item .mix .ic{width:18px;height:18px}
+  .item.unknown{background:#faf7ff;border-style:dashed}
+  .item .cnt{font-weight:700;color:var(--ink);white-space:nowrap}
+  .bigbtn.ghost{background:#efe8ff;color:var(--ink);box-shadow:0 6px 0 #d6c6ff}
+  .bigbtn:disabled{opacity:.5;cursor:default}
+  @media (max-width:640px){ #potionBelt{top:58px;right:8px;padding:6px} .pbtn{width:42px;height:42px} #ingTiles{grid-template-columns:repeat(2,1fr)} }
   .bigbtn:hover{transform:translateY(-2px)}
   .bigbtn:active{transform:translateY(3px);box-shadow:0 3px 0 #c06aa8}
   @media (max-width:640px){
@@ -130,6 +167,8 @@
     <div class="title"><span class="ic" data-ic="sparkle"></span> Starvale</div>
     <div class="row"><span class="ic sm" data-ic="heart"></span> Friends: <b id="friends">0 / 10</b></div>
     <div class="row"><span class="ic sm" data-ic="star"></span> Stars: <b id="stars">0</b></div>
+    <div class="row" id="ingRow"></div>
+    <div class="row" id="fxRow"></div>
     <div class="mana"><div id="manaFill"></div><div id="manaText">100</div></div>
     <div class="row" id="onlineRow" style="display:none"><span class="dot"></span> Online: <b id="online">1</b> <span id="onlineNames"></span></div>
   </div>
@@ -139,6 +178,7 @@
     <button class="roundbtn" id="muteBtn" title="Sound (M)"><span class="ic" data-ic="soundOn"></span></button>
     <button class="roundbtn" id="helpBtn" title="Help (H)"><span class="ic" data-ic="help"></span></button>
   </div>
+  <div id="potionBelt" class="panel"></div>
   <div id="toasts"></div>
   <div id="labels"></div>
   <div id="hint" class="panel"></div>
@@ -155,6 +195,23 @@
   </div>
 </div>
 
+<div id="brew" class="hidden">
+  <div class="card panel">
+    <h2 id="brewTitle"></h2>
+    <p class="shopsub" id="brewSub"></p>
+    <div id="brewMix">
+      <div class="brewlabel">Your ingredients <small>(tap to drop one in)</small></div>
+      <div id="ingTiles"></div>
+      <div class="brewlabel">In the cauldron <small>(2 or 3 ingredients, tap to take one out)</small></div>
+      <div id="potSlots"></div>
+      <button class="bigbtn" id="brewBtn">Brew!</button>
+    </div>
+    <div class="brewlabel">Recipe book</div>
+    <div id="recipeList"></div>
+    <button class="bigbtn ghost" id="brewClose">Close</button>
+  </div>
+</div>
+
 <div id="overlay">
   <div class="card panel">
     <h1><span class="ic big" data-ic="sparkle"></span> Starvale <span class="ic big" data-ic="sparkle"></span></h1>
@@ -167,6 +224,8 @@
       <span><kbd>1</kbd> – <kbd>7</kbd></span><span>cast spells</span>
       <span><kbd>E</kbd></span><span>pet a critter · talk to a wizard</span>
       <span><kbd>B</kbd></span><span>Star Shop</span>
+      <span><kbd>E</kbd> at the cauldron</span><span>brew potions from ingredients you find</span>
+      <span><kbd>Q</kbd> / tap a potion</span><span>drink a potion</span>
       <span>Friends online</span><span>open the same link together · <kbd>E</kbd> near a player = wave</span>
       <span><kbd>M</kbd> / <kbd>H</kbd></span><span>sound on/off · help</span>
     </div>
@@ -221,7 +280,13 @@ const ICON = {
   robe: svg('<path d="M12 4c-2 0-3 1.4-3.6 3L5.5 19.5h13L15.6 7C15 5.4 14 4 12 4z" fill="#262a63" stroke="#6b4cff" stroke-width="1.4"/><circle cx="10" cy="11" r=".9" fill="#ffd84d"/><circle cx="14" cy="14" r=".9" fill="#ffd84d"/><circle cx="10.5" cy="16.5" r=".7" fill="#c9a0ff"/><circle cx="13.6" cy="9" r=".7" fill="#c9a0ff"/>'),
   wave: svg('<path d="M8 13V6.5a1.3 1.3 0 0 1 2.6 0V11M10.6 11V5a1.3 1.3 0 0 1 2.6 0v6M13.2 11V6a1.3 1.3 0 0 1 2.6 0v6.5M15.8 10.5a1.3 1.3 0 0 1 2.6 0V14a6 6 0 0 1-6 6h-.6a6 6 0 0 1-4.6-2.2L5 14.5a1.3 1.3 0 0 1 2-1.7L8 14" fill="#ffe0c7" stroke="#c9906a" stroke-width="1.3"/>'),
   home: svg('<path d="M4 11.5L12 4.5l8 7" stroke="#d96aa0" stroke-width="1.8"/><path d="M6 10v9.5h12V10" fill="#fff0dc" stroke="#a8714a" stroke-width="1.4"/><path d="M10.2 19.5v-5h3.6v5" fill="#8a5bd6" stroke="#6a45b0" stroke-width="1.2"/>'),
+  ingFlower: svg('<g fill="#ffb3d9" stroke="#e06aa0" stroke-width="1.1"><circle cx="12" cy="6.6" r="3.4"/><circle cx="17.2" cy="10.4" r="3.4"/><circle cx="15.2" cy="16.4" r="3.4"/><circle cx="8.8" cy="16.4" r="3.4"/><circle cx="6.8" cy="10.4" r="3.4"/></g><path d="M12 8.6l1.1 2.2 2.4.3-1.8 1.7.5 2.4L12 14l-2.2 1.2.5-2.4-1.8-1.7 2.4-.3z" fill="#ffd84d" stroke="#e0a800" stroke-width=".9"/>'),
+  ingShroom: svg('<path d="M3.5 13a8.5 7.5 0 0 1 17 0z" fill="#7fb2ff" stroke="#4a7fd8" stroke-width="1.4"/><path d="M9.5 13h5l.6 6.5a1.5 1.5 0 0 1-1.5 1.5h-3.2a1.5 1.5 0 0 1-1.5-1.5z" fill="#fff4e0" stroke="#c9a25a" stroke-width="1.3"/><circle cx="8.5" cy="9.5" r="1.3" fill="#fff"/><circle cx="13.5" cy="7.6" r="1.1" fill="#fff"/><circle cx="16.3" cy="10.6" r=".9" fill="#fff"/><path d="M20 2.8c.2 1.1.7 1.6 1.8 1.8-1.1.2-1.6.7-1.8 1.8-.2-1.1-.7-1.6-1.8-1.8 1.1-.2 1.6-.7 1.8-1.8z" fill="#fff09a" stroke="#d9b84a" stroke-width=".6"/>'),
+  ingCrystal: svg('<path d="M12 2.5l5.2 6.8L12 21.5 6.8 9.3z" fill="#e2c8ff" stroke="#9b6bff" stroke-width="1.4"/><path d="M6.8 9.3h10.4M12 2.5v19" stroke="#9b6bff" stroke-width="1"/><path d="M9.3 8.2l1.4-2.4" stroke="#fff" stroke-width="1.3"/>'),
+  ingBubble: svg('<circle cx="11" cy="12.5" r="7.5" fill="#d8f6ff" fill-opacity=".75" stroke="#5cc1e8" stroke-width="1.4"/><path d="M7 10.5a4.6 4.6 0 0 1 3.6-3.4" stroke="#fff" stroke-width="1.8"/><circle cx="19.2" cy="5.5" r="2.4" fill="#d8f6ff" fill-opacity=".75" stroke="#5cc1e8" stroke-width="1.1"/>'),
 };
+const potionSVG = (col) => svg(`<rect x="9.6" y="1.8" width="4.8" height="2.6" rx=".9" fill="#c9906a" stroke="#9c6b48" stroke-width="1"/><path d="M10.2 4.4v4.4a6.4 6.4 0 1 0 3.6 0V4.4z" fill="#ffffff" fill-opacity=".8" stroke="#8a73b8" stroke-width="1.4"/><path d="M6.02 14.5A6 6 0 1 0 17.98 14.5Z" fill="${col}" stroke="${col}" stroke-width=".8"/><ellipse cx="9.4" cy="12.6" rx="1" ry="1.8" fill="#fff" opacity=".8"/><circle cx="14" cy="17" r=".9" fill="#fff" opacity=".7"/>`);
+ICON.potion = potionSVG('#c9a0ff');
 const iconHTML = (name, cls = 'ic') => `<span class="${cls}">${ICON[name] || ''}</span>`;
 document.querySelectorAll('[data-ic]').forEach(el => { el.innerHTML = ICON[el.dataset.ic] || ''; });
 
@@ -639,11 +704,14 @@ mk(Box(2, .04, 1), toon('#c38bff'), 0, .02, hd + .8, house, false);
 }
 // cauldron
 const cauldronPos = new THREE.Vector3(HOUSE.x + 3.2, 1.42, HOUSE.z - 2.4);
+const bookPos = new THREE.Vector3(HOUSE.x + 2.6, 1.1, HOUSE.z + 1.2);
+let cauldronG = null, cauldronLiquidMat = null, bookG = null;
 {
   const c = new THREE.Group(); c.position.set(3.2, 0, -2.4); house.add(c);
   mk(new THREE.SphereGeometry(.85, 24, 16, 0, Math.PI * 2, Math.PI * .3, Math.PI * .7), toon('#3d3550', { side: THREE.DoubleSide }), 0, 1, 0, c);
   const liquid = mk(new THREE.CircleGeometry(.72, 24), glow(toon('#8fff9f', { emissive: '#3dff6e', emissiveIntensity: .7 }), .7, 1.4), 0, 1.38, 0, c, false);
   liquid.rotation.x = -Math.PI / 2;
+  cauldronG = c; cauldronLiquidMat = liquid.material;
   const rim = mk(new THREE.TorusGeometry(.69, .08, 8, 24), toon('#2c2540'), 0, 1.5, 0, c); rim.rotation.x = Math.PI / 2;
   const fireMat = toon('#ffb347', { emissive: '#ff7a1a', emissiveIntensity: 1 });
   for (let i = 0; i < 4; i++) { const a = i * 1.57; mk(new THREE.ConeGeometry(.14, .35, 6), fireMat, Math.cos(a) * .3, .17, Math.sin(a) * .3, c, false); }
@@ -664,6 +732,7 @@ const cauldronPos = new THREE.Vector3(HOUSE.x + 3.2, 1.42, HOUSE.z - 2.4);
   mk(Box(.7, .05, .5), toon('#7a4fc9'), 0, 0, 0, book);
   const p1 = mk(Box(.33, .03, .46), toon('#fffaf0'), -.17, .04, 0, book); p1.rotation.z = .12;
   const p2 = mk(Box(.33, .03, .46), toon('#fffaf0'), .17, .04, 0, book); p2.rotation.z = -.12;
+  bookG = tb;
   circles.push({ x: HOUSE.x + 2.8, z: HOUSE.z + 1.3, r: 1.05 });
 }
 // bookshelf
@@ -1967,6 +2036,11 @@ function sfx(name) {
     case 'jump': tone(380, t, .18, 'sine', .07, 760); break;
     case 'door': seq([659, 784, 988], .09, 'sine', .08, .4); break;
     case 'fanfare': seq([523, 659, 784, 1047, 784, 1047, 1319, 1568], .13, 'triangle', .12, .5); break;
+    case 'brew': for (let i = 0; i < 9; i++) tone(rr(180, 420), t + i * .15, .18, 'sine', .09, rr(500, 900)); break;
+    case 'gulp': tone(520, t, .12, 'sine', .1, 260); tone(480, t + .18, .12, 'sine', .1, 240); seq([784, 1047, 1319], .07, 'triangle', .07, .3); break;
+    case 'ribbit': tone(220, t, .12, 'square', .04, 160); tone(240, t + .16, .16, 'square', .04, 170); break;
+    case 'fail': tone(300, t, .5, 'sawtooth', .04, 90); break;
+    case 'poof': tone(900, t, .4, 'sine', .07, 200); break;
   }
 }
 // soft music-box melody
@@ -2026,9 +2100,11 @@ startBtn.addEventListener('click', () => {
     loadSave();
     spawnNPCs();
     refreshQuestUI();
+    initPotions();
     mpStart();
     setTimeout(() => toast(`Welcome to Starvale, ${playerName}! Your house is right in front of you.`, 4000, 'home'), 400);
     setTimeout(() => toast('Press 1 to 6 to cast spells. Wizards with a ! have a quest for you!', 4500, 'wand'), 2600);
+    setTimeout(() => toast(`Pick up ingredients around the island and brew potions in ${playerName === 'Nikki' ? 'your' : "Nikki's"} cauldron!`, 4500, 'potion'), 5200);
   }
 });
 function toggleHelp() { overlay.classList.toggle('hidden'); }
@@ -2039,6 +2115,7 @@ document.getElementById('muteBtn').addEventListener('click', e => { toggleMute()
 const keys = {};
 addEventListener('keydown', e => {
   if (shopOpen()) { if (e.code === 'KeyB' || e.code === 'Escape') toggleShop(); return; }
+  if (brewOpen()) { if (!e.repeat && (e.code === 'KeyE' || e.code === 'Escape')) closeBrew(); return; }
   if (!started || !overlay.classList.contains('hidden')) { if (e.code === 'KeyH' && started) toggleHelp(); return; }
   keys[e.code] = true;
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
@@ -2050,6 +2127,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyM') toggleMute();
   if (e.code === 'KeyH') toggleHelp();
   if (e.code === 'KeyB') toggleShop();
+  if (e.code === 'KeyQ') drinkQuick();
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
@@ -2073,6 +2151,12 @@ const ray = new THREE.Raycaster();
 let moveTarget = null, petTarget = null, moveTimer = 0;
 function onTap(x, y) {
   ray.setFromCamera(new THREE.Vector2(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1), camera);
+  // the cauldron and the recipe book in Nikki's house
+  for (const [g, pos, mode] of [[cauldronG, cauldronPos, 'brew'], [bookG, bookPos, 'book']]) {
+    if (!g || !ray.intersectObject(g, true).length) continue;
+    if (distXZ(pos) < 3.2) { openBrew(mode); return; }
+    moveTarget = pos.clone().setY(0); petTarget = null; moveTimer = 0; return;
+  }
   const nh = ray.intersectObjects(npcs.map(n => n.g), true);
   if (nh.length) {
     const n = npcs.find(q => { let o = nh[0].object; while (o) { if (o === q.g) return true; o = o.parent; } return false; });
@@ -2095,6 +2179,8 @@ function onTap(x, y) {
 }
 const distXZ = p => Math.hypot(p.x - player.position.x, p.z - player.position.z);
 function tryPet() {
+  const st = nearStation();
+  if (st) { openBrew(st); return; }
   const c = nearestCreature(2.8), n = nearestNPC(2.8), rp = nearestRemote(2.8);
   if (rp && (!c || distXZ(rp.g.position) < distXZ(c.g.position)) && (!n || distXZ(rp.g.position) < distXZ(n.g.position))) { waveAt(rp); return; }
   if (n && (!c || distXZ(n.g.position) < distXZ(c.g.position))) talkTo(n);
@@ -2105,7 +2191,10 @@ function petCreature(c) {
   pState.castT = .4; c.wait = 2;
   makeHappy(c);
 }
-function jump() { if (pState.grounded) { pState.vy = 8; pState.grounded = false; sfx('jump'); } }
+function jump() {
+  if (pfx.id === 'float') { if (player.position.y < 12) { pState.vy = Math.max(pState.vy, 5.5); pState.grounded = false; sfx('jump'); } return; }
+  if (pState.grounded) { pState.vy = pfx.id === 'frog' ? 10 : 8; pState.grounded = false; sfx(pfx.id === 'frog' ? 'ribbit' : 'jump'); }
+}
 
 // ================= update =================
 function updatePlayer(dt, time) {
@@ -2126,13 +2215,18 @@ function updatePlayer(dt, time) {
     else { mx = dx / d; mz = dz / d; }
   }
   const len = Math.hypot(mx, mz);
-  const maxS = (keys.ShiftLeft || keys.ShiftRight) ? 9 : 5.5;
+  const maxS = ((keys.ShiftLeft || keys.ShiftRight) ? 9 : 5.5) * ({ speed: 1.9, shrink: .8, giant: 1.25, frog: .85 }[pfx.id] || 1);
   const tvx = len > .01 ? mx / len * maxS : 0, tvz = len > .01 ? mz / len * maxS : 0;
   pVel.x = lerp(pVel.x, tvx, damp(12, dt)); pVel.z = lerp(pVel.z, tvz, damp(12, dt));
   if (len > .01) pState.heading = Math.atan2(mx, mz);
   player.position.x += pVel.x * dt; player.position.z += pVel.z * dt;
   collide(player.position, .45, playerBoxes);
-  pState.vy -= 22 * dt; player.position.y += pState.vy * dt;
+  if (pfx.id === 'float') {
+    // floaty potion: gentle gravity, hold Space to fly up
+    if (keys.Space && player.position.y < 12) pState.vy = Math.max(pState.vy, 4);
+    pState.vy = Math.max(pState.vy - 5 * dt, -2.5);
+  } else pState.vy -= 22 * dt;
+  player.position.y += pState.vy * dt;
   if (player.position.y <= 0) { player.position.y = 0; pState.vy = 0; pState.grounded = true; }
   player.rotation.y = angleLerp(player.rotation.y, pState.heading, damp(12, dt));
   const sp = Math.hypot(pVel.x, pVel.z), k = Math.min(1, sp / 4);
@@ -2158,9 +2252,10 @@ function updatePlayer(dt, time) {
 function updateCamera(dt) {
   if (!started) camYaw += dt * .08;
   const wantP = pState.inside ? Math.max(camPitch, 1.05) : camPitch;
-  const wantD = pState.inside ? Math.min(camDist, 9.5) : camDist;
+  const ps = player.scale.x;   // potions can make you tiny or huge
+  const wantD = (pState.inside ? Math.min(camDist, 9.5) : camDist) * (.6 + .4 * ps);
   curPitch = lerp(curPitch, wantP, damp(5, dt)); curDist = lerp(curDist, wantD, damp(5, dt));
-  camTarget.lerp(tmpV.set(player.position.x, player.position.y * .5 + 1.4, player.position.z), damp(8, dt));
+  camTarget.lerp(tmpV.set(player.position.x, player.position.y * .5 + 1.4 * ps, player.position.z), damp(8, dt));
   camera.position.set(
     camTarget.x + Math.sin(camYaw) * Math.cos(curPitch) * curDist,
     camTarget.y + Math.sin(curPitch) * curDist,
@@ -2193,7 +2288,7 @@ function updateWorld(dt, time) {
   smokeT -= dt;
   if (smokeT <= 0) { smokeT = .35; emit({ pos: tmpV.set(HOUSE.x + 2.4 + rr(-.1, .1), wh + 3.2, HOUSE.z - 1.4), vel: new THREE.Vector3(rr(-.2, .3), rr(.8, 1.2), rr(-.2, .2)), life: 3.2, size: .7, grow: 2.2, color: night > .5 ? '#9d93c9' : '#ffffff', add: false }); }
   bubbleT -= dt;
-  if (bubbleT <= 0) { bubbleT = .12; emit({ pos: tmpV.copy(cauldronPos).add(new THREE.Vector3(rr(-.5, .5), 0, rr(-.5, .5))), vel: new THREE.Vector3(0, rr(.4, 1), 0), life: rr(.6, 1.2), size: rr(.12, .28), color: rpick(['#8fff9f', '#c9ffb0', '#b0fff0']) }); }
+  if (bubbleT <= 0) { bubbleT = .12; emit({ pos: tmpV.copy(cauldronPos).add(new THREE.Vector3(rr(-.5, .5), 0, rr(-.5, .5))), vel: new THREE.Vector3(0, rr(.4, 1), 0), life: rr(.6, 1.2), size: rr(.12, .28), color: rpick(cauldronCols) }); }
   for (const c of crystals) if (Math.random() < dt * 1.5) emit({ pos: tmpV.copy(c.g.position).add(new THREE.Vector3(rr(-.8, .8), rr(.5, 2), rr(-.8, .8))), vel: new THREE.Vector3(0, .4, 0), life: 1.4, size: .25, color: c.col, tex: starTex, spin: 2 });
 
   for (const c of clouds) { c.a += c.sp * dt; c.g.position.set(Math.cos(c.a) * c.r, c.y + Math.sin(time * .3 + c.r) * .6, Math.sin(c.a) * c.r); }
@@ -2218,7 +2313,9 @@ function updateUI() {
   const near = started ? nearestCreature(2.8) : null;
   const npcNear = started ? nearestNPC(2.8) : null;
   const rpNear = started ? nearestRemote(2.8) : null;
-  if (rpNear && (!near || distXZ(rpNear.g.position) < distXZ(near.g.position))) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('wave')} Press <b>E</b> to wave at <b>${escHTML(who(rpNear))}</b>`; }
+  const station = started ? nearStation() : null;
+  if (station) { hintEl.style.display = 'block'; hintEl.innerHTML = station === 'brew' ? `${iconHTML('potion')} Press <b>E</b> or tap the cauldron to brew potions` : `${iconHTML('scroll')} Press <b>E</b> or tap the book to read your recipes`; }
+  else if (rpNear && (!near || distXZ(rpNear.g.position) < distXZ(near.g.position))) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('wave')} Press <b>E</b> to wave at <b>${escHTML(who(rpNear))}</b>`; }
   else if (npcNear && (!near || distXZ(npcNear.g.position) < distXZ(near.g.position))) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('wave')} Press <b>E</b> or tap to talk to <b>${npcNear.name}</b>`; }
   else if (near && near.happy <= 0 && near.lev <= 0) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('heart')} Press <b>E</b> or tap to pet <b>${near.name}</b>`; }
   else hintEl.style.display = 'none';
@@ -2259,6 +2356,9 @@ const QUESTS = {
     { id: 'delivery', title: 'Curry Delivery', type: 'deliver', need: 1, reward: 4,
       ask: 'Could you bring this bowl of curry to {target}? It is still warm!',
       done: 'Thanks for delivering the curry!', thanks: "Mmm, Ryan's curry! Thank you so much!" },
+    { id: 'herbpotion', title: 'Herb Potion', type: 'potion', item: 'herb', need: 1, reward: 6,
+      ask: 'My next curry needs a magic Herb Potion! Brew one in {cauldron}: two Star Blossoms and a Crystal Shard.',
+      done: 'A Herb Potion! Smell that... this curry is going to be legendary!' },
   ],
   Dusty: [
     { id: 'bone', title: "Dexter's Bone", type: 'collect', item: 'bone', need: 1, reward: 4,
@@ -2283,7 +2383,7 @@ const SHOP = [
   { id: 'rainbowhat', icon: 'hatRainbow', name: 'Rainbow Hat', desc: 'A hat that keeps changing colour', price: 8, kind: 'hat', val: 'rainbow' },
   { id: 'galaxyrobe', icon: 'robe', name: 'Galaxy Robe', desc: 'A deep blue robe that glows like the night sky', price: 6, kind: 'robe', val: 'galaxy' },
 ];
-const save = { stars: 0, qidx: {}, owned: [], hat: null, robe: null };
+const save = { stars: 0, qidx: {}, owned: [], hat: null, robe: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null };
 const activeQ = {};          // giver name -> { q, progress, ready, target }
 const questItems = [];       // collectible things in the world
 const bugs = [];
@@ -2374,7 +2474,8 @@ function presentTarget() {
 function startQuest(giver, q) {
   const a = { q, progress: 0, ready: false, target: null };
   activeQ[giver] = a;
-  let ask = q.ask;
+  let ask = q.ask.replace('{cauldron}', playerName === 'Nikki' ? 'your cauldron' : "Nikki's cauldron");
+  if (q.type === 'potion') a.ready = (save.potions[q.item] || 0) > 0;
   if (q.type === 'deliver') {
     a.target = presentTarget();
     if (!a.target) { delete activeQ[giver]; return false; }
@@ -2423,8 +2524,14 @@ function questTalk(n) {
   }
   const a = activeQ[n.name];
   if (a) {
-    if (a.ready) { finishQuest(n.name, n.name, a.q.done); return true; }
-    const left = a.q.type === 'deliver' ? `Please bring the curry to ${a.target}!` : `${a.q.title}: ${a.progress} / ${a.q.need}. You can do it!`;
+    if (a.q.type === 'potion') a.ready = (save.potions[a.q.item] || 0) > 0;
+    if (a.ready) {
+      if (a.q.type === 'potion') { save.potions[a.q.item]--; renderBelt(); }
+      finishQuest(n.name, n.name, a.q.done); return true;
+    }
+    const left = a.q.type === 'deliver' ? `Please bring the curry to ${a.target}!`
+      : a.q.type === 'potion' ? 'Did you brew my Herb Potion yet? Two Star Blossoms and a Crystal Shard!'
+      : `${a.q.title}: ${a.progress} / ${a.q.need}. You can do it!`;
     toast(`${n.name}: "${left}"`, 3500, 'scroll');
     return true;
   }
@@ -2444,6 +2551,7 @@ function refreshQuestUI() {
     const q = a.q;
     let status;
     if (q.type === 'deliver') status = `Bring the curry to ${a.target}`;
+    else if (q.type === 'potion') status = a.ready ? `You have it! Bring it to ${giver}` : 'Brew it at the cauldron';
     else if (a.ready) status = `Done! Return to ${giver}`;
     else status = `${a.progress} / ${q.need}`;
     return `<div class="q${a.ready ? ' ready' : ''}"><b>${q.title}</b> <span>(${giver})</span><br><span>${status}</span></div>`;
@@ -2544,6 +2652,7 @@ function applyCosmetics() {
   else { W.hatMat.color.set(L.hat); W.hatMat.emissive.set('#000000'); W.hatMat.emissiveIntensity = 0; }
   if (save.robe === 'galaxy') { W.robeMat.color.set('#232760'); W.robeMat.emissive.set('#6b4cff'); W.robeMat.emissiveIntensity = .3; }
   else { W.robeMat.color.set(L.robe); W.robeMat.emissive.set('#000000'); W.robeMat.emissiveIntensity = 0; }
+  if (pfx.id === 'colour') { W.robeMat.color.setHSL(pfx.hue, .75, .62); W.robeMat.emissive.set('#000000'); W.robeMat.emissiveIntensity = 0; }
 }
 document.getElementById('shopBtn').addEventListener('click', e => { toggleShop(); e.currentTarget.blur(); });
 document.getElementById('shopClose').addEventListener('click', () => toggleShop());
@@ -2567,6 +2676,331 @@ function updateRockets(dt) {
       sfx('pop'); rockets.splice(i, 1);
     }
   }
+}
+
+// ================= potions & brewing =================
+const INGREDIENTS = {
+  flower: { name: 'Star Blossom', icon: 'ingFlower', color: '#ffb3d9', max: 6, tip: 'They grow all over the island.' },
+  shroom: { name: 'Moon Mushroom', icon: 'ingShroom', color: '#7fb2ff', max: 5, tip: 'They only glow at night. Try the Day & Night spell!' },
+  crystal: { name: 'Crystal Shard', icon: 'ingCrystal', color: '#d4b0ff', max: 4, tip: 'Look next to the big glowing crystals.' },
+  bubble: { name: 'Pond Bubble', icon: 'ingBubble', color: '#b8f0ff', max: 3, tip: 'They float up from the pond.' },
+};
+const ING_KEYS = Object.keys(INGREDIENTS);
+const RECIPES = [
+  { id: 'shrink', name: 'Shrinking Potion', mix: ['shroom', 'shroom'], color: '#ff8fc7', desc: 'Become teeny tiny', hint: 'Something with two moon mushrooms...', dur: 20 },
+  { id: 'giant', name: 'Giant Potion', mix: ['crystal', 'shroom'], color: '#ffb38a', desc: 'Grow as tall as a house', hint: 'A moon mushroom and a crystal shard?', dur: 20 },
+  { id: 'speed', name: 'Zoom Potion', mix: ['crystal', 'flower'], color: '#ffd84d', desc: 'Run like the wind', hint: 'A star blossom with something sparkly...', dur: 20 },
+  { id: 'float', name: 'Floaty Potion', mix: ['bubble', 'bubble'], color: '#8fd0ff', desc: 'Float and fly (hold Space)', hint: 'Light as two bubbles...', dur: 20 },
+  { id: 'colour', name: 'Colour Potion', mix: ['bubble', 'flower'], color: '#c9a0ff', desc: 'Your robe gets a surprise colour', hint: 'A flower in a bubble?', dur: 30 },
+  { id: 'frog', name: 'Frog Potion', mix: ['bubble', 'shroom'], color: '#7ad37a', desc: 'Ribbit! You turn into a frog', hint: 'Pond things and night things...', dur: 15 },
+  { id: 'herb', name: 'Herb Potion', mix: ['crystal', 'flower', 'flower'], color: '#9fe07a', desc: "For Ryan's curry (not for drinking!)", hint: 'Two star blossoms and a crystal shard.', drink: false },
+];
+const mixKey = arr => [...arr].sort().join('+');
+const RECIPE_BY_MIX = new Map(RECIPES.map(r => [mixKey(r.mix), r]));
+const RECIPE_BY_ID = new Map(RECIPES.map(r => [r.id, r]));
+const ingredients = [];
+const pfx = { id: null, t: 0, hue: 0 };     // the potion effect on you right now
+let brewPot = [], brewT = 0, brewResult = null, tintT = 0, ingSpawnT = 0, frog = null;
+let cauldronCols = ['#8fff9f', '#c9ffb0', '#b0fff0'];
+const CAULDRON_BASE = ['#8fff9f', '#3dff6e'];
+
+// --- ingredients lying around on the island ---
+function makeIngredientMesh(kind, col) {
+  const g = new THREE.Group(), inner = new THREE.Group(); g.add(inner);
+  if (kind === 'flower') {
+    mk(new THREE.CylinderGeometry(.025, .025, .4, 5), toon('#5cbf5c'), 0, .2, 0, inner, false);
+    const petal = toon('#ffb3d9', { emissive: '#ff6bbf', emissiveIntensity: .25 });
+    for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; ball(petal, Math.cos(a) * .13, .45, Math.sin(a) * .13, .1, .05, .1, inner, false); }
+    ball(toon('#ffd84d', { emissive: '#ffb000', emissiveIntensity: .5 }), 0, .47, 0, .07, .05, .07, inner, false);
+  } else if (kind === 'shroom') {
+    mk(new THREE.CylinderGeometry(.07, .1, .3, 8), toon('#fff4e0'), 0, .15, 0, inner, false);
+    const cap = mk(new THREE.SphereGeometry(.24, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), glow(toon('#7fb2ff', { emissive: '#4a7fff', emissiveIntensity: .9 }), .2, 1.4), 0, .28, 0, inner, false);
+    cap.scale.y = .8;
+    for (const [x, z] of [[.1, .05], [-.08, .1], [0, -.12]]) ball(new THREE.MeshBasicMaterial({ color: '#ffffff' }), x, .43, z, .035, .02, .035, inner, false);
+  } else if (kind === 'crystal') {
+    const c = mk(new THREE.OctahedronGeometry(.18), toon('#ffffff', { emissive: col, emissiveIntensity: .8, flatShading: true }), 0, .4, 0, inner, false);
+    c.scale.set(.7, 1.5, .7);
+  } else if (kind === 'bubble') {
+    ball(toon('#d8f6ff', { transparent: true, opacity: .5, emissive: '#7fdcff', emissiveIntensity: .35 }), 0, 0, 0, .32, .32, .32, inner, false);
+    ball(new THREE.MeshBasicMaterial({ color: '#ffffff' }), -.12, .12, .22, .06, .06, .03, inner, false);
+  }
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: col, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false }));
+  halo.scale.setScalar(1.3); halo.position.y = kind === 'bubble' ? 0 : .35; inner.add(halo);
+  return { g, inner };
+}
+function spawnIngredient(kind) {
+  let pos = null, col = INGREDIENTS[kind].color, baseY = 0;
+  for (let i = 0; i < 20; i++) {
+    if (kind === 'crystal' && crystals.length) {
+      const c = rpick(crystals), a = Math.random() * 6.28;
+      pos = new THREE.Vector3(c.g.position.x + Math.cos(a) * 1.45, 0, c.g.position.z + Math.sin(a) * 1.45); col = c.col;
+    } else if (kind === 'bubble') {
+      const a = Math.random() * 6.28, d = rr(4.2, 4.7);
+      pos = new THREE.Vector3(POND.x + Math.cos(a) * d, 0, POND.z + Math.sin(a) * d); baseY = rr(.7, 1.2);
+    } else pos = randomTarget();
+    const tooClose = ingredients.some(o => Math.hypot(o.g.position.x - pos.x, o.g.position.z - pos.z) < 2.5);
+    if (!tooClose && (!started || distXZ(pos) > 6)) break;
+  }
+  const { g, inner } = makeIngredientMesh(kind, col);
+  g.position.copy(pos); g.position.y = baseY; scene.add(g);
+  ingredients.push({ kind, g, inner, baseY, ph: Math.random() * 6, col });
+}
+function initPotions() {
+  if (!ingredients.length) for (const k of ING_KEYS) for (let i = 0; i < INGREDIENTS[k].max; i++) spawnIngredient(k);
+  renderIngRow(); renderBelt();
+}
+function pickIngredient(i) {
+  const it = ingredients[i], d = INGREDIENTS[it.kind];
+  burst(it.g.position.clone().setY(it.baseY + .5), 14, { speed: 3, colors: [it.col, '#ffffff', '#fff09a'], size: .32, life: .8, gravity: 0 });
+  scene.remove(it.g); ingredients.splice(i, 1);
+  save.ing[it.kind] = (save.ing[it.kind] || 0) + 1;
+  sfx('pickup');
+  if (!save.seenIng.includes(it.kind)) {
+    save.seenIng.push(it.kind);
+    toast(`You found a ${d.name}! Brew it into a potion at the cauldron.`, 4200, d.icon);
+  } else toast(`+1 ${d.name} (${save.ing[it.kind]})`, 1800, d.icon);
+  storeSave(); renderIngRow();
+}
+
+// --- the cauldron and recipe book panel ---
+const brewEl = document.getElementById('brew');
+const brewOpen = () => !brewEl.classList.contains('hidden');
+let brewMode = 'brew';
+function nearStation() {
+  if (pState.where !== 'main') return null;
+  const dc = distXZ(cauldronPos), db = distXZ(bookPos);
+  if (dc < 2.5 && dc <= db) return 'brew';
+  if (db < 2.4) return 'book';
+  return null;
+}
+function openBrew(mode) {
+  if (!started || shopOpen()) return;
+  brewMode = mode; brewPot = [];
+  for (const k in keys) keys[k] = false;
+  brewEl.classList.remove('hidden');
+  pState.heading = Math.atan2((mode === 'brew' ? cauldronPos : bookPos).x - player.position.x, (mode === 'brew' ? cauldronPos : bookPos).z - player.position.z);
+  sfx('pop');
+  renderBrew();
+}
+function closeBrew() { brewEl.classList.add('hidden'); brewPot = []; }
+const ingIcon = k => iconHTML(INGREDIENTS[k].icon);
+function renderBrew() {
+  const isBrew = brewMode === 'brew';
+  document.getElementById('brewTitle').innerHTML = isBrew ? `${iconHTML('potion')} Cauldron` : `${iconHTML('scroll')} Recipe Book`;
+  document.getElementById('brewSub').textContent = isBrew
+    ? 'Drop in 2 or 3 ingredients and see what bubbles up!'
+    : `You discovered ${save.recipes.length} of ${RECIPES.length} recipes. Try new mixes at the cauldron!`;
+  document.getElementById('brewMix').style.display = isBrew ? '' : 'none';
+  if (isBrew) {
+    const tiles = document.getElementById('ingTiles'); tiles.innerHTML = '';
+    for (const k of ING_KEYS) {
+      const left = (save.ing[k] || 0) - brewPot.filter(x => x === k).length;
+      const b = document.createElement('button'); b.className = 'ingtile';
+      b.innerHTML = `<span class="ico">${ICON[INGREDIENTS[k].icon]}</span><b>${INGREDIENTS[k].name}</b><span>× ${left}</span>`;
+      b.title = INGREDIENTS[k].tip;
+      b.disabled = left <= 0 || brewPot.length >= 3 || brewT > 0;
+      b.onclick = () => { brewPot.push(k); sfx('pop'); renderBrew(); };
+      tiles.appendChild(b);
+    }
+    const slots = document.getElementById('potSlots'); slots.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      const s = document.createElement('button'); s.className = 'slot' + (brewPot[i] ? ' full' : '');
+      s.innerHTML = brewPot[i] ? ICON[INGREDIENTS[brewPot[i]].icon] : '';
+      if (brewPot[i]) s.onclick = () => { brewPot.splice(i, 1); renderBrew(); };
+      slots.appendChild(s);
+    }
+    const bb = document.getElementById('brewBtn');
+    bb.disabled = brewPot.length < 2 || brewT > 0;
+    bb.innerHTML = brewT > 0 ? 'Bubbling…' : `Brew! ${iconHTML('sparkle')}`;
+  }
+  const list = document.getElementById('recipeList'); list.innerHTML = '';
+  for (const r of RECIPES) {
+    const known = save.recipes.includes(r.id), have = save.potions[r.id] || 0;
+    const row = document.createElement('div'); row.className = 'item' + (known ? '' : ' unknown');
+    row.innerHTML = known
+      ? `<div class="ico">${potionSVG(r.color)}</div><div class="txt"><b>${r.name}</b><span class="mix">${r.mix.map(ingIcon).join('')}</span><span>${r.desc}</span></div><span class="cnt">${have ? '× ' + have : ''}</span>`
+      : `<div class="ico">${potionSVG('#d6cbef')}</div><div class="txt"><b>??? </b><span>${r.hint}</span></div>`;
+    list.appendChild(row);
+  }
+}
+function brew() {
+  if (brewPot.length < 2 || brewT > 0) return;
+  for (const k of brewPot) save.ing[k] = Math.max(0, (save.ing[k] || 0) - 1);
+  brewResult = RECIPE_BY_MIX.get(mixKey(brewPot)) || null;
+  brewPot = []; storeSave(); renderIngRow();
+  closeBrew();
+  brewT = 1.8; tintT = 5;
+  const col = new THREE.Color(brewResult ? brewResult.color : '#8a8f6a');
+  cauldronCols = [col.getStyle(), col.clone().lerp(new THREE.Color('#ffffff'), .4).getStyle()];
+  cauldronLiquidMat.color.copy(col); cauldronLiquidMat.emissive.copy(col).multiplyScalar(.7);
+  sfx('brew');
+  toast('Blub blub blub... the cauldron is bubbling!', 1800, 'potion');
+}
+function finishBrew() {
+  const r = brewResult, top = cauldronPos.clone().add(new THREE.Vector3(0, .4, 0));
+  if (!r) {
+    for (let i = 0; i < 18; i++) emit({ pos: top, vel: new THREE.Vector3(rr(-.6, .6), rr(1.5, 3), rr(-.6, .6)), life: 2, size: .7, grow: 2, color: '#a9b38a', add: false, drag: 1 });
+    toast('Oops! That just made sticky goo. Try another mix!', 3500, 'potion');
+    sfx('fail'); return;
+  }
+  save.potions[r.id] = (save.potions[r.id] || 0) + 1;
+  const isNew = !save.recipes.includes(r.id);
+  if (isNew) save.recipes.push(r.id);
+  if (r.drink !== false) save.lastPotion = r.id;
+  storeSave(); renderBelt();
+  burst(top, 40, { speed: 5, colors: [r.color, '#ffffff', '#fff09a'], size: .5, life: 1.4, gravity: 1 });
+  if (isNew) { toast(`New recipe: ${r.name}! It's in your recipe book now.`, 4200, 'scroll'); sfx('fanfare'); }
+  else sfx('coin');
+  setTimeout(() => toast(r.drink === false ? `You brewed a ${r.name}! Bring it to Ryan.` : `You brewed a ${r.name}! Tap it on the right or press Q to drink it.`, 4000, 'potion'), isNew ? 900 : 0);
+  syncPotionQuests();
+}
+function syncPotionQuests() {
+  for (const giver in activeQ) {
+    const a = activeQ[giver];
+    if (a.q.type !== 'potion') continue;
+    const was = a.ready; a.ready = (save.potions[a.q.item] || 0) > 0;
+    if (a.ready && !was) { toast(`${a.q.title} done! Go back to ${giver}.`, 3800, 'check'); sfx('quest'); }
+  }
+  refreshQuestUI();
+}
+document.getElementById('brewBtn').addEventListener('click', brew);
+document.getElementById('brewClose').addEventListener('click', closeBrew);
+
+// --- HUD: ingredient counts and the potion belt ---
+const ingRowEl = document.getElementById('ingRow'), beltEl = document.getElementById('potionBelt'), fxRowEl = document.getElementById('fxRow');
+function renderIngRow() {
+  ingRowEl.innerHTML = ING_KEYS.map(k => `<span class="ing" title="${INGREDIENTS[k].name}">${ingIcon(k)}${save.ing[k] || 0}</span>`).join('');
+}
+function renderBelt() {
+  beltEl.innerHTML = '';
+  const quick = quickPotion();
+  for (const r of RECIPES) {
+    const n = save.potions[r.id] || 0;
+    if (!n) continue;
+    const b = document.createElement('button'); b.className = 'pbtn'; b.title = `${r.name}: ${r.desc}`;
+    b.innerHTML = potionSVG(r.color) + `<span class="n">${n}</span>` + (quick === r.id ? '<span class="q">Q</span>' : '');
+    b.onclick = () => { drinkPotion(r.id); b.blur(); };
+    beltEl.appendChild(b);
+  }
+  beltEl.style.display = beltEl.children.length ? 'flex' : 'none';
+  if (brewOpen()) renderBrew();
+}
+function quickPotion() {
+  if (save.lastPotion && save.potions[save.lastPotion] > 0) return save.lastPotion;
+  const r = RECIPES.find(x => x.drink !== false && save.potions[x.id] > 0);
+  return r ? r.id : null;
+}
+function drinkQuick() {
+  const id = quickPotion();
+  if (id) drinkPotion(id);
+  else if (started) toast('You have no potions yet. Brew some at the cauldron!', 2800, 'potion');
+}
+
+// --- drinking potions ---
+function drinkPotion(id) {
+  const r = RECIPE_BY_ID.get(id);
+  if (!started || !r || !(save.potions[id] > 0)) return;
+  if (r.drink === false) { toast(`This ${r.name} is for Ryan's curry, not for drinking!`, 3000, 'potion'); return; }
+  save.potions[id]--; save.lastPotion = id; storeSave();
+  endPotion(false);
+  pfx.id = id; pfx.t = r.dur; pfx.hue = Math.random();
+  startPotionLook(W, player, pfx, true);
+  pState.castT = .4;
+  sfx('gulp');
+  burst(player.position.clone().add(new THREE.Vector3(0, 1.4 * player.scale.x, 0)), 30, { speed: 4, colors: [r.color, '#ffffff'], size: .45, life: 1.1, gravity: 0 });
+  toast({ shrink: 'You shrink down to teeny tiny size!', giant: 'Whoa! You are a GIANT now!', speed: 'Zoom zoom! Hold Shift to go even faster.', float: 'You feel light as a bubble! Hold Space to fly.', colour: 'Ta-da! Your robe has a brand new colour!', frog: 'Ribbit! You turned into a frog!' }[id], 3500, 'potion');
+  renderBelt();
+  if (net) Promise.resolve().then(() => net.emit('spell', { id: 'potion', p: id, c: r2(pfx.hue), x: r2(player.position.x), z: r2(player.position.z) })).catch(() => {});
+}
+// a cute frog that replaces a wizard while the frog potion works
+function makeFrog(hatMat) {
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const green = toon('#7ad37a'), light = toon('#c8f0a8');
+  ball(green, 0, .38, 0, .5, .36, .55, body);
+  ball(light, 0, .32, .2, .38, .26, .38, body);
+  for (const sx of [-1, 1]) {
+    ball(green, sx * .22, .72, .22, .17, .17, .17, body);
+    ball(whiteMat, sx * .22, .76, .34, .1, .1, .06, body, false);
+    ball(eyeMat, sx * .22, .76, .38, .055, .065, .04, body, false);
+    ball(blushMat, sx * .32, .46, .44, .08, .04, .03, body, false);
+    ball(green, sx * .42, .14, -.12, .2, .12, .32, body);
+    ball(green, sx * .3, .12, .38, .11, .08, .14, body);
+  }
+  mk(new THREE.TorusGeometry(.12, .02, 6, 14, Math.PI), eyeMat, 0, .47, .5, body, false).rotation.z = Math.PI;
+  const hat = mk(new THREE.ConeGeometry(.2, .45, 14), hatMat, 0, 1.05, .05, body, false); hat.rotation.z = .25;
+  mk(new THREE.CylinderGeometry(.3, .3, .04, 16), hatMat, 0, .84, .05, body, false);
+  g.visible = false;
+  return { g, body };
+}
+// look of a potion effect on a wizard (used for you and for other players)
+function startPotionLook(w, holder, state, mine) {
+  if (state.id === 'colour') { w.robeMat.color.setHSL(state.hue, .75, .62); w.robeMat.emissive.set('#000000'); w.robeMat.emissiveIntensity = 0; }
+  if (state.id === 'frog') {
+    let f = mine ? frog : holder.userData.frog;
+    if (!f) { f = makeFrog(w.hatMat); holder.add(f.g); if (mine) frog = f; else holder.userData.frog = f; }
+    f.g.visible = true; w.root.visible = false;
+    burst(holder.position.clone().add(new THREE.Vector3(0, .8, 0)), 24, { speed: 3, colors: ['#7ad37a', '#ffffff'], size: .5, life: 1, gravity: 0 });
+    sfx('ribbit');
+  }
+}
+function endPotion(announce) {
+  if (!pfx.id) return;
+  const r = RECIPE_BY_ID.get(pfx.id);
+  const was = pfx.id; pfx.id = null; pfx.t = 0;
+  if (was === 'colour') applyCosmetics();
+  if (was === 'frog' && frog) { frog.g.visible = false; W.root.visible = true; burst(player.position.clone().add(new THREE.Vector3(0, .8, 0)), 20, { speed: 3, colors: ['#ffffff', '#c9a0ff'], size: .5, life: .9, gravity: 0 }); }
+  if (announce) { toast(`The ${r.name} wore off.`, 2500, 'potion'); sfx('poof'); }
+}
+function frogHop(f, k, walkT, grounded) {
+  f.body.position.y = grounded ? Math.abs(Math.sin(walkT * .6)) * .45 * k : .15;
+  f.body.scale.set(1, 1 + (grounded ? Math.sin(walkT * 1.2) * .08 * k : .12), 1);
+}
+let ribbitT = 3;
+function updatePotions(dt, time) {
+  // ingredients bob around and get picked up when you walk over them
+  const isNight = night > .45;
+  for (let i = ingredients.length - 1; i >= 0; i--) {
+    const it = ingredients[i];
+    it.inner.position.y = it.kind === 'bubble' ? Math.sin(time * 1.6 + it.ph) * .25 : Math.sin(time * 2.5 + it.ph) * .08;
+    it.inner.rotation.y += dt * 1.2;
+    const vis = it.kind !== 'shroom' || isNight;
+    it.g.visible = vis;
+    if (!vis) continue;
+    if (Math.random() < dt * 2) emit({ pos: it.g.position.clone().add(new THREE.Vector3(rr(-.3, .3), rr(.2, .8), rr(-.3, .3))), vel: new THREE.Vector3(0, .4, 0), life: .9, size: .18, color: it.col, tex: starTex, spin: 2 });
+    if (started && distXZ(it.g.position) < (it.kind === 'bubble' ? 1.7 : 1.3) && Math.abs(player.position.y - it.baseY) < 3) pickIngredient(i);
+  }
+  ingSpawnT -= dt;
+  if (ingSpawnT <= 0 && started) {
+    ingSpawnT = 9;
+    for (const k of ING_KEYS) if (ingredients.filter(o => o.kind === k).length < INGREDIENTS[k].max) { spawnIngredient(k); break; }
+  }
+  // the cauldron bubbling away while you brew
+  if (brewT > 0) {
+    brewT -= dt;
+    if (Math.random() < dt * 30) emit({ pos: cauldronPos.clone().add(new THREE.Vector3(rr(-.5, .5), 0, rr(-.5, .5))), vel: new THREE.Vector3(rr(-.3, .3), rr(1, 2.5), rr(-.3, .3)), life: rr(.6, 1.1), size: rr(.2, .4), color: rpick(cauldronCols) });
+    if (brewT <= 0) finishBrew();
+  } else if (tintT > 0) {
+    tintT -= dt;
+    if (tintT <= 0) { cauldronCols = ['#8fff9f', '#c9ffb0', '#b0fff0']; cauldronLiquidMat.color.set(CAULDRON_BASE[0]); cauldronLiquidMat.emissive.set(CAULDRON_BASE[1]); }
+  }
+  // the potion that is working on you
+  const want = { shrink: .4, giant: 2.3 }[pfx.id] || 1;
+  player.scale.setScalar(lerp(player.scale.x, want, damp(5, dt)));
+  if (pfx.id) {
+    pfx.t -= dt;
+    const r = RECIPE_BY_ID.get(pfx.id);
+    fxRowEl.style.display = 'block';
+    fxRowEl.innerHTML = `${iconHTML('potion', 'ic sm')} ${r.name}: ${Math.ceil(pfx.t)}s`;
+    const sp = Math.hypot(pVel.x, pVel.z);
+    if (pfx.id === 'speed' && sp > 3 && Math.random() < dt * 30) emit({ pos: player.position.clone().add(new THREE.Vector3(rr(-.3, .3), rr(.2, 1), rr(-.3, .3))), vel: new THREE.Vector3(-pVel.x * .1, .3, -pVel.z * .1), life: .5, size: rr(.2, .35), color: rpick(['#ffd84d', '#fff3b0', '#ffffff']), tex: starTex });
+    if (pfx.id === 'float' && Math.random() < dt * 8) emit({ pos: player.position.clone().add(new THREE.Vector3(rr(-.4, .4), .1, rr(-.4, .4))), vel: new THREE.Vector3(0, -.6, 0), life: .9, size: rr(.15, .3), color: rpick(['#b8f0ff', '#ffffff']) });
+    if (pfx.id === 'colour' && Math.random() < dt * 4) emit({ pos: player.position.clone().add(new THREE.Vector3(rr(-.5, .5), rr(.3, 1.4), rr(-.5, .5))), vel: new THREE.Vector3(0, .6, 0), life: 1, size: .25, color: W.robeMat.color.getStyle(), tex: starTex, spin: 3 });
+    if (pfx.id === 'frog' && frog) {
+      frogHop(frog, Math.min(1, sp / 4), pState.walkT, pState.grounded);
+      ribbitT -= dt; if (ribbitT <= 0) { ribbitT = rr(2.5, 5); sfx('ribbit'); }
+    }
+    if (pfx.t <= 0) endPotion(true);
+  } else fxRowEl.style.display = 'none';
 }
 
 // ================= multiplayer =================
@@ -2706,6 +3140,12 @@ function remoteCosmetics(r) {
   if (r.robe === 'galaxy') { w.robeMat.color.set('#232760'); w.robeMat.emissive.set('#6b4cff'); w.robeMat.emissiveIntensity = .3; }
   else { w.robeMat.color.set(L.robe); w.robeMat.emissive.set('#000000'); w.robeMat.emissiveIntensity = 0; }
 }
+function endRemotePotion(r) {
+  if (!r.fx) return;
+  const was = r.fx.id; r.fx = null;
+  if (was === 'colour') remoteCosmetics(r);
+  if (was === 'frog' && r.g.userData.frog) { r.g.userData.frog.g.visible = false; r.w.root.visible = true; }
+}
 function removeRemote(peerId, announce) {
   const r = remotes.get(peerId);
   if (!r) return;
@@ -2735,6 +3175,11 @@ function updateRemotes(dt, time) {
     else if (r.waveT > 0) { r.waveT -= dt; r.w.wandArm.rotation.x = -1.4 + Math.sin(time * 14) * .35; }
     else r.w.wandArm.rotation.x = lerp(r.w.wandArm.rotation.x, -.15 + Math.sin(r.walkT) * .3 * r.k, damp(10, dt));
     if (r.hat === 'rainbow') r.w.hatMat.color.setHSL((time * .15) % 1, .75, .62);
+    // potion they drank
+    if (r.fx) { r.fx.t -= dt; if (r.fx.t <= 0) endRemotePotion(r); }
+    const rs = (r.fx && { shrink: .4, giant: 2.3 }[r.fx.id]) || 1;
+    r.g.scale.setScalar(lerp(r.g.scale.x, rs, damp(5, dt)));
+    if (r.fx && r.fx.id === 'frog' && r.g.userData.frog) frogHop(r.g.userData.frog, r.k, r.walkT, grounded);
     // gently push apart so you can't walk through each other
     if (started) {
       const dx = player.position.x - p.x, dz = player.position.z - p.z, d = Math.hypot(dx, dz);
@@ -2814,6 +3259,13 @@ function onRemoteSpell(msg) {
     }
   } else if (d.id === 'fireworks') {
     castFireworks(new THREE.Vector3(x, 0, z));
+  } else if (d.id === 'potion') {
+    const rec = typeof d.p === 'string' ? RECIPE_BY_ID.get(d.p) : null;
+    if (!rec || rec.drink === false) return;
+    endRemotePotion(r);
+    r.fx = { id: rec.id, t: rec.dur, hue: clamp(num(d.c), 0, 1) };
+    startPotionLook(r.w, r.g, r.fx, false);
+    if (close) { toast(`${who(r)} drank a ${rec.name}!`, 3000, 'potion'); sfx('gulp'); }
   }
   if (close) burst(wand(), 10, { speed: 2.5, colors: ['#ffd1f0', '#fff09a', '#c9a0ff'], size: .3, life: .6, gravity: 0 });
 }
@@ -2842,6 +3294,7 @@ function frame() {
   for (const n of npcs) updateNPC(n, dt, time);
   updateRemotes(dt, time);
   updateQuests(dt, time);
+  updatePotions(dt, time);
   updateRockets(dt);
   updateProjectiles(dt); updateFlowers(dt); updateButterflies(dt, time); updateRainbow(dt);
   updateWorld(dt, time);
