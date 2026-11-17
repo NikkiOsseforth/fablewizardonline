@@ -2385,7 +2385,14 @@ function updateRainbow(dt) {
 
 // 6. day & night
 let night = 0, nightTarget = 0;
-let curIsle = null;                       // the far island you are on right now (null = Starvale)
+// when day/night last changed (ms since epoch). Shared in presence: the newest change wins, so newcomers pick it up.
+let nightAt = 0;
+try { const t = JSON.parse(localStorage.getItem('starvale-time') || 'null'); if (t && typeof t.at === 'number') { nightTarget = night = t.t ? 1 : 0; nightAt = t.at; } } catch (e) { /* ignore */ }
+function setNight(t, at) {
+  nightTarget = t ? 1 : 0; nightAt = at;
+  try { localStorage.setItem('starvale-time', JSON.stringify({ t: nightTarget, at })); } catch (e) { /* ignore */ }
+}
+let curIsle = null;                      // the far island you are on right now (null = Starvale)
 // filled in the "far islands" section: which island each resident lives on, and the islands by id
 const FOLK_ISLE = {}, ISLE_BY_ID = new Map();
 // slippery ground: only when the current island has a frozen lake ({ x, z, r }); everywhere else normal grip
@@ -2397,7 +2404,7 @@ function onIce(p) {
 function inLava(x, z) { const L = curIsle && curIsle.lava; return !!L && Math.hypot(x - L.x, z - L.z) < L.r; }
 const skyO = new THREE.Vector3();         // the sky, sun and clouds are centred on the island you are on
 function castNight() {
-  nightTarget = nightTarget > .5 ? 0 : 1;
+  setNight(nightTarget > .5 ? 0 : 1, Math.max(Date.now(), nightAt + 1));
   toast(nightTarget ? 'The stars are coming out… sweet dreams!' : `Good morning, ${curIsle ? curIsle.name : 'Starvale'}!`, 3300, nightTarget ? 'moon' : 'sparkle');
   sfx(nightTarget ? 'night' : 'day');
   burst(wandWorld().add(new THREE.Vector3(0, 1, 0)), 30, { speed: 6, colors: nightTarget ? ['#c9a0ff', '#8fa0ff', '#ffffff'] : ['#ffe066', '#ffb38a', '#ffffff'], size: .5, life: 1.5, gravity: -.5 });
@@ -4108,7 +4115,7 @@ async function connectSupabase() {
     for (const [pid, metas] of Object.entries(ps)) {
       if (pid === id || !okId(pid) || !metas || !metas.length) continue;
       const m = metas[metas.length - 1];
-      const patch = { c: m.c, n: m.n, hat: m.hat, robe: m.robe };
+      const patch = { c: m.c, n: m.n, hat: m.hat, robe: m.robe, t: m.t, ta: m.ta };
       if (!known.has(pid)) Object.assign(patch, { x: m.x, y: m.y, z: m.z, h: m.h, s: 0 });
       upd(pid, patch);
     }
@@ -4127,7 +4134,7 @@ async function connectSupabase() {
   net = {
     interval: 200,
     presence(p) {
-      const meta = { c: p.c, n: p.n, hat: p.hat, robe: p.robe };
+      const meta = { c: p.c, n: p.n, hat: p.hat, robe: p.robe, t: p.t, ta: p.ta };
       const mk = JSON.stringify(meta);
       if (mk !== lastMeta) { lastMeta = mk; ch.track({ ...meta, x: p.x, y: p.y, z: p.z, h: p.h }); }
       return ch.send({ type: 'broadcast', event: 'pos', payload: { id, x: p.x, y: p.y, z: p.z, h: p.h, s: p.s } });
@@ -4163,7 +4170,7 @@ function sendPresence(force) {
   if (!net || !started) return;
   const now = performance.now();
   if (!force && now - mpLastSend < net.interval) return;
-  const p = { c: playerIsCustom ? '*' : playerName, n: myNick, x: r2(player.position.x), y: r2(player.position.y), z: r2(player.position.z), h: r2(pState.heading), s: r2(Math.hypot(pVel.x, pVel.z)), hat: save.hat || '', robe: save.robe || '' };
+  const p = { c: playerIsCustom ? '*' : playerName, n: myNick, x: r2(player.position.x), y: r2(player.position.y), z: r2(player.position.z), h: r2(pState.heading), s: r2(Math.hypot(pVel.x, pVel.z)), hat: save.hat || '', robe: save.robe || '', t: nightTarget, ta: nightAt };
   if (playerIsCustom) { const { name, ...look } = myWizard; p.w = playerName; p.L = look; }
   const key = JSON.stringify(p);
   if (!force && key === mpLastKey && now - mpLastSend < 3000) return;   // resend every 3 s as a keepalive
@@ -4198,6 +4205,13 @@ function syncRemote(peer) {
   r.tx = num(pr.x); r.ty = clamp(num(pr.y), 0, 30); r.tz = num(pr.z); r.th = num(pr.h); r.s = clamp(num(pr.s), 0, 12);
   const hat = pr.hat === 'gold' || pr.hat === 'rainbow' ? pr.hat : null, robe = pr.robe === 'galaxy' ? 'galaxy' : null;
   if (hat !== r.hat || robe !== r.robe) { r.hat = hat; r.robe = robe; remoteCosmetics(r); }
+  // day/night: take theirs if it changed more recently than ours (e.g. we just joined)
+  const ta = num(pr.ta);
+  if (ta > nightAt && ta <= Date.now() + 864e5) {
+    const t = pr.t ? 1 : 0, changed = t !== nightTarget;
+    setNight(t, ta);
+    if (changed && started) toast(t ? 'It is night on the island…' : 'It is daytime on the island!', 3000, t ? 'moon' : 'sparkle');
+  }
 }
 // a player's display name: their Claude name, else the name they typed, else their wizard
 const escHTML = t => String(t).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
@@ -4279,7 +4293,7 @@ const mpNear = (x, z, d = 28) => Math.hypot(x - player.position.x, z - player.po
 function mpCast(id, floated) {
   if (!net) return;
   const d = { id, x: r2(player.position.x), y: r2(player.position.y), z: r2(player.position.z), h: r2(player.rotation.y) };
-  if (id === 'night') d.t = nightTarget;
+  if (id === 'night') { d.t = nightTarget; d.ta = nightAt; }
   if (id === 'float' && floated) d.n = floated.name;
   Promise.resolve().then(() => net.emit('spell', d)).catch(() => {});
 }
@@ -4326,9 +4340,10 @@ function onRemoteSpell(msg) {
     castRainbow({ x, z, h, y: clamp(num(d.y, r.g.position.y), -20, 20) });
     toast(`${who(r)} made a rainbow!`, 3000, 'rainbow');
   } else if (d.id === 'night') {
-    const t = d.t ? 1 : 0;
-    if (t !== nightTarget) {
-      nightTarget = t;
+    const t = d.t ? 1 : 0, ta = num(d.ta, 0);
+    const changed = t !== nightTarget;
+    setNight(t, Math.max(Math.min(ta, Date.now() + 864e5), nightAt + 1));
+    if (changed) {
       toast(t ? `${who(r)} turned the island to night… sweet dreams!` : `${who(r)} brought the morning back!`, 3300, t ? 'moon' : 'sparkle');
       sfx(t ? 'night' : 'day');
     }
