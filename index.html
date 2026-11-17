@@ -2370,7 +2370,8 @@ function updateCreature(c, dt, time) {
     if (Math.random() < dt * 5) hearts(creatureCenter(c, new THREE.Vector3()).add(new THREE.Vector3(0, .5, 0)), 1);
     return;
   }
-  if (c.type === 'bunny') sniffSnack(c, dt);
+  const led = critLed(c);   // another player (the host) decides where this critter walks
+  if (c.type === 'bunny' && !led) sniffSnack(c, dt);
   if (c.type === 'spirit') {   // stronger in the dark: faster, higher and brighter
     c.speed = 1.6 + night * 1.2; c.baseY = 1.6 + night * .6;
   }
@@ -2380,7 +2381,7 @@ function updateCreature(c, dt, time) {
     c.wait -= dt;
     if (c.munch > 0) munchSnack(c, dt);
     else if (toPlayer < 5) c.heading = Math.atan2(player.position.x - p.x, player.position.z - p.z);
-    if (c.wait <= 0) c.target = randomTarget(c);
+    if (c.wait <= 0 && !led) c.target = randomTarget(c);
   } else {
     const dx = c.target.x - p.x, dz = c.target.z - p.z, d = Math.hypot(dx, dz);
     if (d < .5) c.wait = rr(1.5, 5);
@@ -2393,6 +2394,7 @@ function updateCreature(c, dt, time) {
     }
   }
   if (!moving) c.stuck = 0;
+  if (led) critFollow(c, dt);
   collide(p, .55, creatureBoxes);
   c.g.rotation.y = angleLerp(c.g.rotation.y, c.heading, damp(6, dt));
   if (c.type === 'bunny') {
@@ -2548,7 +2550,7 @@ function updateProjectiles(dt) {
 const flowerStem = new CylGeo(.03, .03, .5, 5), petalGeo = new SphGeo(.2, 10, 6);
 const stemMat2 = toon('#5cbf5c'), centerMat = toon('#ffd84d'), petalMats = PASTELS.concat(['#ffffff']).map(c => toon(c));
 const flowers = [];
-function spawnFlower(x, z, delay, sp = null, y = 0) {
+function spawnFlower(x, z, delay, sp = null, y = 0, ci = -1) {
   const g = new THREE.Group(); g.position.set(x, y, z); g.scale.setScalar(.001); g.rotation.y = Math.random() * 6; scene.add(g);
   mk(flowerStem, stemMat2, 0, .25, 0, g, false);
   if (sp) {   // a special flower from the Collection Book: five round petals, maybe glowing
@@ -2560,21 +2562,26 @@ function spawnFlower(x, z, delay, sp = null, y = 0) {
       halo.scale.setScalar(1.1); halo.position.y = .55; g.add(halo);
     }
   } else {
-    const pt = mk(petalGeo, rpick(petalMats), 0, .52, 0, g, false); pt.scale.set(1, .38, 1);
+    if (!(ci >= 0 && ci < petalMats.length)) ci = Math.floor(Math.random() * petalMats.length);
+    const pt = mk(petalGeo, petalMats[ci], 0, .52, 0, g, false); pt.scale.set(1, .38, 1);
     ball(centerMat, 0, .59, 0, .08, .05, .08, g, false);
   }
   const leaf = ball(stemMat2, .08, .2, 0, .1, .03, .05, g, false); leaf.rotation.z = .5;
-  flowers.push({ g, t: -delay, s: sp ? 1.8 : rr(.9, 1.5), done: false, sp: !!sp });
+  const f = { g, t: -delay, s: sp ? 1.8 : rr(.9, 1.5), done: false, sp: !!sp, spId: sp ? sp.id : null, ci };
+  flowers.push(f);
   if (flowers.length > 280) { const old = flowers.shift(); scene.remove(old.g); }
+  return f;
 }
+let lastField = [];   // the flowers of my latest Flower Field ([x, z, colour]), sent along so others see the same field
 function castFlowers() {
   const f = facingDir();
   const cx = player.position.x + f.x * 2.6, cz = player.position.z + f.z * 2.6;
+  lastField = [];
   for (let i = 0; i < 18; i++) {
     const a = Math.random() * 6.28, d = Math.sqrt(Math.random()) * 3.3;
-    const x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d;
+    const x = r2(cx + Math.cos(a) * d), z = r2(cz + Math.sin(a) * d);
     if (!onLand(x, z) || Math.hypot(x - POND.x, z - POND.z) < POND.r || inLava(x, z)) continue;
-    spawnFlower(x, z, i * .05);
+    lastField.push([x, z, spawnFlower(x, z, i * .05).ci]);
   }
   // special flowers for the Collection Book grow in special places and at special times
   const sky = isleUnder(player.position), found = [FLOWER_BY_ID.get('meadow')];
@@ -2694,13 +2701,15 @@ function rainbowArc(g, rad, cols, k) {
   });
 }
 function spawnRainbow(ox, oz, f, { dist = 15, size = 1, life = 11 } = {}) {
+  placeRainbow(ox + f.x * dist, oz + f.z * dist, Math.atan2(f.x, f.z), size, life);
+  startRainbowRides();
+}
+function placeRainbow(x, z, ry, size, life) {
   if (rainbow) scene.remove(rainbow.g);
   const g = new THREE.Group(); scene.add(g);
   const mats = rainbowArc(g, 10, RAINBOW_COLS, 1);
-  g.position.set(ox + f.x * dist, -.5, oz + f.z * dist);
-  g.rotation.y = Math.atan2(f.x, f.z);
+  g.position.set(x, -.5, z); g.rotation.y = ry;
   rainbow = { g, mats, t: 0, life, size };
-  startRainbowRides();
 }
 // two rainbows at once (a spell combo): a second, paler arc outside the first, with the colours the other way round
 function doubleRainbow() {
@@ -3148,7 +3157,7 @@ function bridgeTarget(ox, oy, oz, f) {
 }
 function makeBridge(t) {
   const N = 40, W = 2.4, cols = RAINBOW_COLS.map(c => new THREE.Color(c));
-  const b = { ax: t.ax, az: t.az, y0: t.y0, y1: t.y1, dx: t.bx - t.ax, dz: t.bz - t.az, t: 0, life: 32, grow: 0, N };
+  const b = { ax: t.ax, az: t.az, y0: t.y0, y1: t.y1, bx: t.bx, bz: t.bz, dx: t.bx - t.ax, dz: t.bz - t.az, t: 0, life: 32, grow: 0, N };
   b.len2 = b.dx * b.dx + b.dz * b.dz || 1;
   const len = Math.sqrt(b.len2);
   b.bump = Math.min(2.5, len * .12);
@@ -4740,7 +4749,7 @@ async function connectSupabase() {
     for (const [pid, metas] of Object.entries(ps)) {
       if (pid === id || !okId(pid) || !metas || !metas.length) continue;
       const m = metas[metas.length - 1];
-      const patch = { c: m.c, n: m.n, hat: m.hat, robe: m.robe, pet: m.pet, t: m.t, ta: m.ta };
+      const patch = { c: m.c, n: m.n, hat: m.hat, robe: m.robe, pet: m.pet, t: m.t, ta: m.ta, j: m.j };
       if (!known.has(pid)) Object.assign(patch, { x: m.x, y: m.y, z: m.z, h: m.h, s: 0 });
       upd(pid, patch);
     }
@@ -4752,6 +4761,7 @@ async function connectSupabase() {
   ch.on('broadcast', { event: 'spell' }, ({ payload: p }) => { if (p && okId(p.id)) onRemoteSpell({ peer: p.id, data: p.d }); });
   ch.on('broadcast', { event: 'wave' }, ({ payload: p }) => { if (p && okId(p.id)) onRemoteWave({ peer: p.id, data: p.d }); });
   ch.on('broadcast', { event: 'town' }, ({ payload: p }) => { if (p && okId(p.id)) onRemoteTown(p.d); });
+  for (const ev of ['hello', 'world', 'crit']) ch.on('broadcast', { event: ev }, ({ payload: p }) => { if (p && okId(p.id)) onWorldMsg(ev, p.id, p.d); });
   await new Promise((res, rej) => {
     const t = setTimeout(() => rej(new Error('timeout')), 10000);
     ch.subscribe(status => { if (status === 'SUBSCRIBED') { clearTimeout(t); res(); } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { clearTimeout(t); rej(new Error(status)); } });
@@ -4760,7 +4770,7 @@ async function connectSupabase() {
   net = {
     interval: 200,
     presence(p) {
-      const meta = { c: p.c, n: p.n, hat: p.hat, robe: p.robe, pet: p.pet, t: p.t, ta: p.ta };
+      const meta = { c: p.c, n: p.n, hat: p.hat, robe: p.robe, pet: p.pet, t: p.t, ta: p.ta, j: p.j };
       const mk = JSON.stringify(meta);
       if (mk !== lastMeta) { lastMeta = mk; ch.track({ ...meta, x: p.x, y: p.y, z: p.z, h: p.h }); }
       return ch.send({ type: 'broadcast', event: 'pos', payload: { id, x: p.x, y: p.y, z: p.z, h: p.h, s: p.s, a: p.a } });
@@ -4785,6 +4795,7 @@ async function connectClaudeRoom() {
   room.on('spell', onRemoteSpell, () => {});
   room.on('wave', onRemoteWave, () => {});
   room.on('town', m => { if (m && !m.sameTab) onRemoteTown(m.data); }, () => {});
+  for (const ev of ['hello', 'world', 'crit']) room.on(ev, m => { if (m && !m.sameTab) onWorldMsg(ev, m.peer, m.data); }, () => {});
   net = { interval: 100, presence: p => room.presence(p), emit: (t, d) => room.emit(t, d) };
   return true;
 }
@@ -4794,12 +4805,19 @@ async function connectClaudeRoom() {
   if (!ok) { try { ok = await connectClaudeRoom(); } catch (e) { net = null; } }
   if (ok) { refreshOnline(); if (started) mpStart(); }
 })();
-function mpStart() { if (net && started) sendPresence(true); }
+function mpStart() {
+  if (!net || !started) return;
+  if (!myJoin) {   // I just stepped onto the island: ask the host what is already there
+    myJoin = Date.now();
+    setTimeout(askWorld, 1500); setTimeout(askWorld, 6000);
+  }
+  sendPresence(true);
+}
 function sendPresence(force) {
   if (!net || !started) return;
   const now = performance.now();
   if (!force && now - mpLastSend < net.interval) return;
-  const p = { c: playerIsCustom ? '*' : playerName, n: myNick, x: r2(player.position.x), y: r2(player.position.y), z: r2(player.position.z), h: r2(pState.heading), s: r2(Math.hypot(pVel.x, pVel.z)), a: pState.act ? pState.act.id : '', hat: save.hat || '', robe: save.robe || '', pet: save.pet || '', t: nightTarget, ta: nightAt };
+  const p = { c: playerIsCustom ? '*' : playerName, n: myNick, x: r2(player.position.x), y: r2(player.position.y), z: r2(player.position.z), h: r2(pState.heading), s: r2(Math.hypot(pVel.x, pVel.z)), a: pState.act ? pState.act.id : '', hat: save.hat || '', robe: save.robe || '', pet: save.pet || '', t: nightTarget, ta: nightAt, j: myJoin };
   if (playerIsCustom) { const { name, ...look } = myWizard; p.w = playerName; p.L = look; }
   const key = JSON.stringify(p);
   if (!force && key === mpLastKey && now - mpLastSend < 3000) return;   // resend every 3 s as a keepalive
@@ -4829,6 +4847,9 @@ function syncRemote(peer) {
       mpUser.profiles([peer.by]).then(ps => { const n = ps && ps[peer.by] && ps[peer.by].name; if (n) { r.name = n; setRemoteLabel(r); refreshOnline(); } }).catch(() => {});
     }
   }
+  const j = num(pr.j);
+  r.j = j > 1.6e12 && j < Date.now() + 864e5 ? j : 0;
+  r.seen = performance.now();
   const nick = cleanNick(pr.n);
   if (nick !== r.nick) { r.nick = nick; setRemoteLabel(r); refreshOnline(); }
   r.tx = num(pr.x); r.ty = clamp(num(pr.y), 0, 30); r.tz = num(pr.z); r.th = num(pr.h); r.s = clamp(num(pr.s), 0, 12);
@@ -4884,6 +4905,8 @@ function refreshOnline() {
 function updateRemotes(dt, time) {
   if (!net) return;
   sendPresence(false);
+  hostPid = findHost();
+  if (hostPid === myPeer && remotes.size) sendCrits();
   for (const r of remotes.values()) {
     // a player in their own room stays hidden: everyone's room is in the same far-away spot
     const away = Math.hypot(r.tx - ROOM.x, r.tz - ROOM.z) < 80;
@@ -4936,6 +4959,7 @@ function mpCast(id, floated) {
   const d = { id, x: r2(player.position.x), y: r2(player.position.y), z: r2(player.position.z), h: r2(player.rotation.y) };
   if (id === 'night') { d.t = nightTarget; d.ta = nightAt; }
   if (id === 'float' && floated) d.n = floated.name;
+  if (id === 'flower') d.f = lastField;
   Promise.resolve().then(() => net.emit('spell', d)).catch(() => {});
 }
 function waveAt(r) {
@@ -4965,7 +4989,13 @@ function onRemoteSpell(msg) {
     if (close) sfx('star');
   } else if (d.id === 'flower') {
     const cx = x + Math.sin(h) * 2.6, cz = z + Math.cos(h) * 2.6;
-    for (let i = 0; i < 18; i++) {
+    if (Array.isArray(d.f)) d.f.slice(0, 24).forEach((q, i) => {   // the exact same field they see
+      if (!Array.isArray(q)) return;
+      const fx = num(q[0], NaN), fz = num(q[1], NaN);
+      if (!(Math.hypot(fx - cx, fz - cz) < 5) || !onLand(fx, fz)) return;
+      spawnFlower(fx, fz, i * .05, null, 0, Math.floor(num(q[2], -1)));
+    });
+    else for (let i = 0; i < 18; i++) {
       const a = Math.random() * 6.28, dd = Math.sqrt(Math.random()) * 3.3, fx = cx + Math.cos(a) * dd, fz = cz + Math.sin(a) * dd;
       if (!onLand(fx, fz) || Math.hypot(fx - POND.x, fz - POND.z) < POND.r || inLava(fx, fz)) continue;
       spawnFlower(fx, fz, i * .05);
@@ -5018,6 +5048,119 @@ function onRemoteWave(msg) {
   hearts(r.g.position.clone().add(new THREE.Vector3(0, 2.4, 0)), 5);
   const to = msg.data && msg.data.to;
   if (to && to === myPeer) { toast(`${who(r)} waves at you! Press E near them to wave back`, 3500, 'wave'); sfx('hello'); }
+}
+
+// --- one shared world ---
+// The player who has been on the island longest is the host: they decide where the critters walk and send it
+// to everyone twice a second. When the host leaves, the next one in line simply takes over.
+// A newcomer asks the host for what is already there: the rainbow, rainbow bridges, flower fields and floating critters.
+let myJoin = 0, hostPid = null, critSentAt = 0, worldGot = false;
+function findHost() {
+  if (!started || !myJoin) return null;
+  let best = document.hidden ? null : myPeer, bj = document.hidden ? Infinity : myJoin;   // a hidden tab sends nothing
+  const now = performance.now();
+  for (const r of remotes.values()) {
+    if (!r.j || now - r.seen > 6000) continue;   // gone quiet (e.g. their tab is in the background): not the host now
+    if (r.j < bj || (r.j === bj && r.peer < best)) { best = r.peer; bj = r.j; }
+  }
+  return best;
+}
+// back after a while in another tab: join the back of the line, so the current host stays host
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) hiddenAt = performance.now();
+  else if (myJoin && performance.now() - hiddenAt > 5000) { myJoin = Date.now(); sendPresence(true); }
+});
+// a critter follows the host while their updates keep coming in
+const critLed = c => !!c.net && hostPid !== myPeer && performance.now() - c.net.at < 3000;
+function sendCrits() {
+  const now = performance.now();
+  if (now - critSentAt < 500) return;
+  critSentAt = now;
+  const d = [];
+  for (const c of creatures) d.push(r2(c.g.position.x), r2(c.g.position.z), r2(c.target.x), r2(c.target.z), Math.round(clamp(c.wait, -1, 99) * 10) / 10, c.munch > 0 ? 1 : 0);
+  Promise.resolve().then(() => net.emit('crit', d)).catch(() => {});
+}
+function onCrits(d) {
+  if (!Array.isArray(d) || d.length !== creatures.length * 6) return;
+  const now = performance.now();
+  creatures.forEach((c, i) => {
+    const o = i * 6, x = num(d[o], NaN), z = num(d[o + 1], NaN), tx = num(d[o + 2], NaN), tz = num(d[o + 3], NaN);
+    if (![x, z, tx, tz].every(isFinite)) return;
+    const h = c.home, R = h ? h.r + 6 : 60, cx = h ? h.x : 0, cz = h ? h.z : 0;
+    if (Math.hypot(x - cx, z - cz) > R || Math.hypot(tx - cx, tz - cz) > R) return;   // nonsense: not near its home
+    const w = clamp(num(d[o + 4]), -1, 99);
+    c.net = { x, z, w, at: now };
+    c.target.set(tx, 0, tz);
+    if (!(c.munch > 0)) c.wait = w;
+    // the host's bunny started nibbling: nibble the flower right there (if we have one)
+    if (d[o + 5] === 1 && c.type === 'bunny' && !c.munch && !c.snack) {
+      const f = flowers.find(q => !q.sp && !q.taken && q.done && q.g.position.y < .3 && Math.hypot(q.g.position.x - x, q.g.position.z - z) < 1.5);
+      if (f) { c.snack = f; f.taken = c; c.munch = .001; c.wait = 99; }
+    }
+  });
+}
+// gently pull a critter towards where it is for the host (guessing how far it walked since)
+function critFollow(c, dt) {
+  const n = c.net, p = c.g.position;
+  let ex = n.x, ez = n.z;
+  if (n.w <= 0) {
+    const dx = c.target.x - n.x, dz = c.target.z - n.z, d = Math.hypot(dx, dz);
+    const step = Math.min(d, c.speed * Math.min(1, (performance.now() - n.at) / 1000));
+    if (d > 1e-3) { ex += dx / d * step; ez += dz / d * step; }
+  }
+  const err = Math.hypot(ex - p.x, ez - p.z);
+  if (err > 5) { p.x = ex; p.z = ez; return; }   // too far apart: just hop there
+  const a = damp(1.5, dt);
+  p.x += (ex - p.x) * a; p.z += (ez - p.z) * a;
+}
+function askWorld() {
+  if (!net || worldGot || !remotes.size) return;
+  Promise.resolve().then(() => net.emit('hello', {})).catch(() => {});
+}
+function worldSnap(to) {
+  const d = { to };
+  const rb = rainbow;
+  if (rb && rb.size < 2 && rb.life - rb.t > 1.5)   // the big rainbow after rain comes with the (shared) weather
+    d.rb = [r2(rb.g.position.x), r2(rb.g.position.z), r2(rb.g.rotation.y), r2(rb.life - rb.t), rb.double ? 1 : 0];
+  d.br = bridges.filter(b => b.life - b.t > 3).map(b => [r2(b.ax), r2(b.az), r2(b.y0), r2(b.bx), r2(b.bz), r2(b.y1), r2(b.life - b.t)]);
+  d.fl = flowers.slice(-160).filter(f => f.g.scale.x > .2 || !f.done).map(f => [r2(f.g.position.x), r2(f.g.position.z), r2(f.g.position.y), f.sp ? f.spId : f.ci]);
+  d.lv = creatures.map((c, i) => c.lev > .3 ? [i, r2(c.lev)] : null).filter(Boolean);
+  return d;
+}
+function applyWorld(d) {
+  if (!d || typeof d !== 'object' || d.to !== myPeer || worldGot) return;
+  worldGot = true;
+  const fin = v => typeof v === 'number' && isFinite(v);
+  if (Array.isArray(d.rb) && d.rb.slice(0, 4).every(fin) && Math.hypot(d.rb[0], d.rb[1]) < 4000) {
+    placeRainbow(d.rb[0], d.rb[1], d.rb[2], 1, clamp(d.rb[3], 1.5, 30));
+    if (d.rb[4] === 1) doubleRainbow();
+  }
+  if (Array.isArray(d.br)) d.br.slice(0, 4).forEach(q => {
+    if (!Array.isArray(q) || !q.slice(0, 7).every(fin)) return;
+    const [ax, az, y0, bx, bz, y1, left] = q;
+    if (Math.hypot(bx - ax, bz - az) > 80 || Math.abs(y0) > 60 || Math.abs(y1) > 60 || Math.hypot(ax, az) > 4000) return;
+    const b = makeBridge({ ax, az, y0, bx, bz, y1 });
+    b.life = clamp(left, 3, 32);
+  });
+  if (Array.isArray(d.fl)) d.fl.slice(-160).forEach((q, i) => {
+    if (!Array.isArray(q) || !q.slice(0, 3).every(fin) || Math.hypot(q[0], q[1]) > 4000) return;
+    const sp = typeof q[3] === 'string' ? FLOWER_BY_ID.get(q[3]) : null;
+    if (typeof q[3] === 'string' && !sp) return;
+    spawnFlower(q[0], q[1], i * .01, sp, clamp(q[2], -5, 60), sp ? -1 : Math.floor(num(q[3], -1)));
+  });
+  if (Array.isArray(d.lv)) d.lv.slice(0, creatures.length).forEach(q => {
+    const c = Array.isArray(q) && Number.isInteger(q[0]) ? creatures[q[0]] : null;
+    if (c) { c.lev = clamp(num(q[1]), 0, 4); c.happy = 0; }
+  });
+}
+function onWorldMsg(ev, peer, d) {
+  if (!remotes.has(peer)) return;   // only from players we know
+  hostPid = findHost();
+  if (ev === 'hello') {
+    if (hostPid === myPeer) Promise.resolve().then(() => net.emit('world', worldSnap(peer))).catch(() => {});
+  } else if (ev === 'world') applyWorld(d);
+  else if (ev === 'crit' && peer === hostPid) onCrits(d);
 }
 
 // --- spell combos: two players casting together, close by, within a few seconds ---
