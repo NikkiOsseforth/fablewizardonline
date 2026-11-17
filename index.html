@@ -2037,7 +2037,7 @@ function makeSpirit(col) {
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: col, transparent: true, opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false }));
   halo.scale.setScalar(2.2); body.add(halo);
   body.position.y = 1.6;
-  return { g, body, orbit, halo, baseY: 1.6, speed: 1.6 };
+  return { g, body, orbit, halo, mat: m, baseY: 1.6, speed: 1.6 };
 }
 function makeDragon(col, bellyCol) {
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
@@ -2197,10 +2197,107 @@ function celebrate(isleId = null) {
   }, i * 350);
 }
 
+// ---- critters that react to spells ----
+// bunnies nibble Flower Field flowers, dragons fly along a rainbow, spirits grow stronger in the dark
+let reactToastAt = -99;
+function reactToast(text, icon) {
+  if (time - reactToastAt < 10) return;
+  reactToastAt = time; toast(text, 3000, icon);
+}
+// a bunny sniffs out a nearby, fully grown, ordinary flower on the ground (Collection Book flowers are left alone)
+function sniffSnack(c, dt) {
+  if (c.snack) {
+    const f = c.snack;
+    if (!f.g.parent) { c.snack = null; c.munch = 0; c.wait = Math.min(c.wait, 1); return; }   // flower was cleaned up
+    if (c.munch > 0) return;
+    const p = c.g.position, dx = f.g.position.x - p.x, dz = f.g.position.z - p.z, d = Math.hypot(dx, dz) || 1;
+    if (c.wait > 0) {   // arrived (or gave up walking): start nibbling if close enough, else forget it
+      if (d < 1.1) {
+        c.munch = .001; c.wait = 99; c.heading = Math.atan2(dx, dz);
+        if (Math.hypot(player.position.x - p.x, player.position.z - p.z) < 20) reactToast(`${c.name} is nibbling your flowers!`, 'flower');
+      } else { f.taken = null; c.snack = null; }
+    } else c.target.set(f.g.position.x - dx / d * .45, 0, f.g.position.z - dz / d * .45);
+    return;
+  }
+  c.sniff = (c.sniff || 0) - dt;
+  if (c.sniff > 0) return;
+  c.sniff = .7;
+  let best = null, bd = 11;
+  for (const f of flowers) {
+    if (f.sp || f.taken || !f.done || f.g.position.y > .3) continue;
+    const d = Math.hypot(f.g.position.x - c.g.position.x, f.g.position.z - c.g.position.z);
+    if (d < bd) { bd = d; best = f; }
+  }
+  if (!best) return;
+  c.snack = best; best.taken = c; c.munch = 0; c.wait = 0;
+  c.target = best.g.position.clone().setY(0);
+}
+function munchSnack(c, dt) {
+  const f = c.snack;
+  c.munch += dt;
+  const k = Math.min(1, c.munch / 1.8);
+  f.g.scale.setScalar(Math.max(.001, f.s * (1 - k)));
+  if (Math.random() < dt * 8) emit({ pos: f.g.position.clone().setY(.4), vel: new THREE.Vector3(rr(-.8, .8), rr(.5, 1.5), rr(-.8, .8)), life: .7, size: .18, color: rpick(PASTELS) });
+  if (k < 1) return;
+  scene.remove(f.g); flowers.splice(flowers.indexOf(f), 1);
+  c.snack = null; c.munch = 0; c.wait = rr(1, 3);
+  makeHappy(c);
+}
+// dragons near a fresh rainbow hop onto its foot and fly along the arc to the other end
+function startRainbowRides() {
+  if (!rainbow) return;
+  const rp = rainbow.g.position;
+  let n = 0;
+  const riders = creatures.filter(c => c.type === 'dragon' && !c.ride && c.lev <= 0 && Math.hypot(c.g.position.x - rp.x, c.g.position.z - rp.z) < 40);
+  riders.forEach(c => c.ride = { rb: rainbow, t: -.4 - n++ * .7, dir: Math.random() < .5 ? 1 : -1 });
+  if (riders.length && Math.hypot(player.position.x - rp.x, player.position.z - rp.z) < 45)
+    setTimeout(() => reactToast(riders.length === 1 ? `${riders[0].name} flies along the rainbow!` : `${riders.map(c => c.name).join(' and ').replace(/ and (?=.* and )/g, ', ')} fly along the rainbow!`, 'rainbow'), 1600);
+}
+const rideV = new THREE.Vector3();
+function rainbowPoint(rb, a, out) {
+  return out.set(Math.cos(a) * 8.3, Math.sin(a) * 8.3 + .8, 0).applyMatrix4(rb.g.matrixWorld);
+}
+// returns true while the dragon is busy riding (the normal walk is skipped)
+function rideRainbow(c, dt, time) {
+  const r = c.ride, p = c.g.position;
+  if (rainbow !== r.rb) { c.ride = null; return false; }   // the rainbow faded or a new one replaced it
+  r.t += dt;
+  if (r.t < 0) return false;
+  const foot = r.dir > 0 ? 0 : Math.PI;
+  if (!r.from) { r.from = p.clone(); r.upT = clamp(rainbowPoint(r.rb, foot, rideV).distanceTo(p) / 7, 1, 4.5); }
+  const ARC = 4.5;
+  let y, prevX = p.x, prevZ = p.z;
+  if (r.t < r.upT) {   // hop over to the foot of the rainbow
+    const k = r.t / r.upT, e = k * k * (3 - 2 * k);
+    rainbowPoint(r.rb, foot, rideV);
+    p.x = lerp(r.from.x, rideV.x, e); p.z = lerp(r.from.z, rideV.z, e);
+    y = lerp(c.baseY, rideV.y, e) + Math.sin(k * Math.PI) * 2;
+  } else if (r.t < r.upT + ARC) {   // glide along the arc
+    const k = (r.t - r.upT) / ARC, e = k * k * (3 - 2 * k);
+    rainbowPoint(r.rb, r.dir > 0 ? e * Math.PI : (1 - e) * Math.PI, rideV);
+    p.x = rideV.x; p.z = rideV.z; y = rideV.y;
+    if (Math.random() < dt * 30) emit({ pos: creatureCenter(c, tmpV), vel: new THREE.Vector3(rr(-.4, .4), rr(-.6, .2), rr(-.4, .4)), life: 1.1, size: rr(.25, .45), color: rpick(RAINBOW_COLS), tex: starTex, spin: 3 });
+  } else {   // landed at the other end
+    c.ride = null;
+    c.target = randomTarget(c); c.wait = 0;
+    makeHappy(c);
+    return true;
+  }
+  c.body.position.y = Math.max(c.baseY, y - p.y);
+  const vx = p.x - prevX, vz = p.z - prevZ;
+  if (vx * vx + vz * vz > 1e-6) c.heading = Math.atan2(vx, vz);
+  c.g.rotation.y = angleLerp(c.g.rotation.y, c.heading, damp(8, dt));
+  c.body.rotation.z = Math.sin(time * 3 + c.phase) * .15;
+  const flap = .55 + Math.sin(time * 18 + c.phase) * .6;
+  c.wings.forEach(w => w.pv.rotation.y = w.sx * flap);
+  return true;
+}
+
 function updateCreature(c, dt, time) {
   const p = c.g.position;
   c.phase += dt;
   if (c.lev > 0) {
+    c.ride = null;
     c.lev -= dt;
     c.body.position.y = lerp(c.body.position.y, c.baseY + 2.6 + Math.sin(time * 3) * .3, damp(3, dt));
     c.g.rotation.y += dt * 3;
@@ -2208,6 +2305,7 @@ function updateCreature(c, dt, time) {
     if (c.lev <= 0) makeHappy(c);
     return;
   }
+  if (c.ride && rideRainbow(c, dt, time)) return;
   if (c.happy > 0) {
     c.happy -= dt;
     c.g.rotation.y += dt * 9 * Math.min(1, c.happy);
@@ -2215,11 +2313,16 @@ function updateCreature(c, dt, time) {
     if (Math.random() < dt * 5) hearts(creatureCenter(c, new THREE.Vector3()).add(new THREE.Vector3(0, .5, 0)), 1);
     return;
   }
+  if (c.type === 'bunny') sniffSnack(c, dt);
+  if (c.type === 'spirit') {   // stronger in the dark: faster, higher and brighter
+    c.speed = 1.6 + night * 1.2; c.baseY = 1.6 + night * .6;
+  }
   let moving = false;
   const toPlayer = Math.hypot(player.position.x - p.x, player.position.z - p.z);
   if (c.wait > 0) {
     c.wait -= dt;
-    if (toPlayer < 5) c.heading = Math.atan2(player.position.x - p.x, player.position.z - p.z);
+    if (c.munch > 0) munchSnack(c, dt);
+    else if (toPlayer < 5) c.heading = Math.atan2(player.position.x - p.x, player.position.z - p.z);
     if (c.wait <= 0) c.target = randomTarget(c);
   } else {
     const dx = c.target.x - p.x, dz = c.target.z - p.z, d = Math.hypot(dx, dz);
@@ -2239,10 +2342,18 @@ function updateCreature(c, dt, time) {
     c.body.position.y = moving ? Math.abs(Math.sin(c.phase * 4.5)) * .45 : lerp(c.body.position.y, 0, damp(10, dt));
     c.ears.forEach((e, i) => e.rotation.x = Math.sin(time * 3 + i + c.phase) * .15 - (moving ? .25 : 0));
     c.body.rotation.x = moving ? Math.sin(c.phase * 9) * .08 : 0;
+    if (c.munch > 0) {   // nom nom: head down, quick nibbles, wiggly ears
+      c.body.rotation.x = .28 + Math.abs(Math.sin(time * 16)) * .1;
+      c.ears.forEach((e, i) => e.rotation.x = .3 + Math.sin(time * 9 + i) * .2);
+    }
   } else if (c.type === 'spirit') {
     c.body.position.y = lerp(c.body.position.y, c.baseY + Math.sin(time * 2 + c.phase) * .25, damp(5, dt));
-    c.orbit.rotation.y += dt * 2.5;
+    c.orbit.rotation.y += dt * (2.5 + night * 3);
     c.body.rotation.z = Math.sin(time * 1.5 + c.phase) * .1;
+    c.body.scale.setScalar(1 + night * .2);
+    c.mat.emissiveIntensity = .45 + night * .9;
+    c.halo.material.opacity = .5 + night * .4; c.halo.scale.setScalar(2.2 + night * 1.8);
+    if (Math.random() < dt * night * 8) emit({ pos: creatureCenter(c, tmpV).add(new THREE.Vector3(rr(-.6, .6), rr(-.4, .6), rr(-.6, .6))), vel: new THREE.Vector3(0, rr(.2, .6), 0), life: 1.4, size: rr(.15, .3), color: rpick([c.color, '#ffffff', '#fff7b0']), tex: starTex, spin: 2 });
     if (Math.random() < dt * 3) emit({ pos: creatureCenter(c, tmpV), vel: new THREE.Vector3(rr(-.2, .2), rr(-.6, -.2), rr(-.2, .2)), life: 1.2, size: .18, color: c.color });
   } else if (c.type === 'corgi') {
     c.body.position.y = moving ? Math.abs(Math.sin(c.phase * 12)) * .06 : lerp(c.body.position.y, 0, damp(10, dt));
@@ -2395,7 +2506,7 @@ function spawnFlower(x, z, delay, sp = null, y = 0) {
     ball(centerMat, 0, .59, 0, .08, .05, .08, g, false);
   }
   const leaf = ball(stemMat2, .08, .2, 0, .1, .03, .05, g, false); leaf.rotation.z = .5;
-  flowers.push({ g, t: -delay, s: sp ? 1.8 : rr(.9, 1.5), done: false });
+  flowers.push({ g, t: -delay, s: sp ? 1.8 : rr(.9, 1.5), done: false, sp: !!sp });
   if (flowers.length > 280) { const old = flowers.shift(); scene.remove(old.g); }
 }
 function castFlowers() {
@@ -2524,6 +2635,7 @@ function castRainbow(at = null) {
   rainbow = { g, mats, t: 0, life: 11 };
   if (!at) toast('What a beautiful rainbow!', 3300, 'rainbow');
   sfx('rainbow');
+  startRainbowRides();
 }
 function updateRainbow(dt) {
   if (!rainbow) return;
@@ -2565,6 +2677,8 @@ function castNight() {
   toast(nightTarget ? 'The stars are coming out… sweet dreams!' : `Good morning, ${curIsle ? curIsle.name : 'Starvale'}!`, 3300, nightTarget ? 'moon' : 'sparkle');
   sfx(nightTarget ? 'night' : 'day');
   burst(wandWorld().add(new THREE.Vector3(0, 1, 0)), 30, { speed: 6, colors: nightTarget ? ['#c9a0ff', '#8fa0ff', '#ffffff'] : ['#ffe066', '#ffb38a', '#ffffff'], size: .5, life: 1.5, gravity: -.5 });
+  if (nightTarget && creatures.some(c => c.type === 'spirit' && c.g.position.distanceTo(player.position) < 30))
+    setTimeout(() => reactToast('The spirits glow brighter in the dark!', 'moon'), 2600);
 }
 const C = s => new THREE.Color(s);
 const DAY = { top: C('#8ecbff'), bottom: C('#ffe3f1'), fog: C('#eef3ff'), hemiSky: C('#ffffff'), hemiGround: C('#d3ddff'), sun: C('#fff0d8') };
