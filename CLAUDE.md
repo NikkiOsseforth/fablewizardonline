@@ -28,12 +28,14 @@ Lees niet het hele bestand (ruim 5000 regels). Het script is opgedeeld in sectie
 | `quests, stars & star shop` | `QUESTS`, `SHOP`, opslaan (`loadSave`, `storeSave`), `startQuest`, `questEvent` |
 | `daily things` | `DAILY_TASKS`, cadeautje, reeks, `WISPS` |
 | `potions & brewing` | `INGREDIENTS`, `RECIPES`, brouwen, drankeffecten |
-| `multiplayer` | `SUPABASE`, aanwezigheid, andere spelers tekenen, spreuken doorsturen |
+| `multiplayer` | `SUPABASE`, aanwezigheid, andere spelers tekenen, spreuken doorsturen, spreukcombo's (`COMBOS`, `comboCast`, `starShower`) |
 | `accounts & cloud saves` | account met naam + wachtwoord (Supabase Auth), onthouden login (`starvale-auth`), opslag online in tabel `starvale_saves` (`acctPick`, `acctStore`, `acctFlush`) |
 | `town hall` | het gemeentehuis (`TOWN`, `townHall`), projecten (`TOWN_PROJECTS`), meubels (`FURNI`), gedeelde staat (`townItems`, `townDon`, Supabase-tabel `starvale_town`), versieren (`deco`, `startDeco`), eigen kamer (`ROOM`, `ROOM_UPS`, `buildRoomShell`) |
 | `christmas` | kerstboom, lichtjes, sneeuwpop, sneeuw |
 | `pond life & fishing` | golfjes, `FISH`, het vis-spelletje, visboek |
 | `far islands & the Star Portal` | `ISLES` (Frostvale, Emberpeak, Glowshroom Wood), `FOLK` (bewoners) en hun `QUESTS`, `makePenguin`/`makeLizard`/`makeShroom`, lantaarns, `PORTALS`, `travelTo`, `checkIsleUnlocks`, `updateFar` |
+| `weather` | regen, sneeuw, mist (`wxAt`, `wxHere`, `updateWeather`); het weer volgt de klok, zodat iedereen hetzelfde ziet. De toestand staat in `wx` (bij de spreuken) en kleurt de lucht in `applyTime` |
+| `emotes & sitting` | `EMOTES`, `startEmote`, `actPose`/`actFx`, zitplekken (`nearestSeat`, `sitDown`); een emote of zitten staat in `pState.act` en gaat mee in de aanwezigheid (`a`) |
 | `loop` | `frame()`: roept alle `update…`-functies aan |
 
 De HTML en CSS van de interface staan bovenaan het bestand, vóór het script.
@@ -46,6 +48,7 @@ De HTML en CSS van de interface staan bovenaan het bestand, vóór het script.
 - **Spreuk, quest, recept, vis, winkelartikel, dagtaak:** voeg een regel toe aan de bijbehorende lijst (`SPELLS`, `QUESTS`, `RECIPES`, `FISH`, `SHOP`, `DAILY_TASKS`) en volg het patroon van de bestaande regels.
 - **Melding of geluid:** `toast(tekst, ms, icoon)` en `sfx(naam)`.
 - **Iets op een ander eiland:** de verre eilanden staan ver weg in dezelfde wereld (`I.x`, `I.z`; de mist verbergt ze voor elkaar). Bouw er in hun eigen blok in `far islands` met `fr`/`FR`/`fpick` (eigen startwaarde) en houd plekken vrij met `block`/`freeSpot`. Een nieuwe bewoner krijgt een regel in `FOLK` en missies in `QUESTS`; een eiland gaat open als alle missies van het vorige klaar zijn.
+- **Zitplek:** `addSeat(groep, [[x, y, z, kijkrichting]], tikbareMeshes)` in de eigen ruimte van die groep; een meubel in `FURNI` krijgt een veld `seats`.
 - **Tikbaar oppervlak:** `onTap` raakt alleen de vlakken in zijn eigen lijst (eiland, vloeren, zwevende eilanden). Voeg een nieuwe loopvloer daar toe.
 
 ## Afspraken

@@ -229,6 +229,12 @@
     .card h1{font-size:42px}
   }
   /* fishing */
+  /* emotes */
+  #emoteBar{position:absolute;left:50%;bottom:136px;transform:translateX(-50%);display:none;gap:6px;padding:8px 10px 10px;max-width:calc(100vw - 16px);flex-wrap:wrap;justify-content:center}
+  #emoteBar.on{display:flex}
+  .spell.emo{width:68px;height:72px}
+  .spell.emo .ico{width:30px;height:30px}
+  @media (max-width:640px){ #emoteBar{bottom:178px} .spell.emo{width:54px;height:58px} .spell.emo .nm{display:none} }
   #fishing{position:absolute;left:50%;bottom:136px;transform:translateX(-50%);padding:10px 16px 14px;display:none;flex-direction:column;align-items:center;gap:8px;width:min(330px,calc(100vw - 24px))}
   #fishMsg{font-size:16px;font-weight:700;text-align:center;display:flex;align-items:center;gap:6px}
   #fishMsg .ic{width:20px;height:20px}
@@ -305,6 +311,7 @@
     <div class="row" id="isleRow" style="display:none"><span class="ic sm" data-ic="portal"></span> <b id="isleNow">Starvale</b></div>
     <div class="row"><span class="ic sm" data-ic="heart"></span> Friends: <b id="friends">0 / 10</b></div>
     <div class="row"><span class="ic sm" data-ic="star"></span> Stars: <b id="stars">0</b></div>
+    <div class="row" id="wxRow"><span class="ic sm" id="wxIc"></span> Weather: <b id="wxNow">Sunny</b></div>
     <div class="row" id="streakRow" style="display:none"><span class="ic sm" data-ic="flame"></span> Streak: <b id="streak">1 day</b></div>
     <div class="row" id="ingRow"></div>
     <div class="row" id="fxRow"></div>
@@ -318,6 +325,7 @@
     <button class="roundbtn" id="shopBtn" title="Star Shop (B)"><span class="ic" data-ic="bag"></span></button>
     <button class="roundbtn" id="muteBtn" title="Sound (M)"><span class="ic" data-ic="soundOn"></span></button>
     <button class="roundbtn" id="fishBookBtn" title="Collection Book (F)"><span class="ic" data-ic="book"></span></button>
+    <button class="roundbtn" id="emoteBtn" title="Emotes &amp; sit (G)"><span class="ic" data-ic="smile"></span></button>
     <button class="roundbtn" id="helpBtn" title="Show/hide keys (H)"><span class="ic" data-ic="help"></span></button>
   </div>
   <div id="potionBelt" class="panel"></div>
@@ -326,6 +334,7 @@
   <div id="hint" class="panel"></div>
   <div id="keys" class="panel">
     <kbd>E</kbd><span>pet · talk · wave · use</span>
+    <kbd>G</kbd><span>emotes · sit down</span>
     <kbd>Q</kbd><span>drink a potion</span>
     <kbd>B</kbd><span>Star Shop</span>
     <kbd>F</kbd><span>Collection Book</span>
@@ -333,6 +342,7 @@
     <kbd>H</kbd><span>hide these keys</span>
   </div>
   <div id="spellbar" class="panel"></div>
+  <div id="emoteBar" class="panel"></div>
   <div id="fishing" class="panel">
     <div id="fishMsg"></div>
     <div id="fishBar"><div id="fishZone"></div><div id="fishMark"></div></div>
@@ -509,6 +519,14 @@ ICON.petBunny = svg('<ellipse cx="9" cy="6" rx="1.8" ry="4.2" fill="#ffd1f0" str
 ICON.petSpirit = svg('<path d="M12 3.5c3.8 0 6.5 3 6.5 7.2 0 4.6-3 8.3-6.5 9.8-3.5-1.5-6.5-5.2-6.5-9.8 0-4.2 2.7-7.2 6.5-7.2z" fill="#e2d0ff" stroke="#9b6bff" stroke-width="1.3"/><circle cx="9.8" cy="11" r="1" fill="#2b1d3a"/><circle cx="14.2" cy="11" r="1" fill="#2b1d3a"/><path d="M10.6 13.6q1.4 1.2 2.8 0" stroke="#2b1d3a" stroke-width="1"/><circle cx="20" cy="5" r="1" fill="#ffd84d"/><circle cx="4" cy="7" r=".8" fill="#ffd84d"/>');
 ICON.petDragon = svg('<path d="M4 10l4.5 1.5L7 15zM20 10l-4.5 1.5L17 15z" fill="#fff3c4" stroke="#e0a800" stroke-width="1"/><circle cx="12" cy="13" r="6.4" fill="#9fdcff" stroke="#4a9fd8" stroke-width="1.3"/><ellipse cx="12" cy="15.6" rx="3" ry="2.2" fill="#fff3c4"/><path d="M9 7.4l-.6-2.6 2 1.6M15 7.4l.6-2.6-2 1.6" fill="#fff3c4" stroke="#e0a800" stroke-width=".9"/><circle cx="9.8" cy="12" r="1" fill="#2b1d3a"/><circle cx="14.2" cy="12" r="1" fill="#2b1d3a"/>');
 ICON.book = svg('<path d="M12 6.2C9.6 4.6 6.6 4.3 3.6 5v13.4c3-.7 6-.4 8.4 1.2 2.4-1.6 5.4-1.9 8.4-1.2V5c-3-.7-6-.4-8.4 1.2z" fill="#ffe3f0" stroke="#d96aa0" stroke-width="1.4"/><path d="M12 6.2v13.4" stroke="#d96aa0" stroke-width="1.3"/><path d="M6 9.2c1.5-.3 2.9-.1 4 .5M6 12.2c1.5-.3 2.9-.1 4 .5" stroke="#e8a5c4" stroke-width="1.1"/><path d="M16.6 8.6l.7 1.4 1.5.2-1.1 1 .3 1.5-1.4-.7-1.3.7.2-1.5-1.1-1 1.6-.2z" fill="#ffd84d" stroke="#e0a800" stroke-width=".8"/>');
+ICON.smile = svg('<circle cx="12" cy="12" r="8.6" fill="#fff09a" stroke="#e0a800" stroke-width="1.4"/><path d="M8.6 10.2v.6M15.4 10.2v.6" stroke="#5a3f8f" stroke-width="1.8"/><path d="M8.4 13.6c1.9 2.6 5.3 2.6 7.2 0" stroke="#5a3f8f" stroke-width="1.5"/><ellipse cx="7" cy="13" rx="1.3" ry=".8" fill="#ffb3d9"/><ellipse cx="17" cy="13" rx="1.3" ry=".8" fill="#ffb3d9"/>');
+ICON.note = svg('<path d="M9.5 17V6.2l9-2v10.6" stroke="#7b5cff" stroke-width="1.6"/><path d="M9.5 9l9-2" stroke="#7b5cff" stroke-width="1.6"/><ellipse cx="7.4" cy="17.4" rx="2.6" ry="2.1" fill="#c9a0ff" stroke="#7b5cff" stroke-width="1.3"/><ellipse cx="16.4" cy="15.2" rx="2.6" ry="2.1" fill="#ffb3d9" stroke="#d96aa0" stroke-width="1.3"/>');
+ICON.zzz = svg('<path d="M4 9.5h5l-5 6h5" stroke="#8fa0ff" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 5h4l-4 4.6h4" stroke="#b48cff" stroke-width="1.6" stroke-linejoin="round"/><path d="M17 13h3l-3 3.4h3" stroke="#c9a0ff" stroke-width="1.4" stroke-linejoin="round"/>');
+ICON.chair = svg('<rect x="5" y="4" width="14" height="9" rx="3" fill="#ffb3d9" stroke="#d96aa0" stroke-width="1.4"/><rect x="3.5" y="11.5" width="17" height="5" rx="2.2" fill="#ffd1f0" stroke="#d96aa0" stroke-width="1.4"/><path d="M6.5 16.5v3.2M17.5 16.5v3.2" stroke="#a8714a" stroke-width="1.8"/>');
+const cloudPath = '<path d="M7 16.2a3.9 3.9 0 0 1-.4-7.8 5.2 5.2 0 0 1 10-.6 3.7 3.7 0 0 1 .8 8.4z" fill="#eef3ff" stroke="#8fa6d8" stroke-width="1.4"/>';
+ICON.rain = svg(cloudPath.replace('16.2', '13.6').replace('8.4z', '5.8z') + '<path d="M8 16.5l-1 2.6M12 16.5l-1 2.6M16 16.5l-1 2.6" stroke="#5cb8ff" stroke-width="1.7"/>');
+ICON.snow = svg('<g stroke="#7fc8ff" stroke-width="1.7"><path d="M12 3.5v17M4.6 7.7l14.8 8.6M4.6 16.3l14.8-8.6"/><path d="M10 5.2l2 1.8 2-1.8M10 18.8l2-1.8 2 1.8" stroke-width="1.3"/></g><circle cx="12" cy="12" r="2" fill="#ffffff" stroke="#7fc8ff" stroke-width="1.2"/>');
+ICON.fog = svg('<g stroke="#a7b3d6" stroke-width="1.8"><path d="M4 8.5h11.5"/><path d="M7 12h13"/><path d="M4 15.5h10"/><path d="M8.5 19h8"/></g>');
 const iconHTML = (name, cls = 'ic') => `<span class="${cls}">${ICON[name] || ''}</span>`;
 document.querySelectorAll('[data-ic]').forEach(el => { el.innerHTML = ICON[el.dataset.ic] || ''; });
 
@@ -612,6 +630,21 @@ const starTex = canvasTex(64, 64, g => {
 // glowing materials that react to day/night
 const glows = [];
 const glow = (mat, day, night) => (glows.push({ mat, day, night }), mat);
+// little music notes and sleepy Z's for the emotes
+const noteTex = canvasTex(64, 64, g => {
+  g.fillStyle = '#fff'; g.strokeStyle = '#fff'; g.lineWidth = 6; g.lineCap = 'round';
+  g.beginPath(); g.ellipse(22, 46, 11, 8, -.4, 0, 6.29); g.fill();
+  g.beginPath(); g.moveTo(31, 44); g.lineTo(31, 10); g.quadraticCurveTo(44, 16, 50, 28); g.stroke();
+});
+const zTex = canvasTex(64, 64, g => {
+  g.strokeStyle = '#fff'; g.lineWidth = 9; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(16, 16); g.lineTo(48, 16); g.lineTo(16, 48); g.lineTo(48, 48); g.stroke();
+});
+// places to sit: { g, spots: [[x, y, z, yaw], ...] } in g's own space. y is where the wizard's feet go,
+// yaw the way the sitter faces (0 = g's +z). `hit` are the meshes you can tap (default: all of g).
+// Furniture in the Town Hall and your room brings its own (FURNI seats).
+const SEATS = [];
+const addSeat = (g, spots, hit = [g]) => SEATS.push({ g, spots, hit });
 
 // ================= sky, lights =================
 const skyU = { top: { value: new THREE.Color('#8ecbff') }, bottom: { value: new THREE.Color('#ffd9f2') } };
@@ -1379,6 +1412,7 @@ function gameTex() {
   for (const sx of [-1, 1]) mk(Box(.12, 1.1, .17), toon('#e53935'), sx * .28, 1.25, .4, ch);
   mk(Box(.5, .25, .2), toon('#e53935'), 0, 1.9, .4, ch);
   h.circ(-1.2, -1.85, .5);
+  addSeat(ch, [[0, .6, -.12, Math.PI]]);
   // server rack
   mk(Box(1.1, 2.6, 1.1), toon('#1a1d27'), 3.6, 1.3, -3.1, G);
   for (let i = 0; i < 8; i++) mk(Box(1, .02, .02), toon('#3b4152'), 3.6, .3 + i * .3, -2.54, G, false);
@@ -1386,12 +1420,14 @@ function gameTex() {
   for (let i = 0; i < 8; i++) for (let k = 0; k < 5; k++) leds.push(mk(Box(.06, .05, .02), ledMats[(i + k) % 3], 3.3 + k * .14, .42 + i * .3, -2.53, G, false));
   h.box(3.05, 4.2, -3.7, -2.55);
   // sofa + game controller
+  const sofaN = G.children.length;
   const sofa = toon('#3d5a80');
   mk(Box(1.1, .5, 2.6), sofa, -3.6, .35, 1, G); mk(Box(.3, .9, 2.6), sofa, -4.0, .9, 1, G);
   for (const s of [-1, 1]) mk(Box(1.1, .75, .3), sofa, -3.6, .5, 1 + s * 1.3, G);
   for (const s of [-1, 1]) mk(Box(.9, .15, 1.05), toon('#5c7cab'), -3.5, .67, 1 + s * .55, G);
   mk(Box(.35, .07, .2), toon('#111318'), -3.4, .78, .6, G);
   h.box(-4.15, -3.05, -.45, 2.45);
+  addSeat(G, [[-3.35, .65, .45, Math.PI / 2], [-3.35, .65, 1.55, Math.PI / 2]], G.children.slice(sofaN));
   // TV + console
   mk(Box(.6, .6, 2), dark, 3.85, .3, 1.2, G);
   mk(Box(.4, .08, .5), toon('#f2f4f7'), 3.8, .64, .7, G);
@@ -1629,10 +1665,12 @@ function gameTex() {
   }
   h.box(-4.65, -3.95, .5, 2.7);
   // red sofa with heart cushions
+  const sofaN = G.children.length;
   mk(Box(1.1, .5, 2.4), redM[3], 3.9, .35, 1, G); mk(Box(.3, .9, 2.4), redM[3], 4.3, .9, 1, G);
   for (const s of [-1, 1]) mk(Box(1.1, .75, .3), redM[3], 3.9, .5, 1 + s * 1.2, G);
   for (const z of [.5, 1.5]) { const c = mk(heartGeo(), redM[4], 4.05, 1.05, z, G); c.scale.setScalar(.2); c.rotation.y = -Math.PI / 2; }
   h.box(3.35, 4.65, -.35, 2.35);
+  addSeat(G, [[3.65, .5, .45, -Math.PI / 2], [3.65, .5, 1.55, -Math.PI / 2]], G.children.slice(sofaN));
   // round table with apples, teapot and roses
   mk(new CylGeo(.8, .8, .1, 24), redM[1], 2.5, 1, -2.4, G);
   mk(new CylGeo(.1, .25, 1, 10), redM[5], 2.5, .5, -2.4, G);
@@ -1864,6 +1902,7 @@ function makeWizard(L) {
 }
 // shared walk / idle animation for player and NPCs
 function animateWizard(w, walkT, k, time, grounded) {
+  w.root.position.y = 0; w.body.rotation.x = w.body.rotation.y = 0; w.wandArm.rotation.z = 0;   // emotes (actPose) bend these
   w.body.position.y = grounded ? Math.abs(Math.sin(walkT)) * .12 * k : 0;
   w.body.rotation.z = Math.sin(walkT) * .06 * k;
   w.hatTip.rotation.z = .35 + Math.sin(time * 3) * .05 + Math.sin(walkT * 2) * .12 * k;
@@ -2430,6 +2469,7 @@ function castSpell(i) {
   const floated = s.id === 'float' && !nearSkyIsle(player.position, 22) && player.position.y < .3 ? nearestCreature(16) : null;
   ({ star: castStar, flower: castFlowers, float: () => floated ? castFloat(floated) : castSelfFloat(), butterfly: () => castButterflies(), rainbow: () => castRainbow(), night: castNight, fireworks: () => castFireworks() })[s.id]();
   mpCast(s.id, floated);
+  comboCast(ME, s.id, player.position.x, player.position.z);
   questEvent('spell', s.id); dailyEvent('cast', s.id);
   setTimeout(() => burst(wandWorld(), 10, { speed: 2.5, colors: ['#ffd1f0', '#fff09a', '#c9a0ff'], size: .3, life: .6, gravity: 0 }), 120);
 }
@@ -2622,28 +2662,44 @@ function castRainbow(at = null) {
       return;
     }
   }
-  if (rainbow) scene.remove(rainbow.g);
-  const g = new THREE.Group(); scene.add(g);
-  const mats = RAINBOW_COLS.map((col, i) => {
-    const m = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
-    g.add(new THREE.Mesh(new TorGeo(10 - i * .55, .29, 8, 72, Math.PI), m)); return m;
-  });
   const f = at ? new THREE.Vector3(Math.sin(at.h), 0, Math.cos(at.h)) : facingDir();
-  const ox = at ? at.x : player.position.x, oz = at ? at.z : player.position.z;
-  g.position.set(ox + f.x * 15, -.5, oz + f.z * 15);
-  g.rotation.y = Math.atan2(f.x, f.z);
-  rainbow = { g, mats, t: 0, life: 11 };
+  spawnRainbow(at ? at.x : player.position.x, at ? at.z : player.position.z, f);
   if (!at) toast('What a beautiful rainbow!', 3300, 'rainbow');
   sfx('rainbow');
+}
+// the arc itself: `dist` ahead of (ox, oz) in direction f. Also used for the rainbow after rain (weather).
+function rainbowArc(g, rad, cols, k) {
+  return cols.map((col, i) => {
+    const m = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+    m.userData.k = k;
+    g.add(new THREE.Mesh(new TorGeo(rad - i * .55, .29, 8, 72, Math.PI), m)); return m;
+  });
+}
+function spawnRainbow(ox, oz, f, { dist = 15, size = 1, life = 11 } = {}) {
+  if (rainbow) scene.remove(rainbow.g);
+  const g = new THREE.Group(); scene.add(g);
+  const mats = rainbowArc(g, 10, RAINBOW_COLS, 1);
+  g.position.set(ox + f.x * dist, -.5, oz + f.z * dist);
+  g.rotation.y = Math.atan2(f.x, f.z);
+  rainbow = { g, mats, t: 0, life, size };
   startRainbowRides();
+}
+// two rainbows at once (a spell combo): a second, paler arc outside the first, with the colours the other way round
+function doubleRainbow() {
+  const r = rainbow;
+  if (!r || r.double) return false;
+  r.double = true;
+  r.mats.push(...rainbowArc(r.g, 14.4, RAINBOW_COLS.slice().reverse(), .55));
+  r.life = Math.max(r.life, r.t + 14);
+  return true;
 }
 function updateRainbow(dt) {
   if (!rainbow) return;
   const r = rainbow; r.t += dt;
   const k = Math.min(1, r.t / 1.4);
-  r.g.scale.setScalar(Math.max(.001, easeOutBack(k)));
+  r.g.scale.setScalar(Math.max(.001, easeOutBack(k)) * r.size);
   const op = Math.min(1, r.t / 1) * (r.t > r.life - 2 ? Math.max(0, (r.life - r.t) / 2) : 1) * .8;
-  r.mats.forEach(m => m.opacity = op);
+  r.mats.forEach(m => m.opacity = op * m.userData.k);
   if (Math.random() < dt * 14) {
     const a = Math.random() * Math.PI, rad = rr(6.5, 10);
     const p = new THREE.Vector3(Math.cos(a) * rad, Math.sin(a) * rad, 0).applyMatrix4(r.g.matrixWorld);
@@ -2654,6 +2710,8 @@ function updateRainbow(dt) {
 
 // 6. day & night
 let night = 0, nightTarget = 0;
+// how much rain, snow and fog there is right now (0..1 each, eased in the "weather" section)
+const wx = { rain: 0, snow: 0, fog: 0, now: 'clear' };
 // when day/night last changed (ms since epoch). Shared in presence: the newest change wins, so newcomers pick it up.
 let nightAt = 0;
 try { const t = JSON.parse(localStorage.getItem('starvale-time') || 'null'); if (t && typeof t.at === 'number') { nightTarget = night = t.t ? 1 : 0; nightAt = t.at; } } catch (e) { /* ignore */ }
@@ -2699,7 +2757,21 @@ function applyTime() {
   for (const g of glows) g.mat.emissiveIntensity = lerp(g.day, g.night, n);
   lampLight.intensity = lerp(10, 22, n);
   for (const h of friendHouses) for (const l of h.lights) l.light.intensity = lerp(l.day, l.night, n);
+  // weather: rain greys the sky and dims the sun, fog pulls the mist in close
+  const grey = wx.rain * .6 + wx.snow * .25 + wx.fog * .35;
+  if (grey > .001) {
+    wxC.copy(WX_GREY.top).lerp(WX_GREY.ntop, n); skyU.top.value.lerp(wxC, grey);
+    wxC.copy(WX_GREY.bottom).lerp(WX_GREY.nbottom, n); skyU.bottom.value.lerp(wxC, grey * .8);
+    wxC.copy(WX_GREY.fog).lerp(WX_GREY.nfog, n); scene.fog.color.lerp(wxC, grey);
+    sun.intensity *= 1 - wx.rain * .5 - wx.fog * .25;
+    hemi.intensity *= 1 - wx.rain * .12;
+    sunSprite.material.opacity *= 1 - Math.min(1, wx.rain + wx.fog) * .85;
+  }
+  scene.fog.near = lerp(70, 4, wx.fog) * (1 - wx.rain * .3);
+  scene.fog.far = lerp(230, 48, wx.fog) * (1 - wx.rain * .25);
 }
+const wxC = new THREE.Color();
+const WX_GREY = { top: C('#aab4cc'), bottom: C('#dfe1ee'), fog: C('#e4e7f2'), ntop: C('#1c1c30'), nbottom: C('#35304a'), nfog: C('#2c2a42') };
 
 // ================= audio =================
 let actx = null, master = null, muted = false;
@@ -2755,6 +2827,8 @@ function sfx(name) {
     case 'catch': seq([659, 784, 1047, 1319, 1568], .07, 'triangle', .1, .3); break;
     case 'warp': tone(220, t, 1.1, 'sine', .09, 1760); tone(330, t + .1, 1, 'triangle', .05, 2640); seq([1047, 1319, 1568, 2093], .12, 'sine', .06, .5); break;
     case 'lantern': seq([784, 1175, 1568], .06, 'sine', .09, .4); tone(392, t, .5, 'triangle', .05, 784); break;
+    case 'dance': seq([523, 659, 784, 659, 880, 784, 1047], .14, 'triangle', .08, .3); break;
+    case 'laugh': for (let i = 0; i < 4; i++) tone(700 - i * 40, t + i * .13, .12, 'triangle', .07, 900 - i * 40); break;
   }
 }
 // soft music-box melody
@@ -3005,6 +3079,7 @@ const scopeG = new THREE.Group(); viewIsle.g.add(scopeG);
   seat.position.set(-1.6, .8, .6); seat.rotation.y = .9; viewIsle.g.add(seat);
   mk(Box(1.8, .12, .55), wood, 0, .5, 0, seat); mk(Box(1.8, .5, .1), wood, 0, .85, -.25, seat);
   for (const sx of [-1, 1]) mk(Box(.12, .5, .5), wood, sx * .75, .25, 0, seat, false);
+  addSeat(seat, [[-.45, .47, .22, 0], [.45, .47, .22, 0]]);
   scopeG.position.set(1.4, .8, .4);
   for (let k = 0; k < 3; k++) { const leg = mk(new CylGeo(.04, .04, 1.3, 6), wood, Math.cos(k * 2.09) * .22, .6, Math.sin(k * 2.09) * .22, scopeG, false); leg.rotation.set(Math.sin(k * 2.09) * .3, 0, -Math.cos(k * 2.09) * .3); }
   const tube = mk(new CylGeo(.11, .16, 1.1, 12), brass, 0, 1.35, 0, scopeG); tube.rotation.x = 1.1;
@@ -3221,6 +3296,9 @@ addEventListener('keydown', e => {
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
   if (e.repeat) return;
   const n = parseInt(e.key, 10);
+  if (emoteOpen() && n >= 1 && n <= EMOTES.length) { startEmote(EMOTES[n - 1].id); return; }   // the emote row is open: numbers pick emotes
+  if (e.code === 'Escape' && emoteOpen()) closeEmotes();
+  if (e.code === 'KeyG') toggleEmotes();
   if (n >= 1 && n <= SPELLS.length) castSpell(n - 1);
   if (e.code === 'KeyE') tryPet();
   if (e.code === 'Space') jump();
@@ -3282,6 +3360,16 @@ function onTap(x, y) {
   }
   // the Town Hall board, the doors to the rooms and the room book
   if (townTap(ray)) return;
+  // benches, sofas and chairs: sit down (walk there first when it is further away)
+  const sg = seatGroups().filter(q => shownInScene(q.g));
+  const sh = ray.intersectObjects(sg.flatMap(q => q.hit), true);
+  if (sh.length && sh[0].distance < 40) {
+    const owns = h => { for (let o = sh[0].object; o; o = o.parent) if (o === h) return true; return false; };
+    const q = sg.find(q => q.hit.some(owns));
+    const seat = q && nearestSeat(40, sh[0].point, q.g);
+    if (seat && distXZ(seat.pos) < 2.4) { sitDown(seat); return; }
+    if (seat) { endAct(true); moveTarget = seat.pos.clone(); moveTarget.y = 0; petTarget = null; sitTarget = q.g; moveTimer = 0; return; }
+  }
   const nh = ray.intersectObjects(npcs.map(n => n.g), true);
   if (nh.length) {
     const n = npcs.find(q => { let o = nh[0].object; while (o) { if (o === q.g) return true; o = o.parent; } return false; });
@@ -3314,13 +3402,15 @@ function onTap(x, y) {
 }
 const distXZ = p => Math.hypot(p.x - player.position.x, p.z - player.position.z);
 function tryPet() {
+  if (pState.act && (pState.act.id === 'sit' || pState.act.id === 'sleep')) { endAct(true); return; }   // stand up
   const st = nearStation();
   if (st) { openBrew(st); return; }
   if (nearFishSpot()) { startFishing(); return; }
   if (skyInteract()) return;
   if (nearPortal()) { openTravel(); return; }
   if (townAct(townStation())) return;
-  const c = nearestCreature(2.8), n = nearestNPC(2.8), rp = nearestRemote(2.8);
+  const c = nearestCreature(2.8), n = nearestNPC(2.8), rp = nearestRemote(2.8), seat = nearestSeat(1.6);
+  if (seat && [c, n, rp].every(q => !q || distXZ(seat.pos) < distXZ(q.g.position))) { sitDown(seat); return; }
   if (rp && (!c || distXZ(rp.g.position) < distXZ(c.g.position)) && (!n || distXZ(rp.g.position) < distXZ(n.g.position))) { waveAt(rp); return; }
   if (n && (!c || distXZ(n.g.position) < distXZ(c.g.position))) talkTo(n);
   else if (c) petCreature(c);
@@ -3331,12 +3421,14 @@ function petCreature(c) {
   makeHappy(c);
 }
 function jump() {
+  if (pState.act) { endAct(true); return; }
   if (floating()) { if (player.position.y < 12) { pState.vy = Math.max(pState.vy, 5.5); pState.grounded = false; sfx('jump'); } return; }
   if (pState.grounded) { pState.vy = pfx.id === 'frog' ? 10 : 8; pState.grounded = false; sfx(pfx.id === 'frog' ? 'ribbit' : 'jump'); }
 }
 
 // ================= update =================
 function updatePlayer(dt, time) {
+  if (updateAct(dt, time)) return;   // sitting or doing an emote (emotes & sitting)
   let ix = 0, iz = 0;
   if (keys.KeyW || keys.ArrowUp) iz += 1;
   if (keys.KeyS || keys.ArrowDown) iz -= 1;
@@ -3344,13 +3436,15 @@ function updatePlayer(dt, time) {
   if (keys.KeyD || keys.ArrowRight) ix += 1;
   const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw), rx = Math.cos(camYaw), rz = -Math.sin(camYaw);
   let mx = fx * iz + rx * ix, mz = fz * iz + rz * ix;
-  if (ix || iz) { moveTarget = null; petTarget = null; }
+  if (ix || iz) { moveTarget = null; petTarget = null; sitTarget = null; }
   else if (moveTarget) {
     if (petTarget) moveTarget.copy(petTarget.g.position);
     const dx = moveTarget.x - player.position.x, dz = moveTarget.z - player.position.z, d = Math.hypot(dx, dz);
     moveTimer += dt;
-    if (petTarget && d < 2.2) { petCreature(petTarget); moveTarget = petTarget = null; }
-    else if (d < .3 || moveTimer > 10) moveTarget = petTarget = null;
+    const seat = sitTarget && d < 1.6 ? nearestSeat(2.4, player.position, sitTarget) : null;
+    if (seat) sitDown(seat);
+    else if (petTarget && d < 2.2) { petCreature(petTarget); moveTarget = petTarget = null; }
+    else if (d < .3 || moveTimer > 10) moveTarget = petTarget = sitTarget = null;
     else { mx = dx / d; mz = dz / d; }
   }
   const len = Math.hypot(mx, mz);
@@ -3495,7 +3589,10 @@ function updateUI() {
   const station = started ? nearStation() : null;
   const skyH = started && !station ? (nearPortal() ? `${iconHTML('portal')} Press <b>E</b> or tap the portal to travel to other islands` : skyHint()) : null;
   const townH = started && !station ? townHint() : null;
-  if (fishing.state || deco) hintEl.style.display = 'none';
+  const sitting = started && pState.act && (pState.act.id === 'sit' || pState.act.id === 'sleep');
+  const seatNear = started && !pState.act ? nearestSeat(1.6) : null;
+  if (fishing.state || deco || emoteOpen()) hintEl.style.display = 'none';
+  else if (sitting) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('chair')} Press <b>E</b> or move to stand up`; }
   else if (started && nearFishSpot()) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('fish')} Press <b>E</b> or tap the water to go fishing`; }
   else if (townH) { hintEl.style.display = 'block'; hintEl.innerHTML = townH; }
   else if (skyH) { hintEl.style.display = 'block'; hintEl.innerHTML = skyH; }
@@ -3503,6 +3600,7 @@ function updateUI() {
   else if (rpNear && (!near || distXZ(rpNear.g.position) < distXZ(near.g.position))) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('wave')} Press <b>E</b> to wave at <b>${escHTML(who(rpNear))}</b>`; }
   else if (npcNear && (!near || distXZ(npcNear.g.position) < distXZ(near.g.position))) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('wave')} Press <b>E</b> or tap to talk to <b>${npcNear.name}</b>`; }
   else if (near && near.happy <= 0 && near.lev <= 0) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('heart')} Press <b>E</b> or tap to pet <b>${near.name}</b>`; }
+  else if (seatNear) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('chair')} Press <b>E</b> or tap to sit down`; }
   else hintEl.style.display = 'none';
   for (const c of creatures) {
     creatureCenter(c, lv); lv.y += c.type === 'spirit' ? .9 : 1.0;
@@ -3591,7 +3689,7 @@ const BOX_ONLY = [
   { id: 'petspirit', icon: 'petSpirit', name: 'Mini Star Spirit', desc: 'A tiny glowing pet that floats by your side', kind: 'pet', val: 'spirit' },
   { id: 'petdragon', icon: 'petDragon', name: 'Mini Dragon', desc: 'A tiny dragon pet that flaps along with you', kind: 'pet', val: 'dragon' },
 ];
-const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, pet: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null, fish: {}, daily: null, streak: 0, lastDay: null, wisps: {}, isles: [], room: null, book: null, at: 0 };
+const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, pet: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null, fish: {}, daily: null, streak: 0, lastDay: null, wisps: {}, isles: [], room: null, book: null, combos: [], at: 0 };
 const activeQ = {};          // giver name -> { q, progress, ready, target }
 const questItems = [];       // collectible things in the world
 const bugs = [];
@@ -3604,6 +3702,7 @@ function loadSave() {
   if (!Array.isArray(save.owned)) save.owned = [];
   if (!save.book || typeof save.book !== 'object') save.book = {};   // the Collection Book: critters (c) and flowers (fl) you found
   for (const k of ['c', 'fl']) if (!save.book[k] || typeof save.book[k] !== 'object') save.book[k] = {};
+  if (!Array.isArray(save.combos)) save.combos = [];   // spell combos you found with other players
   if (save.room && (!Array.isArray(save.room.items) || !Array.isArray(save.room.up))) save.room = null;   // your own room in the Town Hall
   for (const id of save.owned) { const sp = SPELLS.findIndex(s => s.id === id); if (sp >= 0) unlockSpell(sp); }
   if (!Object.hasOwn(PET_DEFS, save.pet) || !save.owned.includes('pet' + save.pet)) save.pet = null;   // pet ids are 'pet' + type
@@ -4567,7 +4666,7 @@ async function connectSupabase() {
     refreshOnline();
   });
   ch.on('presence', { event: 'join' }, () => { mpLastKey = ''; mpLastSend = 0; townHello(); });   // newcomer: send my position again
-  ch.on('broadcast', { event: 'pos' }, ({ payload: p }) => { if (p && okId(p.id) && known.has(p.id)) upd(p.id, { x: p.x, y: p.y, z: p.z, h: p.h, s: p.s }); });
+  ch.on('broadcast', { event: 'pos' }, ({ payload: p }) => { if (p && okId(p.id) && known.has(p.id)) upd(p.id, { x: p.x, y: p.y, z: p.z, h: p.h, s: p.s, a: p.a }); });
   ch.on('broadcast', { event: 'spell' }, ({ payload: p }) => { if (p && okId(p.id)) onRemoteSpell({ peer: p.id, data: p.d }); });
   ch.on('broadcast', { event: 'wave' }, ({ payload: p }) => { if (p && okId(p.id)) onRemoteWave({ peer: p.id, data: p.d }); });
   ch.on('broadcast', { event: 'town' }, ({ payload: p }) => { if (p && okId(p.id)) onRemoteTown(p.d); });
@@ -4582,7 +4681,7 @@ async function connectSupabase() {
       const meta = { c: p.c, n: p.n, hat: p.hat, robe: p.robe, pet: p.pet, t: p.t, ta: p.ta };
       const mk = JSON.stringify(meta);
       if (mk !== lastMeta) { lastMeta = mk; ch.track({ ...meta, x: p.x, y: p.y, z: p.z, h: p.h }); }
-      return ch.send({ type: 'broadcast', event: 'pos', payload: { id, x: p.x, y: p.y, z: p.z, h: p.h, s: p.s } });
+      return ch.send({ type: 'broadcast', event: 'pos', payload: { id, x: p.x, y: p.y, z: p.z, h: p.h, s: p.s, a: p.a } });
     },
     emit(topic, d) { return ch.send({ type: 'broadcast', event: topic, payload: { id, d } }); },
   };
@@ -4618,7 +4717,7 @@ function sendPresence(force) {
   if (!net || !started) return;
   const now = performance.now();
   if (!force && now - mpLastSend < net.interval) return;
-  const p = { c: playerIsCustom ? '*' : playerName, n: myNick, x: r2(player.position.x), y: r2(player.position.y), z: r2(player.position.z), h: r2(pState.heading), s: r2(Math.hypot(pVel.x, pVel.z)), hat: save.hat || '', robe: save.robe || '', pet: save.pet || '', t: nightTarget, ta: nightAt };
+  const p = { c: playerIsCustom ? '*' : playerName, n: myNick, x: r2(player.position.x), y: r2(player.position.y), z: r2(player.position.z), h: r2(pState.heading), s: r2(Math.hypot(pVel.x, pVel.z)), a: pState.act ? pState.act.id : '', hat: save.hat || '', robe: save.robe || '', pet: save.pet || '', t: nightTarget, ta: nightAt };
   if (playerIsCustom) { const { name, ...look } = myWizard; p.w = playerName; p.L = look; }
   const key = JSON.stringify(p);
   if (!force && key === mpLastKey && now - mpLastSend < 3000) return;   // resend every 3 s as a keepalive
@@ -4651,6 +4750,8 @@ function syncRemote(peer) {
   const nick = cleanNick(pr.n);
   if (nick !== r.nick) { r.nick = nick; setRemoteLabel(r); refreshOnline(); }
   r.tx = num(pr.x); r.ty = clamp(num(pr.y), 0, 30); r.tz = num(pr.z); r.th = num(pr.h); r.s = clamp(num(pr.s), 0, 12);
+  const act = typeof pr.a === 'string' && EMOTE_BY_ID.has(pr.a) ? pr.a : '';   // an emote, or sitting down
+  if (act !== (r.a || '')) { r.a = act; r.aT = 0; }
   const hat = pr.hat === 'rainbow' || Object.hasOwn(LOOKS.hat, pr.hat) ? pr.hat : null, robe = Object.hasOwn(LOOKS.robe, pr.robe) ? pr.robe : null;
   if (hat !== r.hat || robe !== r.robe) { r.hat = hat; r.robe = robe; remoteCosmetics(r); }
   const pet = Object.hasOwn(PET_DEFS, pr.pet) ? pr.pet : null;
@@ -4718,6 +4819,7 @@ function updateRemotes(dt, time) {
     if (r.castT > 0) { r.castT -= dt; const c = 1 - Math.max(0, r.castT) / .4; r.w.wandArm.rotation.x = -Math.sin(c * Math.PI) * 1.5; }
     else if (r.waveT > 0) { r.waveT -= dt; r.w.wandArm.rotation.x = -1.4 + Math.sin(time * 14) * .35; }
     else r.w.wandArm.rotation.x = lerp(r.w.wandArm.rotation.x, -.15 + Math.sin(r.walkT) * .3 * r.k, damp(10, dt));
+    if (r.a) { r.aT += dt; actPose(r.w, r.a, r.aT, time); if (mpNear(p.x, p.z, 30)) actFx(p, r.a, r.aT, dt); }
     if (r.hat === 'rainbow') r.w.hatMat.color.setHSL((time * .15) % 1, .75, .62);
     // potion they drank
     if (r.fx) { r.fx.t -= dt; if (r.fx.t <= 0) endRemotePotion(r); }
@@ -4821,6 +4923,7 @@ function onRemoteSpell(msg) {
     startPotionLook(r.w, r.g, r.fx, false);
     if (close) { toast(`${who(r)} drank a ${rec.name}!`, 3000, 'potion'); sfx('gulp'); }
   }
+  comboCast(r.peer, d.id, x, z);
   if (close) burst(wand(), 10, { speed: 2.5, colors: ['#ffd1f0', '#fff09a', '#c9a0ff'], size: .3, life: .6, gravity: 0 });
 }
 function onRemoteWave(msg) {
@@ -4831,6 +4934,72 @@ function onRemoteWave(msg) {
   hearts(r.g.position.clone().add(new THREE.Vector3(0, 2.4, 0)), 5);
   const to = msg.data && msg.data.to;
   if (to && to === myPeer) { toast(`${who(r)} waves at you! Press E near them to wave back`, 3500, 'wave'); sfx('hello'); }
+}
+
+// --- spell combos: two players casting together, close by, within a few seconds ---
+// Every player sees both casts (their own and the other one's message), so each works out the combo by itself.
+const ME = '@me';
+const COMBOS = [
+  { id: 'double', a: 'rainbow', b: 'rainbow', name: 'Double Rainbow', icon: 'rainbow', run: () => doubleRainbow() },
+  { id: 'shower', a: 'star', b: 'night', name: 'Falling Star Shower', icon: 'star', run: (x, z) => starShower(x, z) },
+];
+const recentCasts = [];
+function comboCast(by, id, x, z) {
+  const now = performance.now();
+  while (recentCasts.length && now - recentCasts[0].t > 4000) recentCasts.shift();
+  for (const cb of COMBOS) {
+    const other = id === cb.a ? cb.b : id === cb.b ? cb.a : null;
+    if (!other) continue;
+    const m = recentCasts.find(q => q.by !== by && q.id === other && !q.used && Math.hypot(q.x - x, q.z - z) < 30);
+    if (!m) continue;
+    m.used = true;
+    const cx = (x + m.x) / 2, cz = (z + m.z) / 2;
+    if (!mpNear(cx, cz, 45) || cb.run(cx, cz) === false) return;
+    const mine = by === ME || m.by === ME, partner = remotes.get(by === ME ? m.by : by);
+    if (mine && partner) {
+      toast(`Spell combo with ${who(partner)}: ${cb.name}!`, 3800, cb.icon);
+      save.combos ||= [];
+      if (!save.combos.includes(cb.id)) {   // the first time you find a combo: a few stars
+        save.combos.push(cb.id); save.stars += 3; storeSave(); updateStarsUI();
+        setTimeout(() => { toast(`New spell combo found! +3 stars`, 3500, 'star'); sfx('coin'); }, 1800);
+      }
+    } else toast(`Spell combo: ${cb.name}!`, 3300, cb.icon);
+    sfx('fanfare');
+    return;
+  }
+  recentCasts.push({ by, id, x, z, t: now });
+}
+// Star Shot + Day & Night: shooting stars rain down around the two casters
+const meteors = [];
+function starShower(cx, cz) {
+  for (let i = 0; i < 46; i++) {
+    const wait = i * .13 + rr(0, .3), a = rr(0, 6.28), d = rr(2, 22);
+    const end = new THREE.Vector3(cx + Math.cos(a) * d, 0, cz + Math.sin(a) * d);
+    const g = supportAt(end.x, end.z, 40); end.y = g === -Infinity ? 0 : g;
+    const dir = new THREE.Vector3(rr(-.5, .5), -1, rr(-.5, .5)).normalize();
+    meteors.push({ end, dir, wait, t: 0, dur: rr(1, 1.6), dist: rr(24, 34), s: null });
+  }
+  burst(new THREE.Vector3(cx, 3, cz), 30, { speed: 6, colors: ['#ffe066', '#c9a0ff', '#ffffff'], size: .5, life: 1.4, gravity: -.5 });
+}
+function updateMeteors(dt) {
+  for (let i = meteors.length - 1; i >= 0; i--) {
+    const m = meteors[i];
+    if (m.wait > 0) { m.wait -= dt; continue; }
+    if (!m.s) {
+      m.s = new THREE.Sprite(new THREE.SpriteMaterial({ map: starTex, color: rpick(['#ffe066', '#fff3b0', '#ffd1f0', '#c9e6ff']), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+      m.s.scale.setScalar(.9); scene.add(m.s);
+    }
+    m.t += dt;
+    const k = Math.min(1, m.t / m.dur);
+    m.s.position.copy(m.end).addScaledVector(m.dir, -(1 - k) * m.dist);
+    m.s.material.rotation += dt * 6;
+    emit({ pos: m.s.position, vel: new THREE.Vector3(rr(-.3, .3), rr(-.2, .3), rr(-.3, .3)), life: .7, size: rr(.25, .45), color: rpick(['#fff3b0', '#ffd1f0', '#c9a0ff']), tex: Math.random() < .5 ? starTex : glowTex, spin: 3 });
+    if (k >= 1) {
+      burst(m.end.clone().setY(m.end.y + .3), 12, { speed: 3, colors: ['#ffe066', '#ff8fc7', '#c9a0ff', '#8fd0ff'], size: .4, life: .9 });
+      if (Math.random() < .3 && distXZ(m.end) < 20) sfx('pop');
+      scene.remove(m.s); meteors.splice(i, 1);
+    }
+  }
 }
 
 // ================= accounts & cloud saves =================
@@ -5153,6 +5322,7 @@ const TH = {};           // the parts that change: projects, interaction spots
     const b = new THREE.Group(); b.position.set(x, 0, 2.6); b.rotation.y = s * Math.PI / 2; GD.add(b);
     mk(Box(1.8, .14, .55), toon('#c98d55'), 0, .5, 0, b); mk(Box(1.8, .5, .12), toon('#c98d55'), 0, .85, -.24, b);
     for (const e of [-1, 1]) mk(Box(.12, .5, .5), beamM, e * .78, .25, 0, b);
+    addSeat(b, [[-.45, .47, .22, 0], [.45, .47, .22, 0]]);
     mk(new CylGeo(.06, .08, 2.4, 10), toon('#6a5584'), x, 1.2, -3.9, GD);
     ball(glow(toon('#fff3c4', { emissive: '#ffcb5c', emissiveIntensity: .2 }), .2, 2.2), x, 2.55, -3.9, .24, .28, .24, GD, false);
     for (const [lz, r] of [[-1, .9], [-2.4, .8], [.4, .8], [2.6, .9], [-3.9, .25]]) { const [wx, wz] = thWorld(x, lz); TH.gardenCircs.push({ x: wx, z: wz, r }); }
@@ -5259,7 +5429,7 @@ const FURNI = [
     mk(new RingGeo(.62, .74, 40), fm(CREAM), 0, .08, 0, g, false).rotation.x = -Math.PI / 2;
     mk(new CircGeo(.3, 30), fm(CREAM), 0, .08, 0, g, false).rotation.x = -Math.PI / 2;
   } },
-  { id: 'beanbag', name: 'Beanbag', price: 1, r: .6, c: 2, build(g, c) {
+  { id: 'beanbag', name: 'Beanbag', price: 1, r: .6, c: 2, seats: [[0, .45, .12, 0]], build(g, c) {
     ball(fm(c), 0, .32, 0, .62, .36, .6, g); ball(fm(c), 0, .58, -.26, .5, .36, .3, g);
   } },
   { id: 'cake', name: 'Cake Stand', price: 1, r: .45, c: 0, build(g, c) {
@@ -5271,7 +5441,7 @@ const FURNI = [
     mk(new CylGeo(.26, .3, .06, 16), fm(WOOD2), 0, .03, 0, g); mk(new CylGeo(.035, .035, 1.8, 8), fm(WOOD2), 0, .95, 0, g);
     mk(new CylGeo(.24, .4, .48, 20, 1, true), fglow(c), 0, 1.95, 0, g); ball(fglow('#fff6c2'), 0, 1.82, 0, .12, .12, .12, g, false);
   } },
-  { id: 'armchair', name: 'Armchair', price: 2, r: .7, c: 2, build(g, c) {
+  { id: 'armchair', name: 'Armchair', price: 2, r: .7, c: 2, seats: [[0, .63, .22, 0]], build(g, c) {
     mk(Box(1.1, .45, .95), fm(c), 0, .38, 0, g); mk(Box(1.1, .85, .28), fm(c), 0, .8, -.36, g);
     for (const s of [-1, 1]) mk(Box(.24, .6, .95), fm(c), s * .5, .55, 0, g);
     mk(Box(.68, .14, .6), fm(CREAM), 0, .66, .08, g); legs(g, .42, .36);
@@ -5297,11 +5467,11 @@ const FURNI = [
     for (const [x, y, z] of [[.15, 1.15, .25], [-.22, .98, .2], [.05, .9, -.28], [.27, 1.05, -.1]]) ball(fm('#9ff0c8'), x, y, z, .12, .08, .1, g, false);
     const ring = mk(new TorGeo(.39, .025, 8, 40), fm('#ffd84d'), 0, 1.05, 0, g); ring.rotation.y = Math.PI / 2; ring.rotation.x = .4;
   } },
-  { id: 'bench', name: 'Bench', price: 2, r: .95, c: 5, build(g, c) {
+  { id: 'bench', name: 'Bench', price: 2, r: .95, c: 5, seats: [[-.45, .47, .22, 0], [.45, .47, .22, 0]], build(g, c) {
     mk(Box(1.8, .14, .55), fm(c), 0, .5, 0, g); mk(Box(1.8, .5, .12), fm(c), 0, .85, -.24, g);
     for (const s of [-1, 1]) mk(Box(.12, .5, .5), fm(WOOD2), s * .78, .25, 0, g);
   } },
-  { id: 'sofa', name: 'Sofa', price: 3, r: 1.15, c: 0, build(g, c) {
+  { id: 'sofa', name: 'Sofa', price: 3, r: 1.15, c: 0, seats: [[-.44, .62, .26, 0], [.44, .62, .26, 0]], build(g, c) {
     const m = fm(c);
     mk(Box(2.2, .45, .95), m, 0, .35, 0, g); mk(Box(2.2, .8, .3), m, 0, .8, -.34, g);
     for (const s of [-1, 1]) { mk(Box(.3, .62, .95), m, s * 1.0, .5, 0, g); mk(Box(.86, .16, .62), fm(CREAM), s * .44, .64, .07, g); }
@@ -5359,6 +5529,7 @@ const FURNI_BY_ID = new Map(FURNI.map(f => [f.id, f]));
 function buildFurni(F, c) {
   const g = new THREE.Group();
   F.build(g, PASTELS[clamp(c | 0, 0, PASTELS.length - 1)]);
+  if (F.seats) g.userData.seats = F.seats;
   return g;
 }
 // little pictures of each piece for the panels (rendered once, with a small extra renderer)
@@ -7202,6 +7373,277 @@ function updateFar(dt, time) {
   }
 }
 
+// ================= weather =================
+// Rain, snow and fog come and go by themselves. The weather follows the clock (one spell of weather per
+// WX_SLOT), so everyone online sees the same sky without sending anything. After rain, a rainbow appears.
+const WX_SLOT = 150000;   // 2.5 minutes
+const WX_INFO = {
+  clear: { name: 'Sunny', icon: 'sun' }, rain: { name: 'Rainy', icon: 'rain' },
+  snow: { name: 'Snowy', icon: 'snow' }, fog: { name: 'Foggy', icon: 'fog' },
+};
+function wxHash(n) { let h = Math.imul(n | 0, 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; h ^= h >>> 13; return (h >>> 0) / 4294967296; }
+function wxBase(slot) { const v = wxHash(slot); return v < .48 ? 'clear' : v < .73 ? 'rain' : v < .87 ? 'snow' : 'fog'; }
+// right after rain it always clears up, so there is time for the rainbow
+const wxAt = slot => wxBase(slot) !== 'rain' && wxBase(slot - 1) === 'rain' ? 'clear' : wxBase(slot);
+// each place has its own taste: snow instead of rain on Frostvale, no snow on the volcano, mist in the mushroom wood
+function wxHere(w) {
+  if (curIsle === ROOM) return 'clear';
+  const id = curIsle && curIsle.id;
+  if (id === 'frost' && w === 'rain') return 'snow';
+  if (id === 'ember' && w === 'snow') return 'clear';
+  if (id === 'shroom' && w === 'snow') return 'fog';
+  return w;
+}
+// rain: short falling lines in a box around the player
+const RAIN_N = 1500, RAIN_BOX = 44, RAIN_H = 26;
+const rainPos = new Float32Array(RAIN_N * 6), rainSpd = new Float32Array(RAIN_N);
+for (let i = 0; i < RAIN_N; i++) { rainPos[i * 6] = rr(-.5, .5) * RAIN_BOX; rainPos[i * 6 + 1] = rr(0, RAIN_H); rainPos[i * 6 + 2] = rr(-.5, .5) * RAIN_BOX; rainSpd[i] = rr(20, 27); }
+const rainGeo = new THREE.BufferGeometry(); rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+const rainLines = new THREE.LineSegments(rainGeo, new THREE.LineBasicMaterial({ color: '#cfe0ff', transparent: true, opacity: 0, depthWrite: false }));
+rainLines.frustumCulled = false; rainLines.visible = false; scene.add(rainLines);
+// snow weather: big, soft flakes (on top of the light christmas snow)
+const FLAKE_N = 1400, FLAKE_BOX = 50, FLAKE_H = 26;
+const flakePos = new Float32Array(FLAKE_N * 3), flakePh = new Float32Array(FLAKE_N);
+for (let i = 0; i < FLAKE_N; i++) { flakePos[i * 3] = rr(-.5, .5) * FLAKE_BOX; flakePos[i * 3 + 1] = rr(0, FLAKE_H); flakePos[i * 3 + 2] = rr(-.5, .5) * FLAKE_BOX; flakePh[i] = rr(0, 6.28); }
+const flakeGeo = new THREE.BufferGeometry(); flakeGeo.setAttribute('position', new THREE.BufferAttribute(flakePos, 3));
+const flakes = new THREE.Points(flakeGeo, new THREE.PointsMaterial({ map: glowTex, color: '#ffffff', size: .55, transparent: true, depthWrite: false, opacity: 0 }));
+flakes.frustumCulled = false; flakes.visible = false; scene.add(flakes);
+// the soft hiss of rain: filtered noise
+let rainSnd = null, rainSndT = 0;
+function rainSound(k) {
+  if (!actx || actx.state !== 'running') return;
+  if (!rainSnd) {
+    if (k < .01) return;
+    const buf = actx.createBuffer(1, actx.sampleRate * 2, actx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = actx.createBufferSource(); src.buffer = buf; src.loop = true;
+    const f = actx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1300;
+    rainSnd = actx.createGain(); rainSnd.gain.value = 0;
+    src.connect(f).connect(rainSnd).connect(master); src.start();
+  }
+  rainSnd.gain.setTargetAtTime(muted ? 0 : k * .07, actx.currentTime, .4);
+}
+let wxSlotNow = null, wxIsle = undefined, wxShown = '';
+function updateWeather(dt, time) {
+  const slot = Math.floor(Date.now() / WX_SLOT);
+  const w = wxHere(wxAt(slot)), was = wx.now;
+  if (w !== was || slot !== wxSlotNow) {
+    const quiet = wxSlotNow === null || wxIsle !== curIsle;   // just arrived: no fuss
+    wxSlotNow = slot; wxIsle = curIsle; wx.now = w;
+    if (w !== was && !quiet && started) {
+      if (w === 'rain') toast('Pitter-patter… it is starting to rain!', 3500, 'rain');
+      else if (w === 'snow') toast('Big fluffy snowflakes are falling!', 3500, 'snow');
+      else if (w === 'fog') toast('A soft, sleepy fog rolls in…', 3500, 'fog');
+      else if (was === 'rain') {
+        toast('The rain stopped. Look, a rainbow!', 4000, 'rainbow');
+        if (curIsle !== ROOM) setTimeout(() => {
+          spawnRainbow(player.position.x, player.position.z, new THREE.Vector3(-Math.sin(camYaw), 0, -Math.cos(camYaw)), { dist: 42, size: 2.4, life: 26 });
+          sfx('rainbow');
+        }, 2500);
+      } else toast('The sky is clearing up!', 3000, 'sun');
+    }
+  }
+  const e = damp(.35, dt);
+  wx.rain = lerp(wx.rain, w === 'rain' ? 1 : 0, e);
+  wx.snow = lerp(wx.snow, w === 'snow' ? 1 : 0, e);
+  wx.fog = lerp(wx.fog, (w === 'fog' ? 1 : 0) * (pState.inside ? .25 : 1), e);
+  const show = pState.inside ? 0 : 1, P = player.position;
+  // rain
+  const rk = wx.rain * show;
+  rainLines.visible = rk > .01;
+  if (rainLines.visible) {
+    rainLines.position.set(P.x, P.y - 3, P.z);
+    rainLines.material.opacity = .55 * rk;
+    for (let i = 0; i < RAIN_N; i++) {
+      const k = i * 6;
+      rainPos[k + 1] -= rainSpd[i] * dt;
+      if (rainPos[k + 1] < 0) { rainPos[k + 1] += RAIN_H; rainPos[k] = rr(-.5, .5) * RAIN_BOX; rainPos[k + 2] = rr(-.5, .5) * RAIN_BOX; }
+      rainPos[k + 3] = rainPos[k] + .12; rainPos[k + 4] = rainPos[k + 1] + .85; rainPos[k + 5] = rainPos[k + 2] + .04;
+    }
+    rainGeo.setDrawRange(0, Math.ceil(RAIN_N * Math.min(1, rk * 1.3)) * 2);
+    rainGeo.attributes.position.needsUpdate = true;
+    // little splashes on the ground around you
+    for (let n = Math.floor(rk * 40 * dt + Math.random()); n > 0; n--) {
+      const x = P.x + rr(-9, 9), z = P.z + rr(-9, 9), g = supportAt(x, z, P.y + 1);
+      if (g === -Infinity) continue;
+      emit({ pos: tmpV.set(x, g + .05, z), vel: new THREE.Vector3(rr(-.4, .4), rr(1, 1.8), rr(-.4, .4)), life: .3, size: rr(.1, .18), color: '#e6f2ff', gravity: 8, add: false });
+    }
+  }
+  // big snowflakes
+  const sk = wx.snow * show;
+  flakes.visible = sk > .01;
+  if (flakes.visible) {
+    flakes.position.set(P.x, P.y - 2, P.z);
+    flakes.material.opacity = .95 * sk;
+    for (let i = 0; i < FLAKE_N; i++) {
+      const k = i * 3, ph = flakePh[i];
+      flakePos[k] += Math.sin(time * .8 + ph) * .6 * dt;
+      flakePos[k + 1] -= (1.6 + (i % 5) * .2) * dt;
+      flakePos[k + 2] += Math.cos(time * .6 + ph) * .5 * dt;
+      if (flakePos[k + 1] < 0) { flakePos[k + 1] += FLAKE_H; flakePos[k] = rr(-.5, .5) * FLAKE_BOX; flakePos[k + 2] = rr(-.5, .5) * FLAKE_BOX; }
+    }
+    flakeGeo.attributes.position.needsUpdate = true;
+  }
+  snow.material.opacity = .95 * (1 - wx.rain);   // the light christmas snow stops while it rains
+  snow.visible = wx.rain < .97;
+  rainSndT -= dt;
+  if (rainSndT <= 0) { rainSndT = .25; rainSound(rk); }
+  // the weather line in the status panel
+  const label = w + (w === 'clear' && nightTarget ? '-n' : '');
+  if (label !== wxShown) {
+    wxShown = label;
+    const I = WX_INFO[w];
+    document.getElementById('wxNow').textContent = w === 'clear' && nightTarget ? 'Clear night' : I.name;
+    document.getElementById('wxIc').innerHTML = ICON[w === 'clear' && nightTarget ? 'moon' : I.icon];
+  }
+}
+
+// ================= emotes & sitting =================
+// G opens a row of emotes. Sitting snaps you onto the nearest bench, sofa or chair (SEATS and FURNI seats),
+// or onto the ground. Others see it through the presence field `a`. Moving ends any emote.
+const EMOTES = [
+  { id: 'wave', name: 'Wave', icon: 'wave', dur: 2.2 },
+  { id: 'dance', name: 'Dance', icon: 'note', dur: 4.6 },
+  { id: 'cheer', name: 'Cheer', icon: 'star', dur: 2.2 },
+  { id: 'love', name: 'Love', icon: 'heart', dur: 2.6 },
+  { id: 'laugh', name: 'Laugh', icon: 'smile', dur: 2.4 },
+  { id: 'sleep', name: 'Nap', icon: 'zzz', dur: 0 },   // 0 = until you move
+  { id: 'sit', name: 'Sit', icon: 'chair', dur: 0 },
+];
+const EMOTE_BY_ID = new Map(EMOTES.map(e => [e.id, e]));
+const emoteBar = document.getElementById('emoteBar');
+EMOTES.forEach((E, i) => {
+  const b = document.createElement('button'); b.className = 'spell emo';
+  b.innerHTML = `<span class="key">${i + 1}</span><span class="ico">${ICON[E.icon]}</span><span class="nm">${E.name}</span>`;
+  b.addEventListener('click', () => { startEmote(E.id); b.blur(); });
+  emoteBar.appendChild(b);
+});
+const emoteOpen = () => emoteBar.classList.contains('on');
+function toggleEmotes() {
+  if (!started) return;
+  emoteBar.style.bottom = (spellbar.offsetHeight + 22) + 'px';   // just above the spell bar (it can wrap onto two rows)
+  emoteBar.classList.toggle('on');
+}
+function closeEmotes() { emoteBar.classList.remove('on'); }
+document.getElementById('emoteBtn').addEventListener('click', e => { toggleEmotes(); e.currentTarget.blur(); });
+
+// ---- seats ----
+function shownInScene(o) { for (; o; o = o.parent) { if (!o.visible) return false; if (o === scene) return true; } return false; }
+function seatGroups() {
+  const out = SEATS.slice();
+  for (const m of [...hallMeshes.values(), ...roomItemMeshes]) if (m.g.userData.seats) out.push({ g: m.g, spots: m.g.userData.seats, hit: [m.g] });
+  return out;
+}
+const seatV = new THREE.Vector3(), seatF = new THREE.Vector3();
+// the closest free seat spot within maxD (optionally only on group onlyG): { pos, h, g }
+function nearestSeat(maxD, from = player.position, onlyG = null) {
+  let best = null, bd = maxD;
+  for (const s of seatGroups()) {
+    if ((onlyG && s.g !== onlyG) || !shownInScene(s.g)) continue;
+    for (const sp of s.spots) {
+      s.g.localToWorld(seatV.set(sp[0], sp[1], sp[2]));
+      const d = Math.hypot(seatV.x - from.x, seatV.z - from.z);
+      if (d >= bd || Math.abs(seatV.y - from.y) > 1.8) continue;
+      let taken = false;
+      for (const r of remotes.values()) if ((r.a === 'sit' || r.a === 'sleep') && Math.hypot(r.tx - seatV.x, r.tz - seatV.z) < .4) taken = true;
+      if (taken) continue;
+      s.g.localToWorld(seatF.set(sp[0] + Math.sin(sp[3]), sp[1], sp[2] + Math.cos(sp[3])));
+      bd = d; best = { pos: seatV.clone(), h: Math.atan2(seatF.x - seatV.x, seatF.z - seatV.z), g: s.g };
+    }
+  }
+  return best;
+}
+let sitTarget = null;   // a seat you tapped from further away: sit down when you get there
+function sitDown(seat) {
+  endAct(false);
+  if (!seat && !pState.grounded) return;
+  pState.act = { id: 'sit', t: 0, seat };
+  if (seat) { player.position.copy(seat.pos); pState.heading = seat.h; }
+  pVel.set(0, 0, 0); pState.vy = 0; moveTarget = petTarget = sitTarget = null;
+  burst(player.position.clone().add(new THREE.Vector3(0, .5, 0)), 8, { speed: 1.5, colors: ['#ffffff', '#ffd1f0'], size: .3, life: .6, gravity: 0 });
+  sfx('plop');
+}
+function startEmote(id) {
+  if (!started || fishing.state || deco) return;
+  closeEmotes();
+  if (id === 'sit') { sitDown(nearestSeat(2.6)); return; }
+  const E = EMOTE_BY_ID.get(id);
+  if (!E) return;
+  // a nap keeps your seat; the other emotes make you stand up first
+  const seat = id === 'sleep' && pState.act ? pState.act.seat : null;
+  if (pState.act && !seat) endAct(true);
+  if (!seat && !pState.grounded) return;
+  pState.act = { id, t: 0, seat };
+  pVel.set(0, 0, 0); moveTarget = petTarget = sitTarget = null;
+  if (id === 'cheer') burst(player.position.clone().add(new THREE.Vector3(0, 2, 0)), 24, { speed: 4, colors: PASTELS, size: .4, life: 1.2, gravity: 3 });
+  sfx({ wave: 'hello', dance: 'dance', cheer: 'happy', love: 'happy', laugh: 'laugh', sleep: 'night' }[id]);
+}
+// stop the emote; off a seat you hop down in front of it
+function endAct(step = true) {
+  const a = pState.act;
+  pState.act = null;
+  if (!a || !a.seat || !step) return;
+  const P = player.position;
+  P.x += Math.sin(a.seat.h) * .8; P.z += Math.cos(a.seat.h) * .8;
+  collide(P, .45, playerBoxes, true);
+  pState.grounded = false; pState.vy = 0;
+}
+// called at the start of updatePlayer: true while the emote holds the player in place
+function updateAct(dt, time) {
+  const a = pState.act;
+  if (!a) return false;
+  const moving = keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD || keys.ArrowUp || keys.ArrowDown || keys.ArrowLeft || keys.ArrowRight || moveTarget || fishing.state || deco;
+  const E = EMOTE_BY_ID.get(a.id);
+  if (moving || (E.dur && a.t > E.dur)) { endAct(true); return false; }
+  a.t += dt;
+  const P = player.position;
+  if (a.seat) { P.copy(a.seat.pos); pState.heading = a.seat.h; }
+  pVel.set(0, 0, 0); pState.vy = 0; pState.grounded = true;
+  player.rotation.y = angleLerp(player.rotation.y, pState.heading, damp(12, dt));
+  animateWizard(W, pState.walkT, 0, time, true);
+  actPose(W, a.id, a.t, time);
+  if (pState.castT > 0) { pState.castT -= dt; const c = 1 - Math.max(0, pState.castT) / .4; W.wandArm.rotation.x = -Math.sin(c * Math.PI) * 1.5; }
+  actFx(P, a.id, a.t, dt);
+  return true;
+}
+// the pose for each emote, on top of the normal idle (animateWizard resets what this bends)
+function actPose(w, id, t, time) {
+  const b = w.body, L = w.leftArm, Rm = w.wandArm;
+  if (id === 'sit' || id === 'sleep') {
+    w.feet.forEach(f => { f.position.y = .16; f.position.z = .42; f.rotation.x = -.5; });
+    L.rotation.x = -.45; Rm.rotation.x = -.45;
+    if (id === 'sleep') { b.rotation.z = .2 + Math.sin(time * 1.4) * .03; b.rotation.x = .12; b.scale.y = 1 + Math.sin(time * 1.4) * .025; w.hatTip.rotation.z = .9; }
+  } else if (id === 'wave') {
+    Rm.rotation.x = -2.6; Rm.rotation.z = .35 + Math.sin(time * 13) * .45;
+    b.rotation.z = Math.sin(time * 6.5) * .05;
+  } else if (id === 'dance') {
+    const s = Math.sin(t * 7);
+    w.root.position.y = Math.abs(s) * .22;
+    b.rotation.y = t > 2.3 ? (t - 2.3) * 5.5 : Math.sin(t * 3.5) * .5;   // sway, then a little twirl
+    b.rotation.z = s * .14;
+    L.rotation.x = -2.2 + s * .5; Rm.rotation.x = -2.2 - s * .5;
+    w.feet.forEach((f, i) => { f.position.y = .08 + Math.max(0, i ? s : -s) * .12; });
+  } else if (id === 'cheer') {
+    w.root.position.y = Math.abs(Math.sin(t * 6.5)) * .5;
+    L.rotation.x = -2.9; Rm.rotation.x = -2.9; L.rotation.z = -.35; Rm.rotation.z = .35 + Math.sin(time * 10) * .2;
+  } else if (id === 'love') {
+    L.rotation.x = -1.2; L.rotation.z = .7; Rm.rotation.x = -1.2; Rm.rotation.z = -.7;
+    b.rotation.z = Math.sin(time * 3) * .09; b.position.y = Math.abs(Math.sin(time * 3)) * .05;
+  } else if (id === 'laugh') {
+    b.rotation.x = -.2; b.position.y = Math.abs(Math.sin(time * 16)) * .05;
+    L.rotation.x = -.8; L.rotation.z = .5; Rm.rotation.x = -.8; Rm.rotation.z = -.5;
+  }
+}
+// sparkles, notes, hearts and Z's (for you and for other players close by)
+function actFx(P, id, t, dt) {
+  const at = (dy, sp = .3) => tmpV.set(P.x + rr(-sp, sp), P.y + dy, P.z + rr(-sp, sp));
+  if (id === 'dance' && Math.random() < dt * 4) emit({ pos: at(2.2, .6), vel: new THREE.Vector3(rr(-.6, .6), rr(1, 1.6), rr(-.6, .6)), life: 1.4, size: rr(.35, .5), color: rpick(PASTELS), tex: noteTex, add: false, drag: 1 });
+  else if (id === 'love' && Math.random() < dt * 4) hearts(at(2.1), 1);
+  else if (id === 'cheer' && Math.random() < dt * 10) emit({ pos: at(2.4, .5), vel: new THREE.Vector3(rr(-1.5, 1.5), rr(1, 3), rr(-1.5, 1.5)), life: 1, size: rr(.2, .35), color: rpick(PASTELS), tex: starTex, gravity: 3, spin: 4 });
+  else if (id === 'laugh' && Math.random() < dt * 6) emit({ pos: at(2.1, .5), vel: new THREE.Vector3(rr(-.8, .8), rr(.8, 1.5), rr(-.8, .8)), life: .9, size: rr(.2, .32), color: rpick(['#ffe066', '#fff3b0', '#ffd1f0']), tex: starTex, spin: 3 });
+  else if (id === 'sleep' && Math.random() < dt * 1.3) emit({ pos: at(2.2, .1), vel: new THREE.Vector3(rr(.2, .5), .55, rr(-.2, .2)), life: 2.2, size: rr(.3, .45), color: rpick(['#c9a0ff', '#8fa0ff', '#ffffff']), tex: zTex, add: false });
+}
+
 // ================= loop =================
 const clock = new THREE.Clock();
 let time = 0;
@@ -7229,6 +7671,8 @@ function frame() {
   updateFar(dt, time);
   updateTown(dt, time);
   updateChristmas(dt, time);
+  updateWeather(dt, time);
+  updateMeteors(dt);
   updateCamera(dt);
   updateParticles(dt);
   updateUI();
