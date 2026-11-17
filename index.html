@@ -408,7 +408,40 @@ const gradientMap = (() => {
 // smoother primitives: raise low segment counts (4 or fewer stays, for pyramids / roofs / tufts)
 const seg = (n, min) => n === undefined || n <= 4 ? n : Math.max(n, min);
 class CylGeo extends THREE.CylinderGeometry { constructor(rt, rb, h, rs, hs, ...r) { super(rt, rb, h, seg(rs, 28), hs, ...r); } }
-class ConeGeo extends THREE.ConeGeometry { constructor(rad, h, rs, hs, ...r) { super(rad, h, seg(rs, 28), hs, ...r); } }
+// --- soft shapes: chunky and rounded, no hard edges or sharp points ---
+const bez = (out, a, c, b, n) => { for (let i = 1; i <= n; i++) { const t = i / n, u = 1 - t; out.push([u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]); } };
+// a cone with a rounded base rim, a slightly puffy side and a rounded tip (same size and centre as ConeGeometry)
+function softConeGeo(rad, h, rs = 28) {
+  const P = [[0, -.5]];
+  bez(P, [0, -.5], [.4, -.5], [.8, -.5], 2);
+  bez(P, [.8, -.5], [1, -.5], [.9, -.38], 6);
+  bez(P, [.9, -.38], [.56, .04], [.13, .4], 8);
+  bez(P, [.13, .4], [.05, .48], [0, .48], 5);
+  return new THREE.LatheGeometry(P.map(([x, y]) => new THREE.Vector2(x * rad, y * h)), rs);
+}
+// a hip roof like a 4-sided cone, but with rounded corners, soft eaves and a rounded top.
+// R is the corner radius of the matching ConeGeometry(R, h, 4) turned 45°, so sizes stay the same.
+function softRoofGeo(R, h, n = 6, M = 96) {
+  const w = R / Math.SQRT2, P = [[0, -.5]];
+  bez(P, [0, -.5], [.45, -.5], [.9, -.5], 2);
+  bez(P, [.9, -.5], [1.01, -.5], [.97, -.4], 6);
+  for (let i = 1; i <= 6; i++) P.push([lerp(.97, .1, i / 6), lerp(-.4, .42, i / 6)]);
+  bez(P, [.1, .42], [.03, .49], [0, .49], 5);
+  const pos = [], idx = [];
+  for (const [x, y] of P) for (let j = 0; j < M; j++) {
+    const th = j / M * Math.PI * 2, c = Math.cos(th), s = Math.sin(th);
+    const k = x * w * Math.pow(Math.pow(Math.abs(c), n) + Math.pow(Math.abs(s), n), -1 / n);
+    pos.push(k * c, y * h, k * s);
+  }
+  for (let i = 0; i < P.length - 1; i++) for (let j = 0; j < M; j++) {
+    const j1 = (j + 1) % M, a = i * M + j, b = i * M + j1, c = (i + 1) * M + j, d = (i + 1) * M + j1;
+    idx.push(a, c, b, b, c, d);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+class ConeGeo { constructor(rad, h, rs, hs, ...r) { return rs !== undefined && rs <= 4 ? new THREE.ConeGeometry(rad, h, rs, hs, ...r) : softConeGeo(rad, h, seg(rs, 28)); } }
 class SphGeo extends THREE.SphereGeometry { constructor(rad, ws, hs, ...r) { super(rad, seg(ws, 32), seg(hs, 20), ...r); } }
 class TorGeo extends THREE.TorusGeometry { constructor(rad, tube, rs, ts, ...r) { super(rad, tube, seg(rs, 14), seg(ts, 48), ...r); } }
 class CircGeo extends THREE.CircleGeometry { constructor(rad, s, ...r) { super(rad, seg(s, 40), ...r); } }
@@ -616,10 +649,27 @@ function collide(p, r, boxes, free = false) {
 
 // ================= island =================
 const grassMat = toon('#eef4ff'), dirtMat = toon('#b98257');
-const island = new THREE.Mesh(new CylGeo(ISLAND_R, ISLAND_R - 1.2, 3, 72), [dirtMat, grassMat, dirtMat]);
+// the ground has a soft dappled pattern, so the snow does not look like one flat sheet
+const groundTex = canvasTex(256, 256, (g, s) => {
+  g.fillStyle = '#eef4ff'; g.fillRect(0, 0, s, s);
+  let q = 7; const rnd = () => (q = (q * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 34; i++) {
+    const x = rnd() * s, y = rnd() * s, r = 6 + rnd() * 13;
+    g.fillStyle = i % 2 ? 'rgba(255,255,255,.8)' : 'rgba(216,228,249,.34)';
+    for (const ox of [-s, 0, s]) for (const oy of [-s, 0, s]) { g.beginPath(); g.ellipse(x + ox, y + oy, r, r * .8, rnd() * 3, 0, Math.PI * 2); g.fill(); }
+  }
+});
+groundTex.wrapS = groundTex.wrapT = THREE.RepeatWrapping; groundTex.repeat.set(9, 9); groundTex.anisotropy = 8;
+const groundMat = toon('#ffffff', { map: groundTex });
+// every island gets a rounded shoulder instead of a sharp rim
+const edgeMat = toon('#e9f0fd');
+function softEdge(parent, r, topY, tube) {
+  const m = mk(new TorGeo(r - tube, tube, 14, 90), edgeMat, 0, topY - tube, 0, parent, false);
+  m.rotation.x = Math.PI / 2; return m;
+}
+const island = new THREE.Mesh(new CylGeo(ISLAND_R - .7, ISLAND_R - 1.2, 3, 72), [dirtMat, groundMat, dirtMat]);
 island.position.y = -1.5; island.receiveShadow = true; scene.add(island);
-const lip = new THREE.Mesh(new TorGeo(ISLAND_R - 0.3, 0.55, 8, 90), toon('#dfe9fb'));
-lip.rotation.x = Math.PI / 2; lip.position.y = -0.15; scene.add(lip);
+softEdge(scene, ISLAND_R, 0, .7);
 const under = new THREE.Mesh(new ConeGeo(ISLAND_R - 1.2, 36, 14, 4), toon('#a27052'));
 under.rotation.x = Math.PI; under.position.y = -3 - 18; scene.add(under);
 // little crystals hanging below the island
@@ -632,7 +682,7 @@ for (let i = 0; i < 10; i++) {
 // grass tufts + tiny flowers (instanced)
 {
   const dummy = new THREE.Object3D();
-  const tufts = new THREE.InstancedMesh(new ConeGeo(.09, .42, 4), toon('#8fc9a0'), 900);
+  const tufts = new THREE.InstancedMesh(softConeGeo(.11, .38, 7), toon('#8fc9a0'), 900);
   let n = 0;
   while (n < 900) {
     const a = rand() * Math.PI * 2, d = Math.sqrt(rand()) * (ISLAND_R - 2);
@@ -658,8 +708,8 @@ for (let i = 0; i < 10; i++) {
 {
   const stoneMat = toon('#e4dcef');
   for (let z = -15.6; z < 6.5; z += 1.25) {
-    const s = mk(new CylGeo(R(.55, .75), R(.6, .8), .12, 9), stoneMat, R(-.35, .35), .04, z, scene, false);
-    s.rotation.y = R(0, 3);
+    const s = ball(stoneMat, 0, .03, z, R(.6, .8), .09, R(.6, .8) * .82, scene, false);   // rounded stepping stones
+    s.position.x = R(-.35, .35); s.rotation.y = R(0, 3);
   }
 }
 
@@ -699,8 +749,7 @@ const pierLampMat = glow(toon('#fff3c4', { emissive: '#ffcb5c', emissiveIntensit
   // lantern post at the tip
   mk(new CylGeo(.06, .06, 1.6, 6), postMat, PIER.hw - .15, 1.2, PIER.len - .2, pier);
   mk(Box(.5, .06, .06), postMat, PIER.hw - .35, 1.98, PIER.len - .2, pier);
-  const lamp = mk(new THREE.OctahedronGeometry(.17), pierLampMat, PIER.hw - .55, 1.78, PIER.len - .2, pier, false);
-  lamp.scale.y = 1.4;
+  ball(pierLampMat, PIER.hw - .55, 1.78, PIER.len - .2, .15, .2, .15, pier, false);
   // a little sign: fishing spot
   const sign = new THREE.Group(); sign.position.set(-PIER.hw - .6, 0, -.3); sign.rotation.y = Math.PI - .3; pier.add(sign);
   mk(Box(.9, .45, .06), toon('#fff4d6'), 0, 1.05, 0, sign);
@@ -848,7 +897,8 @@ for (let i = 0; i < 4; i++) {
   const g = new THREE.Group(); scene.add(g);
   const a = i * 1.57 + .6, d = R(68, 85);
   g.position.set(Math.cos(a) * d, R(-6, 10), Math.sin(a) * d);
-  const top = new THREE.Mesh(new CylGeo(5, 4.6, 1.6, 24), [dirtMat, grassMat, dirtMat]); g.add(top);
+  const top = new THREE.Mesh(new CylGeo(4.5, 4.4, 1.6, 24), [dirtMat, grassMat, dirtMat]); g.add(top);
+  softEdge(g, 5, .8, .5);
   const bot = mk(new ConeGeo(4.6, 8, 8), toon('#a27052'), 0, -4.8, 0, g, false); bot.rotation.x = Math.PI;
   const t = new THREE.Group(); t.position.y = .8; g.add(t);
   mk(new CylGeo(.3, .4, 2, 8), trunkMat, 0, 1, 0, t, false);
@@ -862,7 +912,7 @@ const { hw, hd, wh, t: WT } = HOUSE;
 const wallMat = toon('#fff0dc');
 const frontMat = toon('#fff0dc', { transparent: true });
 const beamMat = toon('#a8714a');
-const roofMat = toon('#ff8fbf', { transparent: true, flatShading: true });
+const roofMat = toon('#ff8fbf', { transparent: true });
 const chimMat = toon('#d9776b', { transparent: true });
 const houseFloor = mk(Box(hw * 2, .06, hd * 2), toon('#e0a96e'), 0, .03, 0, house, false);
 for (let i = -3; i <= 3; i++) mk(Box(.04, .065, hd * 2), toon('#c98d55'), i * 1.4, .033, 0, house, false);
@@ -899,9 +949,9 @@ for (const sx of [-1, 1]) {
   for (let k = 0; k < 4; k++) ball(toon(PASTELS[(k + (sx > 0 ? 2 : 0)) % 7]), sx * 3.15 - .55 + k * .37, 1.72, hd + .2, .16, .13, .16, house);
 }
 // roof
-const roofGeo = new ConeGeo(8.4, 3.6, 4, 1); roofGeo.rotateY(Math.PI / 4);
+const roofGeo = softRoofGeo(8.4, 3.6);
 const roof = mk(roofGeo, roofMat, 0, wh + 1.8, 0, house); roof.scale.z = (hd + .9) / (hw + .94);
-const roofSnow = mk(roofGeo, toon('#ffffff', { transparent: true, flatShading: true }), 0, wh + 2.75, 0, house, false);
+const roofSnow = mk(roofGeo, toon('#ffffff', { transparent: true }), 0, wh + 2.75, 0, house, false);
 roofSnow.scale.set(.6, .5, .6 * roof.scale.z);
 const chimney = mk(Box(.8, 2.2, .8), chimMat, 2.4, wh + 2.0, -1.4, house);
 const roofStar = mk(new THREE.OctahedronGeometry(.35), glow(toon('#ffe066', { emissive: '#ffcc33', emissiveIntensity: .4 }), .4, 1.8), 0, wh + 3.95, 0, house);
@@ -1099,8 +1149,8 @@ function heartGeo() {
 function stonePath(ax, az, bx, bz) {
   const mat = toon('#e4dcef'), len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(len / 1.25));
   for (let i = 0; i <= n; i++) {
-    const t = i / n, s = mk(new CylGeo(R(.55, .75), R(.6, .8), .12, 9), mat, lerp(ax, bx, t) + R(-.3, .3), .04, lerp(az, bz, t) + R(-.3, .3), scene, false);
-    s.rotation.y = R(0, 3);
+    const t = i / n, s = ball(mat, 0, .03, 0, R(.6, .8), .09, R(.6, .8) * .82, scene, false);
+    s.position.x = lerp(ax, bx, t) + R(-.3, .3); s.position.z = lerp(az, bz, t) + R(-.3, .3); s.rotation.y = R(0, 3);
   }
 }
 PATHS.slice(1).forEach(p => stonePath(...p));
@@ -1277,17 +1327,17 @@ function gameTex() {
   for (const y of [.9, wh - .5]) { mk(Box(hw * 2, .14, .1), beam, 0, y, -hd - .04, G, false); for (const s of [-1, 1]) mk(Box(.1, .14, hd * 2), beam, s * (hw + .04), y, 0, G, false); }
   for (const s of [-1, 1]) { mk(Box(hw * 2 + .5, .3, .25), red, 0, wh - .1, s * (hd + .05), G); mk(Box(.25, .3, hd * 2 + .5), red, s * (hw + .05), wh - .1, 0, G); }
   // two-tier pagoda roof
-  const roofMat = toon('#3b4a6b', { flatShading: true }), zs = (hd + 1.4) / (hw + 1.4);
-  const t1 = new ConeGeo((hw + 1.4) * Math.SQRT2, 2.2, 4, 1); t1.rotateY(Math.PI / 4);
+  const roofMat = toon('#3b4a6b'), zs = (hd + 1.4) / (hw + 1.4);
+  const t1 = softRoofGeo((hw + 1.4) * Math.SQRT2, 2.2, 9);
   mk(t1, roofMat, 0, wh + 1.1, 0, R2).scale.z = zs;
   mk(Box(8, .8, 8 * zs), toon('#c9372c'), 0, wh + 1.4, 0, R2);
-  const t2 = new ConeGeo(4.6 * Math.SQRT2, 1.9, 4, 1); t2.rotateY(Math.PI / 4);
+  const t2 = softRoofGeo(4.6 * Math.SQRT2, 1.9, 9);
   mk(t2, roofMat, 0, wh + 2.75, 0, R2).scale.z = zs;
   const gold = toon('#ffcc4d', { emissive: '#ffb000', emissiveIntensity: .3 });
   ball(gold, 0, wh + 3.75, 0, .22, .22, .22, R2);
   const up = new THREE.Vector3(0, 1, 0);
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-    for (const [ex, ez, ey, sc] of [[hw + 1.35, (hw + 1.35) * zs, wh + .12, 1], [4.55, 4.55 * zs, wh + 1.85, .7]]) {
+    for (const [ex, ez, ey, sc] of [[(hw + 1.35) * .92, (hw + 1.35) * zs * .92, wh + .2, 1], [4.55 * .92, 4.55 * zs * .92, wh + 1.92, .7]]) {   // on the rounded roof corners
       const tip = mk(new ConeGeo(.16 * sc, .7 * sc, 6), gold, sx * ex, ey, sz * ez, R2);
       tip.quaternion.setFromUnitVectors(up, new THREE.Vector3(sx * .7, 1, sz * .7).normalize());
     }
@@ -1415,8 +1465,7 @@ function gameTex() {
   const redM = ['#e53935', '#c62828', '#ff5252', '#d32f2f', '#ff1744', '#b71c1c'].map(c => toon(c));
   const metal = toon('#c9ced8'), white = toon('#ffffff'), green = toon('#4fa35a');
   // roof with a glowing heart on top
-  const rg = new ConeGeo(8.4, 3.6, 4, 1); rg.rotateY(Math.PI / 4);
-  mk(rg, toon('#b71c1c', { flatShading: true }), 0, wh + 1.8, 0, R2).scale.z = (hd + .9) / (hw + .94);
+  mk(softRoofGeo(8.4, 3.6), toon('#b71c1c'), 0, wh + 1.8, 0, R2).scale.z = (hd + .9) / (hw + .94);
   mk(Box(.8, 2.2, .8), toon('#8e1b1b'), -2.4, wh + 2.0, -1.4, R2);
   finishRoof(h);
   const topHeart = mk(heartGeo(), glow(toon('#ff1744', { emissive: '#ff1744', emissiveIntensity: .4 }), .4, 1.8), 0, wh + 4.1, 0, G);
@@ -1941,8 +1990,8 @@ function makeCat() {
   }
   const ears = [];
   for (const sx of [-1, 1]) {
-    const e = mk(new ConeGeo(.1, .2, 4), fur, sx * .15, .22, -.02, head); e.rotation.z = -sx * .3; ears.push(e);
-    mk(new ConeGeo(.05, .12, 4), pink, sx * .145, .2, .025, head, false).rotation.z = -sx * .3;
+    const e = mk(new ConeGeo(.1, .2, 12), fur, sx * .15, .22, -.02, head); e.rotation.z = -sx * .3; ears.push(e);
+    mk(new ConeGeo(.05, .12, 12), pink, sx * .145, .2, .025, head, false).rotation.z = -sx * .3;
   }
   // Nikki-purple collar with a golden bell
   mk(new TorGeo(.16, .035, 8, 20), toon('#9476ff'), 0, .58, .3, body).rotation.x = Math.PI / 2 - .5;
@@ -2357,7 +2406,7 @@ function castNight() {
   burst(wandWorld().add(new THREE.Vector3(0, 1, 0)), 30, { speed: 6, colors: nightTarget ? ['#c9a0ff', '#8fa0ff', '#ffffff'] : ['#ffe066', '#ffb38a', '#ffffff'], size: .5, life: 1.5, gravity: -.5 });
 }
 const C = s => new THREE.Color(s);
-const DAY = { top: C('#8ecbff'), bottom: C('#ffe3f1'), fog: C('#eef3ff'), hemiSky: C('#ffffff'), hemiGround: C('#dfe8ff'), sun: C('#fff1dc') };
+const DAY = { top: C('#8ecbff'), bottom: C('#ffe3f1'), fog: C('#eef3ff'), hemiSky: C('#ffffff'), hemiGround: C('#d3ddff'), sun: C('#fff0d8') };
 const NIGHT = { top: C('#141238'), bottom: C('#4a2b6b'), fog: C('#2a2152'), hemiSky: C('#8f8cff'), hemiGround: C('#3a2f6b'), sun: C('#9fb4ff') };
 function applyTime() {
   const n = night, Dy = (curIsle && curIsle.day) || DAY, Nt = (curIsle && curIsle.night) || NIGHT;
@@ -2366,9 +2415,9 @@ function applyTime() {
   scene.fog.color.copy(Dy.fog).lerp(Nt.fog, n);
   hemi.color.copy(DAY.hemiSky).lerp(NIGHT.hemiSky, n);
   hemi.groundColor.copy(DAY.hemiGround).lerp(NIGHT.hemiGround, n);
-  hemi.intensity = lerp(1.3, .55, n);
+  hemi.intensity = lerp(1.15, .55, n);
   sun.color.copy(DAY.sun).lerp(NIGHT.sun, n);
-  sun.intensity = lerp(2.4, .45, n);
+  sun.intensity = lerp(2.7, .45, n);
   starMat.opacity = n;
   sunSprite.material.opacity = 1 - n;
   moon.material.opacity = n; moonGlow.material.opacity = n * .5;
@@ -2573,9 +2622,9 @@ const SKY_DEFS = [
 const skyIsles = SKY_DEFS.map((def, i) => {
   const s = { ...def, x: Math.cos(def.a) * def.d, z: Math.sin(def.a) * def.d, baseTop: def.top, ph: i * 2.1 };
   const g = new THREE.Group(); g.position.set(s.x, s.top - .8, s.z); scene.add(g); s.g = g;
-  s.topMesh = new THREE.Mesh(new CylGeo(s.r, s.r - .4, 1.6, 30), [dirtMat, grassMat, dirtMat]);
+  s.topMesh = new THREE.Mesh(new CylGeo(s.r - .4, s.r - .5, 1.6, 30), [dirtMat, grassMat, dirtMat]);
   s.topMesh.receiveShadow = true; g.add(s.topMesh);
-  mk(new TorGeo(s.r - .15, .35, 6, 40), toon('#dfe9fb'), 0, .75, 0, g, false).rotation.x = Math.PI / 2;
+  softEdge(g, s.r, .8, .4);
   const bot = mk(new ConeGeo(s.r - .4, s.r * 1.7, 9), toon('#a27052'), 0, -.8 - s.r * .85, 0, g, false); bot.rotation.x = Math.PI;
   // little glowing crystals hanging underneath
   for (let k = 0; k < 4; k++) {
@@ -2626,8 +2675,8 @@ const kitty = (() => {
   ball(fur, 0, 0, 0, .42, .38, .38, head);
   face(head, .02, .34, .14, .06);
   for (const sx of [-1, 1]) {
-    const e = mk(new ConeGeo(.15, .3, 4), fur, sx * .24, .36, 0, head); e.rotation.z = -sx * .35;
-    const ein = mk(new ConeGeo(.08, .18, 4), pink, sx * .24, .35, .05, head, false); ein.rotation.z = -sx * .35;
+    const e = mk(new ConeGeo(.15, .3, 12), fur, sx * .24, .36, 0, head); e.rotation.z = -sx * .35;
+    const ein = mk(new ConeGeo(.08, .18, 12), pink, sx * .24, .35, .05, head, false); ein.rotation.z = -sx * .35;
   }
   ball(pink, 0, -.06, .38, .05, .04, .03, head, false);
   const tail = new THREE.Group(); tail.position.set(0, .5, -.45); body.add(tail);
