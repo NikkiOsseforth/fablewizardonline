@@ -29,6 +29,7 @@ Lees niet het hele bestand (ruim 5000 regels). Het script is opgedeeld in sectie
 | `daily things` | `DAILY_TASKS`, cadeautje, reeks, `WISPS` |
 | `potions & brewing` | `INGREDIENTS`, `RECIPES`, brouwen, drankeffecten |
 | `multiplayer` | `SUPABASE`, aanwezigheid, andere spelers tekenen, spreuken doorsturen |
+| `town hall` | het gemeentehuis (`TOWN`, `townHall`), projecten (`TOWN_PROJECTS`), meubels (`FURNI`), gedeelde staat (`townItems`, `townDon`, Supabase-tabel `starvale_town`), versieren (`deco`, `startDeco`), eigen kamer (`ROOM`, `ROOM_UPS`, `buildRoomShell`) |
 | `christmas` | kerstboom, lichtjes, sneeuwpop, sneeuw |
 | `pond life & fishing` | golfjes, `FISH`, het vis-spelletje, visboek |
 | `far islands & the Star Portal` | `ISLES` (Frostvale, Emberpeak, Glowshroom Wood), `FOLK` (bewoners) en hun `QUESTS`, `makePenguin`/`makeLizard`/`makeShroom`, lantaarns, `PORTALS`, `travelTo`, `checkIsleUnlocks`, `updateFar` |
@@ -51,6 +52,7 @@ De HTML en CSS van de interface staan bovenaan het bestand, vóór het script.
 - **Taal:** alle tekst in het spel is Engels. `IDEAS.md` en dit bestand zijn Nederlands. Commentaar in de code is Engels.
 - **Opslag:** voortgang staat in `localStorage` onder sleutels die met `starvale-` beginnen, per karakter (`saveKey`). Voeg je een veld toe aan de opslag, geef het dan een standaardwaarde in `loadSave`, zodat oude opslag blijft werken.
 - **Multiplayer:** iedereen die het spel open heeft, deelt één eiland via Supabase. Wat alleen bij jezelf gebeurt, zien anderen niet; stuur het mee in de aanwezigheid of als bericht als het zichtbaar moet zijn. Vertrouw nooit op wat binnenkomt: maak waarden schoon zoals `num` en `cleanNick` dat doen.
+- **Gemeentehuis:** de versiering en de gegeven sterren zijn gedeeld: elke speler bewaart een kopie (`starvale-town`), wisselt die uit met wie online is en schrijft naar de Supabase-tabel `starvale_town` (zie `supabase-town.sql`). Een meubel mag alleen door de eigenaar veranderd worden (het id begint met diens `myPid`). De eigen kamer staat in de opslag (`save.room`) en ligt ver weg op een wolk (`ROOM`, in `FAR`); spelers in hun kamer worden voor anderen verborgen.
 - **Ideeën:** vink in `IDEAS.md` af wat gebouwd is. Dat bestand staat in `.gitignore` en wordt dus niet gecommit.
 - **Commits:** rechtstreeks op `main`, met een bericht dat begint met `Starvale: `.
 

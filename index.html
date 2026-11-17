@@ -5,56 +5,73 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Starvale</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cherry+Swash:wght@700&family=Delius&display=swap" rel="stylesheet">
 <style>
+  /* Storybook game UI: cream parchment panels, solid "pressable" depth instead of glows and gradients.
+     Cherry Swash for titles (curly storybook lettering), Delius for everything you read while playing. */
   :root{
-    --ink:#5a3f8f; --ink-soft:#8a73b8; --panel:rgba(255,255,255,.86); --pink:#ff8fc7; --lilac:#b48cff; --sky:#8fd0ff;
+    --ink:#43304f; --ink-soft:#7c6a84;
+    --paper:#fff8ea; --paper-2:#f7ecd4; --edge:#ead5ac; --drop:#d4b88a;
+    --line:#5b4468;
+    --gold:#ffc94a; --gold-d:#d0912a; --gold-soft:#fff0c4;
+    --mint:#79cfa2; --mint-d:#3f9b6c;
+    --berry:#e5658c; --plum:#7b5bab; --plum-soft:#efe5f7;
+    --mana:#5aa7f2; --mana-d:#2f6fb8;
+    --pink:var(--berry); --lilac:var(--plum); --sky:#8fd0ff;
+    --panel:var(--paper);
+    --title:'Cherry Swash',Georgia,serif;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;overflow:hidden;background:#cfe6ff;font-family:'Fredoka',system-ui,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none}
+  html,body{margin:0;height:100%;overflow:hidden;background:#cfe6ff;font-family:'Delius',system-ui,sans-serif;font-weight:400;color:var(--ink);user-select:none;-webkit-user-select:none}
   canvas{display:block;touch-action:none;outline:none}
   #hud{position:fixed;inset:0;pointer-events:none}
   #hud > *{pointer-events:auto}
-  .panel{background:var(--panel);border:3px solid #fff;border-radius:22px;box-shadow:0 6px 20px rgba(90,63,143,.18);backdrop-filter:blur(6px)}
+  .panel{background:var(--paper);border:3px solid var(--edge);border-radius:20px;box-shadow:0 4px 0 var(--drop),0 8px 16px rgba(67,48,79,.12)}
   /* stats card and quest card stack in one column, so quests always sit below the (growing) stats card */
-  #leftCol{position:absolute;top:14px;left:14px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;pointer-events:none}
+  #leftCol{position:absolute;top:14px;left:14px;display:flex;flex-direction:column;align-items:flex-start;gap:12px;pointer-events:none}
   #leftCol > *{pointer-events:auto}
   #status{padding:12px 16px;min-width:220px}
-  #status .title{font-weight:700;font-size:22px;letter-spacing:.3px}
-  #status .row{margin-top:4px;font-size:15px;color:var(--ink-soft)}
-  #status .row b{color:var(--ink)}
-  .mana{position:relative;margin-top:8px;height:18px;border-radius:12px;background:#ece4ff;overflow:hidden}
-  #manaFill{position:absolute;inset:0 auto 0 0;width:100%;background:linear-gradient(90deg,#8fd0ff,#b48cff,#ff8fc7);border-radius:12px;transition:width .1s}
-  #manaText{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;text-shadow:0 1px 2px rgba(90,63,143,.6)}
+  #status .title{font-family:var(--title);font-weight:400;font-size:24px;line-height:1.1;color:var(--plum)}
+  #status .row{margin-top:4px;font-size:15px;font-weight:500;color:var(--ink-soft)}
+  #status .row b{color:var(--ink);font-weight:700}
+  .mana{position:relative;margin-top:9px;height:20px;border-radius:10px;background:var(--line);border:2px solid var(--line);overflow:hidden}
+  #manaFill{position:absolute;inset:0 auto 0 0;width:100%;background:var(--mana);border-radius:8px;box-shadow:inset 0 4px 0 rgba(255,255,255,.35),inset 0 -3px 0 var(--mana-d);transition:width .1s}
+  #manaText{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;letter-spacing:.3px;text-shadow:0 1px 0 var(--line),1px 0 0 var(--line),-1px 0 0 var(--line),0 -1px 0 var(--line)}
   #topright{position:absolute;top:14px;right:14px;display:flex;gap:8px}
-  .roundbtn{width:48px;height:48px;border-radius:50%;border:3px solid #fff;background:var(--panel);font-size:22px;cursor:pointer;box-shadow:0 6px 20px rgba(90,63,143,.18);font-family:inherit}
-  .roundbtn:hover{transform:scale(1.07)}
-  #spellbar{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px;padding:10px;max-width:calc(100vw - 16px);flex-wrap:wrap;justify-content:center}
-  .spell{position:relative;width:86px;height:92px;border-radius:18px;border:3px solid #fff;background:linear-gradient(180deg,#fff,#f3ecff);cursor:pointer;font-family:inherit;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;overflow:hidden;transition:transform .12s, opacity .2s;box-shadow:0 3px 0 #e2d6ff}
-  .spell:hover{transform:translateY(-3px)}
-  .spell:active{transform:translateY(1px)}
+  .roundbtn{width:48px;height:48px;border-radius:50%;border:3px solid var(--edge);background:var(--paper);color:var(--ink);font-size:22px;cursor:pointer;box-shadow:0 4px 0 var(--drop);font-family:inherit;transition:transform .1s,box-shadow .1s}
+  .roundbtn:hover{transform:translateY(-2px);box-shadow:0 6px 0 var(--drop)}
+  .roundbtn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--drop)}
+  #spellbar{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px;padding:10px 10px 12px;max-width:calc(100vw - 16px);flex-wrap:wrap;justify-content:center}
+  .spell{position:relative;width:86px;height:92px;border-radius:16px;border:3px solid var(--edge);background:#fffdf6;cursor:pointer;font-family:inherit;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;overflow:hidden;transition:transform .1s, opacity .2s, box-shadow .1s;box-shadow:0 4px 0 var(--drop)}
+  .spell:hover{transform:translateY(-3px);border-color:var(--gold);box-shadow:0 7px 0 var(--gold-d)}
+  .spell:active{transform:translateY(3px);box-shadow:0 1px 0 var(--drop)}
   .spell .ico{font-size:30px;line-height:1}
-  .spell .nm{font-size:11.5px;font-weight:600;line-height:1.1;text-align:center;padding:0 3px}
-  .spell .cost{font-size:11px;color:var(--ink-soft)}
-  .spell .key{position:absolute;top:4px;left:6px;font-size:11px;font-weight:700;color:#fff;background:var(--lilac);border-radius:8px;padding:0 5px}
-  .spell .cd{position:absolute;left:0;right:0;bottom:0;height:0;background:rgba(120,90,190,.35);pointer-events:none}
+  .spell .nm{font-size:12px;font-weight:700;line-height:1.05;text-align:center;padding:0 3px}
+  .spell .cost{font-size:11px;font-weight:600;color:var(--mana-d)}
+  .spell .key{position:absolute;top:4px;left:5px;min-width:17px;height:17px;font-size:11px;font-weight:800;line-height:17px;text-align:center;color:var(--paper);background:var(--line);border-radius:6px;padding:0 4px}
+  .spell .cd{position:absolute;left:0;right:0;bottom:0;height:0;background:rgba(67,48,79,.38);pointer-events:none}
   .spell.low{opacity:.5}
   .spell.shake{animation:shake .35s}
   @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-  #hint{position:absolute;left:50%;bottom:132px;transform:translateX(-50%);padding:8px 16px;font-size:16px;display:none;white-space:nowrap}
+  #hint{position:absolute;left:50%;bottom:136px;transform:translateX(-50%);padding:8px 16px;font-size:16px;display:none;white-space:nowrap}
   #toasts{position:absolute;top:80px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
-  .toast{padding:10px 18px;font-size:17px;font-weight:500;animation:toast 3.2s forwards;text-align:center;max-width:90vw}
+  .toast{padding:10px 18px;font-size:17px;font-weight:600;animation:toast 3.2s forwards;text-align:center;max-width:90vw}
   @keyframes toast{0%{opacity:0;transform:translateY(-10px) scale(.9)}10%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
   #labels{position:absolute;inset:0;pointer-events:none}
-  .label{position:absolute;left:0;top:0;padding:2px 10px;border-radius:12px;background:rgba(255,255,255,.85);font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;display:none;border:2px solid #fff}
-  #overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,rgba(255,230,250,.55),rgba(120,90,190,.55));z-index:10;padding:16px}
+  .label{position:absolute;left:0;top:0;padding:2px 10px;border-radius:10px;background:var(--paper);font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;display:none;border:2px solid var(--edge);box-shadow:0 2px 0 var(--drop)}
+  #overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(43,28,60,.45);z-index:10;padding:16px}
   #overlay.hidden{display:none}
-  .card{max-width:560px;width:100%;padding:26px 28px;text-align:center;max-height:calc(100vh - 32px);overflow:auto}
-  .card h1{margin:0;font-size:44px;background:linear-gradient(90deg,#8f6bff,#ff7fbf,#7fbfff);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .card p{font-size:17px;line-height:1.45;margin:8px 0 14px;color:var(--ink-soft)}
-  .controls{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;text-align:left;font-size:15px;margin:0 auto 18px;max-width:420px}
-  .controls kbd{display:inline-block;background:#f1eaff;border:2px solid #e0d2ff;border-bottom-width:3px;border-radius:8px;padding:0 6px;font-family:inherit;font-weight:600;color:var(--ink);font-size:13px}
-  .bigbtn{font-family:inherit;font-size:21px;font-weight:600;color:#fff;border:none;border-radius:30px;padding:13px 34px;cursor:pointer;background:linear-gradient(90deg,#9b7bff,#ff8fc7);box-shadow:0 6px 0 #c06aa8, 0 10px 24px rgba(155,123,255,.35);transition:transform .1s}
+  .card{max-width:560px;width:100%;padding:26px 28px;text-align:center;max-height:calc(100vh - 32px);overflow:auto;border-width:4px;border-radius:26px;box-shadow:0 0 0 3px var(--paper),0 0 0 6px var(--line),0 12px 0 rgba(43,28,60,.25)}
+  .card h1{margin:0;font-family:var(--title);font-weight:400;font-size:56px;line-height:1;color:var(--plum);text-shadow:0 3px 0 var(--gold)}
+  .card h2{font-family:var(--title);font-weight:400;color:var(--plum)}
+  .card p{font-size:17px;font-weight:500;line-height:1.45;margin:8px 0 14px;color:var(--ink-soft)}
+  #keys{position:absolute;left:14px;bottom:14px;padding:10px 14px;display:none;grid-template-columns:auto 1fr;gap:5px 10px;align-items:center;font-size:13px;font-weight:500;color:var(--ink-soft)}
+  #keys.on{display:grid}
+  #keys.panel{background:transparent;border-color:transparent;box-shadow:none}
+  #keys span{color:#fff;font-weight:700;text-shadow:0 1px 0 var(--line),1px 0 0 var(--line),-1px 0 0 var(--line),0 -1px 0 var(--line),0 2px 3px rgba(43,28,60,.5)}
+  #keys kbd{display:inline-block;min-width:22px;text-align:center;background:#fffdf6;border:2px solid var(--edge);border-bottom-width:4px;border-bottom-color:var(--drop);border-radius:7px;padding:0 6px;font-family:inherit;font-weight:700;color:var(--ink);font-size:13px}
+  .bigbtn{font-family:inherit;font-size:21px;font-weight:800;color:var(--ink);border:3px solid var(--gold-d);border-radius:18px;padding:11px 34px;cursor:pointer;background:var(--gold);box-shadow:inset 0 4px 0 rgba(255,255,255,.45),0 5px 0 var(--gold-d);transition:transform .1s,box-shadow .1s}
   .ic{display:inline-flex;width:1.15em;height:1.15em;vertical-align:-.2em}
   .ic svg{width:100%;height:100%;display:block}
   .ic.sm{width:1em;height:1em;vertical-align:-.12em}
@@ -68,148 +85,180 @@
   #manaText{gap:3px}
   .toast{display:flex;align-items:center;gap:8px}
   .toast .ic{flex:none;width:20px;height:20px}
-  .label.mp{background:linear-gradient(90deg,#fff,#ffe9f6);border-color:#ff8fc7;color:#b0397a}
+  .label.mp{background:#ffeaf0;border-color:var(--berry);box-shadow:0 2px 0 #c44b70;color:#9c2f55}
   .label.mp small{font-weight:500;color:var(--ink-soft)}
-  #onlineRow .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#3ccf7f;box-shadow:0 0 0 3px rgba(60,207,127,.25);margin:0 3px 1px 2px}
+  #onlineRow .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--mint);border:2px solid var(--mint-d);margin:0 3px 1px 2px}
   #onlineNames{font-size:12px}
-  #nickWrap{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 16px;font-size:16px;font-weight:600}
-  #nick{font-family:inherit;font-size:16px;color:var(--ink);border:3px solid #ece4ff;border-radius:14px;padding:8px 12px;width:min(230px,60vw);outline:none;user-select:text;-webkit-user-select:text}
-  #nick:focus{border-color:#b48cff}
-  .label .qm{display:inline-block;background:#ffd84d;color:#7a4a00;border-radius:50%;width:16px;height:16px;line-height:16px;text-align:center;font-size:12px}
+  #nickWrap{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 16px;font-size:16px;font-weight:700}
+  #nick{font-family:inherit;font-size:16px;font-weight:600;color:var(--ink);background:#fffdf6;border:3px solid var(--edge);border-radius:12px;padding:8px 12px;width:min(230px,60vw);outline:none;user-select:text;-webkit-user-select:text;box-shadow:inset 0 3px 0 var(--paper-2)}
+  #nick:focus{border-color:var(--plum)}
+  .label .qm{display:inline-block;background:var(--gold);color:var(--ink);border-radius:50%;width:16px;height:16px;line-height:16px;text-align:center;font-size:12px;font-weight:800}
   .label .ic{width:12px;height:12px;vertical-align:-1px}
-  #quests{padding:10px 14px;box-sizing:border-box;min-width:220px;max-width:280px;display:none;font-size:14px}
-  #quests h3{margin:0 0 6px;font-size:15px;display:flex;align-items:center;gap:6px}
+  #quests{padding:10px 14px;box-sizing:border-box;min-width:220px;max-width:280px;display:none;font-size:14px;font-weight:500}
+  #quests h3{margin:0 0 6px;font-family:var(--title);font-weight:400;font-size:18px;color:var(--plum);display:flex;align-items:center;gap:6px}
   #quests .q{margin:5px 0;line-height:1.25}
-  #quests .q b{color:var(--ink)}
+  #quests .q b{color:var(--ink);font-weight:700}
   #quests .q span{color:var(--ink-soft);font-size:13px}
-  #quests .q.ready span{color:#2fa36b;font-weight:600}
-  #quests .q.daily{background:linear-gradient(90deg,#fff6d6,#fff0f8);border-radius:10px;padding:5px 8px;margin:4px -6px 6px}
+  #quests .q.ready span{color:var(--mint-d);font-weight:700}
+  #quests .q.daily{background:var(--gold-soft);border:2px dashed #e9bd5c;border-radius:10px;padding:5px 8px;margin:4px -6px 6px}
   #quests .q.daily .ic{width:15px;height:15px;vertical-align:-2px}
-  #shop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(120,90,190,.45);z-index:11;padding:16px}
+  #shop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(43,28,60,.45);z-index:11;padding:16px}
   #shop.hidden{display:none}
-  #shop h2{margin:0;font-size:30px;display:flex;align-items:center;justify-content:center;gap:8px}
+  #shop h2{margin:0;font-size:34px;display:flex;align-items:center;justify-content:center;gap:8px}
   .shopsub{margin:4px 0 6px!important}
-  .shopstars{font-size:20px;font-weight:600;margin-bottom:12px}
-  #shopItems{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;text-align:left}
-  .item{display:flex;align-items:center;gap:12px;background:#fff;border:3px solid #ece4ff;border-radius:16px;padding:8px 12px}
+  .shopstars{display:inline-flex;align-items:center;gap:6px;font-size:18px;font-weight:700;margin-bottom:12px;background:var(--gold-soft);border:2px solid #e9bd5c;border-radius:999px;padding:3px 14px 3px 10px}
+  #shopItems{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;text-align:left}
+  .item{display:flex;align-items:center;gap:12px;background:#fffdf6;border:3px solid var(--edge);border-radius:14px;padding:8px 12px;box-shadow:0 3px 0 var(--paper-2)}
   .item .ico{width:40px;height:40px;flex:none}
   .item .ico svg{width:100%;height:100%}
   .item .txt{flex:1;line-height:1.2}
-  .item .txt span{display:block;font-size:13px;color:var(--ink-soft)}
-  .item button{font-family:inherit;font-weight:600;font-size:14px;border:none;border-radius:14px;padding:8px 12px;cursor:pointer;color:#fff;background:linear-gradient(90deg,#9b7bff,#ff8fc7);white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+  .item .txt b{font-weight:700}
+  .item .txt span{display:block;font-size:13px;font-weight:500;color:var(--ink-soft)}
+  .item button{font-family:inherit;font-weight:800;font-size:14px;border:2px solid var(--gold-d);border-radius:12px;padding:6px 12px;cursor:pointer;color:var(--ink);background:var(--gold);box-shadow:inset 0 3px 0 rgba(255,255,255,.45),0 3px 0 var(--gold-d);white-space:nowrap;display:inline-flex;align-items:center;gap:4px;transition:transform .1s,box-shadow .1s}
+  .item button:hover:not(:disabled){transform:translateY(-1px);box-shadow:inset 0 3px 0 rgba(255,255,255,.45),0 4px 0 var(--gold-d)}
+  .item button:active:not(:disabled){transform:translateY(2px);box-shadow:inset 0 3px 0 rgba(255,255,255,.45),0 1px 0 var(--gold-d)}
   .item button .ic{width:14px;height:14px}
   .item button:disabled{opacity:.45;cursor:default}
-  .item button.owned{background:#e9e2fb;color:var(--ink)}
+  .item button.owned{background:var(--paper-2);border-color:var(--edge);box-shadow:none;color:var(--ink-soft)}
   @media (max-width:640px){ #quests{position:fixed;bottom:178px;left:8px;min-width:0;max-width:60vw;font-size:12px} }
-  #pickTitle{font-size:20px;font-weight:600;margin:0 0 8px}
+  #pickTitle{font-family:var(--title);font-weight:400;font-size:24px;color:var(--plum);margin:0 0 10px}
   #chars{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 0 18px}
-  .char{font-family:inherit;color:var(--ink);background:#fff;border:3px solid #ece4ff;border-radius:18px;padding:6px 6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:transform .12s,border-color .12s,box-shadow .12s}
-  .char:hover{transform:translateY(-3px)}
-  .char.sel{border-color:#b48cff;box-shadow:0 0 0 3px #f1eaff,0 8px 18px rgba(155,123,255,.3);background:linear-gradient(180deg,#fff,#f6f0ff)}
+  .char{font-family:inherit;color:var(--ink);background:#fffdf6;border:3px solid var(--edge);border-radius:16px;padding:6px 6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;box-shadow:0 4px 0 var(--paper-2);transition:transform .1s,border-color .1s,box-shadow .1s}
+  .char:hover{transform:translateY(-3px);box-shadow:0 7px 0 var(--paper-2)}
+  .char.sel{border-color:var(--gold-d);background:var(--gold-soft);box-shadow:0 4px 0 var(--gold-d)}
   .char img{width:100%;max-width:110px;aspect-ratio:200/220;object-fit:contain}
   .char .noimg{font-size:48px;padding:16px 0}
-  .char b{font-size:17px}
-  .char span{font-size:11.5px;color:var(--ink-soft);line-height:1.2;text-align:center}
+  .char b{font-size:17px;font-weight:800}
+  .char span{font-size:11.5px;font-weight:500;color:var(--ink-soft);line-height:1.2;text-align:center}
   #chars{grid-template-columns:repeat(5,1fr)}
   .char.mine{border-style:dashed}
   .char.mine.sel{border-style:solid}
-  #maker{background:#fbf8ff;border:3px solid #ece4ff;border-radius:18px;padding:12px 14px;margin:-6px 0 16px;text-align:left}
+  #maker{background:var(--paper-2);border:3px solid var(--edge);border-radius:16px;padding:12px 14px;margin:-6px 0 16px;text-align:left}
   #maker[hidden]{display:none}
   #maker .mrow{display:flex;align-items:center;gap:10px;margin:6px 0;flex-wrap:wrap}
-  #maker .mlab{width:84px;flex:none;font-weight:600;font-size:14px}
+  #maker .mlab{width:84px;flex:none;font-weight:700;font-size:14px}
   #maker .opts{display:flex;flex-wrap:wrap;gap:6px;flex:1;align-items:center}
-  #maker .sw{width:26px;height:26px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #ddd2f5;cursor:pointer;padding:0}
-  #maker .sw.sel{box-shadow:0 0 0 3px #9b7bff}
-  #maker .pill{font-family:inherit;font-size:14px;color:var(--ink);background:#fff;border:2px solid #ddd2f5;border-radius:14px;padding:4px 11px;cursor:pointer}
-  #maker .pill.sel{border-color:#9b7bff;background:#f1eaff;font-weight:600}
-  #makerName{font-family:inherit;font-size:15px;color:var(--ink);border:3px solid #ece4ff;border-radius:12px;padding:5px 10px;width:min(200px,50vw);outline:none;user-select:text;-webkit-user-select:text}
-  #makerName:focus{border-color:#b48cff}
-  #makerWarn{color:#d0386b;font-size:13px;font-weight:600}
+  #maker .sw{width:26px;height:26px;border-radius:50%;border:3px solid #fffdf6;box-shadow:0 0 0 2px var(--drop);cursor:pointer;padding:0}
+  #maker .sw.sel{box-shadow:0 0 0 3px var(--line)}
+  #maker .pill{font-family:inherit;font-size:14px;font-weight:600;color:var(--ink);background:#fffdf6;border:2px solid var(--edge);border-radius:10px;padding:4px 11px;cursor:pointer;box-shadow:0 2px 0 var(--drop)}
+  #maker .pill.sel{border-color:var(--line);background:var(--line);color:var(--paper);box-shadow:none}
+  #makerName{font-family:inherit;font-size:15px;font-weight:600;color:var(--ink);background:#fffdf6;border:3px solid var(--edge);border-radius:10px;padding:5px 10px;width:min(200px,50vw);outline:none;user-select:text;-webkit-user-select:text}
+  #makerName:focus{border-color:var(--plum)}
+  #makerWarn{color:#c43a62;font-size:13px;font-weight:700}
   @media (max-width:640px){ #chars{grid-template-columns:repeat(3,1fr)} #maker .mlab{width:100%} }
   /* potions & brewing */
   #ingRow{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
-  #ingRow .ing{display:inline-flex;align-items:center;gap:2px;color:var(--ink);font-weight:600}
+  #ingRow .ing{display:inline-flex;align-items:center;gap:2px;color:var(--ink);font-weight:700}
   #ingRow .ic{width:17px;height:17px}
-  #fxRow{display:none;color:#2fa36b!important;font-weight:600}
-  #potionBelt{position:absolute;top:74px;right:14px;display:none;flex-direction:column;gap:6px;padding:8px}
-  .pbtn{position:relative;width:52px;height:52px;border-radius:16px;border:3px solid #fff;background:linear-gradient(180deg,#fff,#f3ecff);cursor:pointer;padding:5px;box-shadow:0 3px 0 #e2d6ff;transition:transform .12s}
-  .pbtn:hover{transform:scale(1.07)}
+  #fxRow{display:none;color:var(--mint-d)!important;font-weight:700}
+  #potionBelt{position:absolute;top:74px;right:14px;display:none;flex-direction:column;gap:8px;padding:8px}
+  .pbtn{position:relative;width:52px;height:52px;border-radius:14px;border:3px solid var(--edge);background:#fffdf6;cursor:pointer;padding:5px;box-shadow:0 3px 0 var(--drop);transition:transform .1s,box-shadow .1s}
+  .pbtn:hover{transform:translateY(-2px);box-shadow:0 5px 0 var(--drop)}
+  .pbtn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--drop)}
   .pbtn svg{width:100%;height:100%;display:block}
-  .pbtn .n{position:absolute;right:-5px;bottom:-5px;min-width:20px;height:20px;border-radius:10px;background:var(--pink);color:#fff;font-size:12px;font-weight:700;line-height:20px;text-align:center;font-family:inherit;border:2px solid #fff}
-  .pbtn .q{position:absolute;top:-6px;left:-6px;font-size:11px;font-weight:700;color:#fff;background:var(--lilac);border-radius:8px;padding:0 5px;font-family:inherit}
-  #brew{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(120,90,190,.45);z-index:11;padding:16px}
+  .pbtn .n{position:absolute;right:-6px;bottom:-6px;min-width:20px;height:20px;border-radius:10px;background:var(--berry);color:#fff;font-size:12px;font-weight:800;line-height:16px;text-align:center;font-family:inherit;border:2px solid var(--paper)}
+  .pbtn .q{position:absolute;top:-7px;left:-7px;font-size:11px;font-weight:800;color:var(--paper);background:var(--line);border-radius:6px;padding:0 5px;font-family:inherit}
+  #brew{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(43,28,60,.45);z-index:11;padding:16px}
   #brew.hidden{display:none}
-  #brew h2{margin:0;font-size:30px;display:flex;align-items:center;justify-content:center;gap:8px}
+  #brew h2{margin:0;font-size:34px;display:flex;align-items:center;justify-content:center;gap:8px}
   #brew h2 .ic{width:34px;height:34px}
-  .brewlabel{font-weight:600;font-size:16px;margin:12px 0 6px;text-align:left}
-  .brewlabel small{font-weight:400;color:var(--ink-soft)}
+  .brewlabel{font-weight:700;font-size:16px;margin:14px 0 6px;text-align:left}
+  .brewlabel small{font-weight:500;color:var(--ink-soft)}
   #ingTiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-  .ingtile{font-family:inherit;color:var(--ink);background:#fff;border:3px solid #ece4ff;border-radius:16px;padding:6px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;transition:transform .12s,border-color .12s}
-  .ingtile:hover:not(:disabled){transform:translateY(-2px);border-color:#b48cff}
+  .ingtile{font-family:inherit;color:var(--ink);background:#fffdf6;border:3px solid var(--edge);border-radius:14px;padding:6px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;box-shadow:0 3px 0 var(--paper-2);transition:transform .1s,border-color .1s}
+  .ingtile:hover:not(:disabled){transform:translateY(-2px);border-color:var(--gold-d)}
   .ingtile:disabled{opacity:.45;cursor:default}
   .ingtile .ico{width:36px;height:36px}
   .ingtile .ico svg{width:100%;height:100%}
-  .ingtile b{font-size:12.5px;line-height:1.1;text-align:center}
-  .ingtile span{font-size:12px;color:var(--ink-soft)}
-  #potSlots{display:flex;justify-content:center;gap:12px;margin-bottom:12px}
-  .slot{width:58px;height:58px;border-radius:50%;border:3px dashed #d6c6ff;background:#faf7ff;display:flex;align-items:center;justify-content:center;padding:9px;cursor:pointer;font-family:inherit}
-  .slot.full{border-style:solid;border-color:#b48cff;background:#fff}
+  .ingtile b{font-size:12.5px;font-weight:700;line-height:1.1;text-align:center}
+  .ingtile span{font-size:12px;font-weight:500;color:var(--ink-soft)}
+  #potSlots{display:flex;justify-content:center;gap:12px;margin-bottom:14px}
+  .slot{width:58px;height:58px;border-radius:50%;border:3px dashed var(--drop);background:var(--paper-2);display:flex;align-items:center;justify-content:center;padding:9px;cursor:pointer;font-family:inherit}
+  .slot.full{border-style:solid;border-color:var(--gold-d);background:var(--gold-soft)}
   .slot svg{width:100%;height:100%}
-  #recipeList{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;text-align:left}
+  #recipeList{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;text-align:left}
   .item .mix{display:inline-flex;gap:2px;vertical-align:middle;margin-left:4px}
   .item .mix .ic{width:18px;height:18px}
-  .item.unknown{background:#faf7ff;border-style:dashed}
-  .item .cnt{font-weight:700;color:var(--ink);white-space:nowrap}
-  .bigbtn.ghost{background:#efe8ff;color:var(--ink);box-shadow:0 6px 0 #d6c6ff}
+  .item.unknown{background:var(--paper-2);border-style:dashed;box-shadow:none}
+  .item .cnt{font-weight:800;color:var(--ink);white-space:nowrap}
+  .bigbtn.ghost{background:#fffdf6;border-color:var(--edge);color:var(--ink);box-shadow:0 5px 0 var(--drop)}
   .bigbtn:disabled{opacity:.5;cursor:default}
   @media (max-width:640px){ #potionBelt{top:58px;right:8px;padding:6px} .pbtn{width:42px;height:42px} #ingTiles{grid-template-columns:repeat(2,1fr)} }
-  .bigbtn:hover{transform:translateY(-2px)}
-  .bigbtn:active{transform:translateY(3px);box-shadow:0 3px 0 #c06aa8}
+  .bigbtn:hover:not(:disabled){transform:translateY(-2px)}
+  .bigbtn:active:not(:disabled){transform:translateY(4px);box-shadow:inset 0 4px 0 rgba(255,255,255,.45),0 1px 0 var(--gold-d)}
+  .bigbtn.ghost:active:not(:disabled){box-shadow:0 1px 0 var(--drop)}
+  button:focus-visible{outline:3px solid var(--plum);outline-offset:2px}
   @media (max-width:640px){
-    .spell{width:64px;height:70px;border-radius:14px}
+    .spell{width:64px;height:70px;border-radius:13px}
     .spell .ico{font-size:24px}
     .spell .nm{display:none}
     #leftCol{top:8px;left:8px}
     #status{min-width:0;padding:8px 12px}
-    #status .title{font-size:17px}
+    #status .title{font-size:19px}
     #topright{top:8px;right:8px}
     .roundbtn{width:40px;height:40px;font-size:18px}
     #hint{bottom:178px;font-size:14px}
-    .card h1{font-size:34px}
+    .card{padding:22px 18px}
+    .card h1{font-size:42px}
   }
   /* fishing */
-  #fishing{position:absolute;left:50%;bottom:132px;transform:translateX(-50%);padding:10px 16px;display:none;flex-direction:column;align-items:center;gap:8px;width:min(330px,calc(100vw - 24px))}
-  #fishMsg{font-size:16px;font-weight:600;text-align:center;display:flex;align-items:center;gap:6px}
+  #fishing{position:absolute;left:50%;bottom:136px;transform:translateX(-50%);padding:10px 16px 14px;display:none;flex-direction:column;align-items:center;gap:8px;width:min(330px,calc(100vw - 24px))}
+  #fishMsg{font-size:16px;font-weight:700;text-align:center;display:flex;align-items:center;gap:6px}
   #fishMsg .ic{width:20px;height:20px}
-  #fishBar{position:relative;width:100%;height:22px;border-radius:12px;background:#dceeff;overflow:hidden;border:2px solid #fff;display:none}
-  #fishZone{position:absolute;top:0;bottom:0;background:linear-gradient(90deg,#7fe0a8,#3ccf7f);border-radius:8px}
-  #fishMark{position:absolute;top:-2px;bottom:-2px;width:6px;margin-left:-3px;background:#5a3f8f;border-radius:4px;box-shadow:0 0 0 2px #fff}
-  #fishBtn{font-family:inherit;font-weight:600;font-size:16px;border:none;border-radius:14px;padding:8px 18px;cursor:pointer;color:#fff;background:linear-gradient(90deg,#5cc1e8,#9b7bff)}
-  #fishBtn.go{background:linear-gradient(90deg,#ffb000,#ff6fae);animation:shake .35s infinite}
-  #fishbook{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(90,140,200,.45);z-index:11;padding:16px}
+  #fishBar{position:relative;width:100%;height:22px;border-radius:11px;background:#cfe6f7;overflow:hidden;border:2px solid var(--line);display:none}
+  #fishZone{position:absolute;top:0;bottom:0;background:var(--mint);box-shadow:inset 0 3px 0 rgba(255,255,255,.4);border-radius:6px}
+  #fishMark{position:absolute;top:-2px;bottom:-2px;width:6px;margin-left:-3px;background:var(--line);border-radius:3px;box-shadow:0 0 0 2px var(--paper)}
+  #fishBtn{font-family:inherit;font-weight:800;font-size:16px;border:2px solid #2f86b8;border-radius:12px;padding:7px 18px;cursor:pointer;color:#fff;background:#4fb0e3;box-shadow:inset 0 3px 0 rgba(255,255,255,.35),0 4px 0 #2f86b8;text-shadow:0 1px 0 #2f86b8}
+  #fishBtn.go{background:var(--gold);border-color:var(--gold-d);color:var(--ink);text-shadow:none;box-shadow:inset 0 3px 0 rgba(255,255,255,.45),0 4px 0 var(--gold-d);animation:shake .35s infinite}
+  #fishbook{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(24,46,78,.45);z-index:11;padding:16px}
   #fishbook.hidden{display:none}
-  #fishbook h2{margin:0;font-size:30px;display:flex;align-items:center;justify-content:center;gap:8px}
+  #fishbook h2{margin:0;font-size:34px;display:flex;align-items:center;justify-content:center;gap:8px}
   #fishbook h2 .ic{width:34px;height:34px}
-  #fishList{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;text-align:left}
-  .rar{font-size:11px;font-weight:700;font-style:normal;border-radius:8px;padding:1px 6px;color:#fff;margin-left:6px;vertical-align:1px}
+  #fishList{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;text-align:left}
+  .rar{font-size:11px;font-weight:800;font-style:normal;border-radius:6px;padding:1px 6px;color:#fff;margin-left:6px;vertical-align:1px;text-shadow:0 1px 0 rgba(0,0,0,.25)}
   @media (max-width:640px){ #fishing{bottom:178px} }
   /* star portal & other islands */
-  #travel{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(120,90,190,.45);z-index:11;padding:16px}
+  #travel{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(43,28,60,.45);z-index:11;padding:16px}
   #travel.hidden{display:none}
-  #travel h2{margin:0;font-size:30px;display:flex;align-items:center;justify-content:center;gap:8px}
+  #travel h2{margin:0;font-size:34px;display:flex;align-items:center;justify-content:center;gap:8px}
   #travel h2 .ic{width:34px;height:34px}
-  #travelList{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;text-align:left}
-  #travelList .item.here{border-color:#b48cff;background:linear-gradient(90deg,#fff,#f6f0ff)}
-  #travelList .item.locked{background:#faf7ff;border-style:dashed}
+  #travelList{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;text-align:left}
+  #travelList .item.here{border-color:var(--gold-d);background:var(--gold-soft);box-shadow:0 3px 0 var(--gold-d)}
+  #travelList .item.locked{background:var(--paper-2);border-style:dashed;box-shadow:none}
   #travelList .item.locked .ico{filter:grayscale(.85);opacity:.6}
-  .tbar{position:relative;height:9px;border-radius:6px;background:#ece4ff;overflow:hidden;margin-top:5px}
-  .tbar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#8fd0ff,#b48cff,#ff8fc7);border-radius:6px}
-  #warp{position:fixed;inset:0;z-index:12;pointer-events:none;opacity:0;transition:opacity .45s ease;background:radial-gradient(circle at 50% 50%,#ffffff 0%,#fff3fb 35%,#e2d4ff 70%,#b9a0ff 100%)}
+  /* town hall */
+  #town{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(43,28,60,.45);z-index:11;padding:16px}
+  #town.hidden{display:none}
+  #town h2{margin:0;font-size:34px;display:flex;align-items:center;justify-content:center;gap:8px}
+  #town h2 .ic{width:34px;height:34px}
+  #town .tlist{display:flex;flex-direction:column;gap:8px;text-align:left}
+  #town .item.done{background:var(--gold-soft);border-color:var(--gold-d)}
+  #town .item .bcol{display:flex;flex-direction:column;gap:5px}
+  #town .ftiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
+  #town .ingtile img{width:58px;height:58px;object-fit:contain}
+  #town .swatches{display:flex;gap:8px;flex-wrap:wrap}
+  #town .sw{width:34px;height:34px;border-radius:50%;border:3px solid #fffdf6;box-shadow:0 0 0 2px var(--drop);cursor:pointer;padding:0}
+  #town .sw.sel{box-shadow:0 0 0 3px var(--line)}
+  #town .sw:disabled{opacity:.45;cursor:default}
+  #decoBar{position:absolute;left:50%;bottom:136px;transform:translateX(-50%);padding:10px 14px 12px;display:none;flex-direction:column;align-items:center;gap:8px;width:min(470px,calc(100vw - 24px))}
+  #decoMsg{font-size:15px;text-align:center;display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center}
+  #decoMsg .ic{width:15px;height:15px}
+  #decoMsg span:last-child{color:var(--ink-soft);font-size:13px}
+  #decoBar .dbtns{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+  #decoBar button{font-family:inherit;font-weight:700;font-size:14px;border:2px solid var(--edge);border-radius:12px;padding:6px 12px;cursor:pointer;color:var(--ink);background:#fffdf6;box-shadow:0 3px 0 var(--drop)}
+  #decoBar button.go{background:var(--gold);border-color:var(--gold-d);box-shadow:0 3px 0 var(--gold-d)}
+  #decoBar button:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 var(--drop)}
+  #decoBar button:disabled{opacity:.45;cursor:default}
+  #decoBar kbd{font-family:inherit;font-size:11px;opacity:.7}
+  @media (max-width:640px){ #town .ftiles{grid-template-columns:repeat(3,1fr)} #decoBar{bottom:178px} #decoBar kbd{display:none} }
+  .tbar{position:relative;height:10px;border-radius:5px;background:var(--paper-2);border:2px solid var(--edge);overflow:hidden;margin-top:5px}
+  .tbar i{position:absolute;inset:0 auto 0 0;background:var(--plum);border-radius:3px}
+  #warp{position:fixed;inset:0;z-index:12;pointer-events:none;opacity:0;transition:opacity .45s ease;background:radial-gradient(circle at 50% 50%,#ffffff 0%,#fff8ea 35%,#f3dcae 70%,#9c82c9 100%)}
   #warp.on{opacity:1}
-  #isleName{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);z-index:13;pointer-events:none;font-size:42px;font-weight:700;color:#fff;text-shadow:0 3px 0 #b48cff,0 8px 24px rgba(90,63,143,.45);opacity:0;transition:opacity .6s ease;white-space:nowrap;text-align:center}
-  #isleName small{display:block;font-size:18px;font-weight:600;text-shadow:0 2px 0 #b48cff}
+  #isleName{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);z-index:13;pointer-events:none;font-family:var(--title);font-size:56px;font-weight:400;line-height:1.05;color:var(--paper);text-shadow:0 2px 0 var(--line),2px 0 0 var(--line),-2px 0 0 var(--line),0 -2px 0 var(--line),2px 2px 0 var(--line),-2px 2px 0 var(--line),0 6px 0 rgba(43,28,60,.35);opacity:0;transition:opacity .6s ease;white-space:nowrap;text-align:center}
+  #isleName small{display:block;font-family:'Delius',system-ui,sans-serif;font-size:18px;font-weight:700;letter-spacing:.5px;text-shadow:0 2px 0 var(--line),1px 0 0 var(--line),-1px 0 0 var(--line),0 -1px 0 var(--line)}
   #isleName.on{opacity:1}
-  @media (max-width:640px){ #isleName{font-size:30px} }
+  @media (max-width:640px){ #isleName{font-size:38px} }
 </style>
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
@@ -232,20 +281,39 @@
   <div id="quests" class="panel"></div>
   </div>
   <div id="topright">
+    <button class="roundbtn" id="townBtn" title="Town Hall" style="display:none"><span class="ic" data-ic="hall"></span></button>
     <button class="roundbtn" id="shopBtn" title="Star Shop (B)"><span class="ic" data-ic="bag"></span></button>
     <button class="roundbtn" id="muteBtn" title="Sound (M)"><span class="ic" data-ic="soundOn"></span></button>
     <button class="roundbtn" id="fishBookBtn" title="Fish Book (F)"><span class="ic" data-ic="fish"></span></button>
-    <button class="roundbtn" id="helpBtn" title="Help (H)"><span class="ic" data-ic="help"></span></button>
+    <button class="roundbtn" id="helpBtn" title="Show/hide keys (H)"><span class="ic" data-ic="help"></span></button>
   </div>
   <div id="potionBelt" class="panel"></div>
   <div id="toasts"></div>
   <div id="labels"></div>
   <div id="hint" class="panel"></div>
+  <div id="keys" class="panel">
+    <kbd>E</kbd><span>pet · talk · wave · use</span>
+    <kbd>Q</kbd><span>drink a potion</span>
+    <kbd>B</kbd><span>Star Shop</span>
+    <kbd>F</kbd><span>Fish Book</span>
+    <kbd>M</kbd><span>sound on/off</span>
+    <kbd>H</kbd><span>hide these keys</span>
+  </div>
   <div id="spellbar" class="panel"></div>
   <div id="fishing" class="panel">
     <div id="fishMsg"></div>
     <div id="fishBar"><div id="fishZone"></div><div id="fishMark"></div></div>
     <button id="fishBtn">Reel in</button>
+  </div>
+  <div id="decoBar" class="panel">
+    <div id="decoMsg"></div>
+    <div class="dbtns">
+      <button id="dRot">Turn <kbd>R</kbd></button>
+      <button id="dCol">Colour <kbd>C</kbd></button>
+      <button id="dPlace" class="go">Place <kbd>E</kbd></button>
+      <button id="dAway">Put away <kbd>X</kbd></button>
+      <button id="dCancel">Cancel <kbd>Esc</kbd></button>
+    </div>
   </div>
 </div>
 
@@ -293,30 +361,22 @@
     <button class="bigbtn ghost" id="travelClose">Close</button>
   </div>
 </div>
+<div id="town" class="hidden">
+  <div class="card panel">
+    <h2 id="townTitle"></h2>
+    <p class="shopsub" id="townSub"></p>
+    <div class="shopstars"><span class="ic" data-ic="star"></span> <b id="townStars">0</b> stars</div>
+    <div id="townBody"></div>
+    <button class="bigbtn ghost" id="townClose">Close</button>
+  </div>
+</div>
 <div id="warp"></div>
 <div id="isleName"></div>
 
 <div id="overlay">
   <div class="card panel">
     <h1><span class="ic big" data-ic="sparkle"></span> Starvale <span class="ic big" data-ic="sparkle"></span></h1>
-    <p>Welcome, little wizard! <b>Nikki</b> (with her black cat <b>Nunu</b>), <b>Kevin</b>, <b>Ryan</b> and <b>Dusty</b> (with her corgi <b>Dexter</b>) each have their own house on this floating island. Magical critters live here too: hopping bunnies with a little horn, glowing spirits and tiny dragons. Help the other wizards with their quests, earn stars and spend them in the Star Shop! Or make <b>your own wizard</b>: then every resident has quests for you.</p>
-    <div class="controls">
-      <span><kbd>W A S D</kbd> / arrows</span><span>walk &nbsp;·&nbsp; <kbd>Shift</kbd> run</span>
-      <span><kbd>Space</kbd></span><span>jump</span>
-      <span>Drag mouse</span><span>rotate camera &nbsp;·&nbsp; scroll = zoom</span>
-      <span>Click / tap</span><span>walk somewhere, pet a critter or talk</span>
-      <span><kbd>1</kbd> – <kbd>7</kbd></span><span>cast spells</span>
-      <span><kbd>E</kbd></span><span>pet a critter · talk to a wizard</span>
-      <span><kbd>B</kbd></span><span>Star Shop</span>
-      <span>Every day</span><span>a new daily task, a gift for coming back and a rare visitor hiding somewhere</span>
-      <span>Sky islands</span><span>cast <b>Rainbow</b> near the edge for a bridge, or <b>Levitate</b> yourself</span>
-      <span>Star Portal</span><span>finish every quest on an island to open the next one: a snowy isle, a volcano and a glowing mushroom wood</span>
-      <span><kbd>E</kbd> at the cauldron</span><span>brew potions from ingredients you find</span>
-      <span><kbd>E</kbd> at the end of the pier</span><span>go fishing · <kbd>F</kbd> Fish Book</span>
-      <span><kbd>Q</kbd> / tap a potion</span><span>drink a potion</span>
-      <span>Friends online</span><span>open the same link together · <kbd>E</kbd> near a player = wave</span>
-      <span><kbd>M</kbd> / <kbd>H</kbd></span><span>sound on/off · help</span>
-    </div>
+    <p>Help the wizards with their quests, earn stars and explore new islands.</p>
     <div id="pickTitle">Who are you?</div>
     <div id="chars"></div>
     <div id="maker" hidden></div>
@@ -328,6 +388,12 @@
 <script type="module">
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+// signs and labels are painted onto canvases while the world is built, so wait (briefly) for the UI font
+await Promise.race([
+  Promise.all(['40px Delius', '700 40px "Cherry Swash"'].map(f => document.fonts.load(f))).catch(() => {}),
+  new Promise(r => setTimeout(r, 1500)),
+]);
 
 // ================= helpers =================
 let seed = 20261116;
@@ -382,6 +448,7 @@ ICON.gift = svg('<rect x="3.5" y="9" width="17" height="11" rx="1.6" fill="#ff8f
 ICON.portal = svg('<ellipse cx="12" cy="12.5" rx="7.6" ry="9" fill="#e9dcff" stroke="#8a6bd8" stroke-width="1.6"/><path d="M12 7.2c3 .2 4.4 2.6 3.6 5-.8 2.2-3.6 2.8-5 1.4-1.2-1.2-.6-3 .9-3.1" stroke="#b48cff" stroke-width="1.6"/><path d="M5 19.5h14" stroke="#a8714a" stroke-width="2"/><circle cx="12" cy="3" r="1.3" fill="#ffd84d"/>');
 const isleSVG = (top, side, dot) => svg(`<path d="M3 11.5h18l-2.6 3.2L12 21.5 5.6 14.7z" fill="${side}" stroke="#6b4c8f" stroke-width="1.1" stroke-opacity=".5"/><ellipse cx="12" cy="11.5" rx="9" ry="3" fill="${top}" stroke="#6b4c8f" stroke-width="1.1" stroke-opacity=".5"/><path d="M12 3.5l3.6 7h-7.2z" fill="${dot}" stroke="#6b4c8f" stroke-width="1" stroke-opacity=".5"/>`);
 ICON.sun = svg('<circle cx="12" cy="12" r="4.6" fill="#ffd84d" stroke="#e0a800" stroke-width="1.3"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" stroke="#f0a000" stroke-width="1.6"/>');
+ICON.hall = svg('<path d="M3.2 10L12 4.2l8.8 5.8z" fill="#9cc0ff" stroke="#6a8fd8" stroke-width="1.4"/><rect x="5" y="10" width="14" height="9.8" rx="1.2" fill="#f4eeff" stroke="#a58be0" stroke-width="1.4"/><path d="M10.3 19.8v-4a1.7 1.7 0 0 1 3.4 0v4" fill="#8a5bd6" stroke="#6a45b0" stroke-width="1.2"/><path d="M7.6 12.6v4.4M16.4 12.6v4.4" stroke="#a58be0" stroke-width="1.5"/><circle cx="12" cy="7.9" r="1.2" fill="#ffd84d"/>');
 document.querySelectorAll('[data-ic="flame"]').forEach(el => { el.innerHTML = ICON.flame; });
 const fishSVG = (col, line = '#5a3f8f') => svg(`<path d="M3.2 12c2.6-4.4 6.4-6 10-5.4 2.6.4 4.4 2.4 5.4 5.4-1 3-2.8 5-5.4 5.4-3.6.6-7.4-1-10-5.4z" fill="${col}" stroke="${line}" stroke-width="1.3" stroke-opacity=".7"/><path d="M18.4 12l3.2-3.6v7.2z" fill="${col}" stroke="${line}" stroke-width="1.3" stroke-opacity=".7"/><path d="M10.5 7.2c.6 1.6.6 3.2 0 4.8" stroke="#ffffff" stroke-width="1.2" opacity=".7"/><circle cx="7.4" cy="11" r="1.15" fill="#2b1d3a"/><circle cx="7.8" cy="10.6" r=".4" fill="#fff"/>`);
 ICON.fish = fishSVG('#8fd0ff');
@@ -598,7 +665,9 @@ function segDist(x, z, ax, az, bx, bz) {
   const t = clamp(((x - ax) * dx + (z - az) * dz) / l2, 0, 1);
   return Math.hypot(x - ax - dx * t, z - az - dz * t);
 }
+let TOWN_FOOT = null;   // the Town Hall's footprint, set once it is built (after the trees and the grass)
 function nearHouse(x, z, m) {
+  if (TOWN_FOOT && TOWN_FOOT(x, z, m)) return true;
   if (x > HOUSE.x - HOUSE.hw - m && x < HOUSE.x + HOUSE.hw + m && z > HOUSE.z - HOUSE.hd - m && z < HOUSE.z + HOUSE.hd + m) return true;
   for (const d of Object.values(FRIENDS)) { const f = d.foot; if (x > f.x0 - m && x < f.x1 + m && z > f.z0 - m && z < f.z1 + m) return true; }
   return false;
@@ -759,7 +828,7 @@ const pierLampMat = glow(toon('#fff3c4', { emissive: '#ffcb5c', emissiveIntensit
     g.fillStyle = '#5cc1e8'; g.beginPath(); g.ellipse(70, 64, 34, 20, 0, 0, Math.PI * 2); g.fill();
     g.beginPath(); g.moveTo(100, 64); g.lineTo(124, 44); g.lineTo(124, 84); g.fill();
     g.fillStyle = '#2b1d3a'; g.beginPath(); g.arc(56, 58, 5, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#5a3f8f'; g.font = 'bold 34px Fredoka, sans-serif'; g.fillText('Fish!', 136, 76);
+    g.fillStyle = '#5a3f8f'; g.font = 'bold 34px Delius, sans-serif'; g.fillText('Fish!', 136, 76);
   });
   mk(new THREE.PlaneGeometry(.84, .4), new THREE.MeshBasicMaterial({ map: tex }), 0, 1.05, .035, sign, false);
 }
@@ -809,6 +878,8 @@ for (let i = 0; i < 5; i++) {
   }
 }
 
+// remember the trees, mushrooms and crystals, so the Town Hall can clear its spot later
+const islandDecoAt = scene.children.length, islandCircles = [circles.length, 0];
 // trees
 const trunkMat = toon('#9c6b48');
 const leafMats = ['#5cc46b', '#7ad37a', '#4fb36e', '#8fe08a'].map(c => toon(c));
@@ -871,6 +942,7 @@ for (let i = 0; i < 6; i++) {
   circles.push({ x: p.x, z: p.z, r: .8 });
   crystals.push({ g, col: col[1] });
 }
+const islandDeco = scene.children.slice(islandDecoAt); islandCircles[1] = circles.length;
 
 // lanterns along the path
 const lanternMat = glow(toon('#fff3c4', { emissive: '#ffcb5c', emissiveIntensity: .2 }), .2, 2.2);
@@ -960,7 +1032,7 @@ const fadeMats = [roofMat, chimMat, frontMat, roofSnow.material];
 const signTex = canvasTex(512, 128, (g) => {
   g.fillStyle = '#fff4e6'; g.strokeStyle = '#a8714a'; g.lineWidth = 10;
   g.beginPath(); g.roundRect(8, 8, 496, 112, 40); g.fill(); g.stroke();
-  g.fillStyle = '#7a4fc9'; g.font = '600 50px Fredoka, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillStyle = '#7a4fc9'; g.font = '600 50px Delius, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
   g.fillText("Nikki's Cottage ♥", 256, 68);
 });
 mk(new THREE.PlaneGeometry(2.3, .58), new THREE.MeshBasicMaterial({ map: signTex, transparent: true }), 0, 3.62, hd + .1, house, false);
@@ -1072,7 +1144,8 @@ function buildHouse(d, o) {
   h.world = (x, y, z) => { const [wx, wz] = toWorld(x, z); return new THREE.Vector3(wx, y, wz); };
   h.inside = p => { const dx = p.x - d.x, dz = p.z - d.z; return Math.abs(dx * cs - dz * sn) < hw - T && Math.abs(dx * sn + dz * cs) < hd - T; };
   // solid walls: back, both sides, and the front on either side of the doorway
-  h.box(-hw, hw, -hd, -hd + T);
+  const BG = o.backGap || 0;   // optional archway in the back wall
+  if (BG) { h.box(-hw, -BG, -hd, -hd + T); h.box(BG, hw, -hd, -hd + T); } else h.box(-hw, hw, -hd, -hd + T);
   h.box(-hw, -hw + T, -hd, hd);
   h.box(hw - T, hw, -hd, hd);
   h.box(-hw, -DG, hd - T, hd);
@@ -1080,7 +1153,11 @@ function buildHouse(d, o) {
   const wallMat = toon(o.wall), frontMat = toon(o.wall, { transparent: true }), beamMat = toon(o.beam);
   h.frontMat = frontMat; h.beamMat = beamMat;
   h.floor = mk(Box(hw * 2, .06, hd * 2), toon(o.floor), 0, .03, 0, g, false);
-  mk(Box(hw * 2, wh, T), wallMat, 0, wh / 2, -hd + T / 2, g);
+  if (BG) {
+    const sw = hw - BG, AH = o.backGapH || 3.4;
+    for (const s of [-1, 1]) mk(Box(sw, wh, T), wallMat, s * (BG + sw / 2), wh / 2, -hd + T / 2, g);
+    mk(Box(BG * 2, wh - AH, T), wallMat, 0, AH + (wh - AH) / 2, -hd + T / 2, g);
+  } else mk(Box(hw * 2, wh, T), wallMat, 0, wh / 2, -hd + T / 2, g);
   mk(Box(T, wh, hd * 2), wallMat, -hw + T / 2, wh / 2, 0, g);
   mk(Box(T, wh, hd * 2), wallMat, hw - T / 2, wh / 2, 0, g);
   const segW = hw - DG;
@@ -1117,7 +1194,7 @@ function buildHouse(d, o) {
   const [txt, bg, border, fg, fs] = o.sign;
   const st = canvasTex(512, 128, c => {
     c.fillStyle = bg; c.strokeStyle = border; c.lineWidth = 10; c.beginPath(); c.roundRect(8, 8, 496, 112, 40); c.fill(); c.stroke();
-    c.fillStyle = fg; c.font = `600 ${fs || 54}px Fredoka, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, 256, 68);
+    c.fillStyle = fg; c.font = `600 ${fs || 54}px Delius, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, 256, 68);
   });
   mk(new THREE.PlaneGeometry(2.3, .58), new THREE.MeshBasicMaterial({ map: st, transparent: true }), 0, (DH + wh) / 2 + .05, hd + .1, g, false);
   mk(Box(2, .04, 1), toon(o.mat || o.beam), 0, .02, hd + .8, g, false);
@@ -1288,7 +1365,7 @@ function gameTex() {
   const posterTex = canvasTex(256, 320, (c, w) => {
     c.fillStyle = '#ffe066'; c.fillRect(0, 0, w, 320); c.strokeStyle = '#2b2f3d'; c.lineWidth = 10; c.strokeRect(5, 5, w - 10, 310);
     c.lineWidth = 9; c.beginPath(); c.arc(128, 82, 36, -1.1, 4.25); c.stroke(); c.beginPath(); c.moveTo(128, 34); c.lineTo(128, 84); c.stroke();
-    c.fillStyle = '#2b2f3d'; c.font = '700 25px Fredoka, sans-serif'; c.textAlign = 'center';
+    c.fillStyle = '#2b2f3d'; c.font = '700 25px Delius, sans-serif'; c.textAlign = 'center';
     ['HAVE YOU TRIED', 'TURNING IT', 'OFF AND', 'ON AGAIN?'].forEach((l, i) => c.fillText(l, 128, 165 + i * 36));
   });
   mk(new THREE.PlaneGeometry(1.1, 1.38), new THREE.MeshBasicMaterial({ map: posterTex }), 1.9, 2.45, -hd + .37, G, false);
@@ -1532,7 +1609,7 @@ function gameTex() {
     c.fillStyle = '#2b1d3a'; for (const sx of [-1, 1]) { c.beginPath(); c.arc(128 + sx * 34, 128, 9, 0, 7); c.fill(); }
     c.beginPath(); c.ellipse(128, 160, 13, 9, 0, 0, 7); c.fill();
     c.fillStyle = '#ff8fb8'; c.beginPath(); c.ellipse(128, 196, 10, 14, 0, 0, 7); c.fill();
-    c.fillStyle = '#c62828'; c.font = '600 26px Fredoka, sans-serif'; c.textAlign = 'center'; c.fillText('DEXTER', 128, 246);
+    c.fillStyle = '#c62828'; c.font = '600 26px Delius, sans-serif'; c.textAlign = 'center'; c.fillText('DEXTER', 128, 246);
   });
   mk(Box(1.15, 1.15, .06), toon('#ffcc4d'), -1.6, 2.5, -hd + .37, G);
   mk(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: portrait }), -1.6, 2.5, -hd + .41, G, false);
@@ -1558,7 +1635,7 @@ function gameTex() {
   const holeMat = toon('#2b1d3a');
   mk(new THREE.PlaneGeometry(.76, .5), holeMat, 0, .25, .91, dh, false);
   mk(new CircGeo(.38, 20), holeMat, 0, .5, .91, dh, false);
-  const dexSign = canvasTex(256, 72, (c, w, hh) => { c.fillStyle = '#fff0f0'; c.beginPath(); c.roundRect(4, 4, w - 8, hh - 8, 20); c.fill(); c.fillStyle = '#c62828'; c.font = '700 44px Fredoka, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('DEXTER', w / 2, hh / 2 + 2); });
+  const dexSign = canvasTex(256, 72, (c, w, hh) => { c.fillStyle = '#fff0f0'; c.beginPath(); c.roundRect(4, 4, w - 8, hh - 8, 20); c.fill(); c.fillStyle = '#c62828'; c.font = '700 44px Delius, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('DEXTER', w / 2, hh / 2 + 2); });
   mk(new THREE.PlaneGeometry(.8, .23), new THREE.MeshBasicMaterial({ map: dexSign, transparent: true }), 0, 1.4, .92, dh, false);
   mk(new CylGeo(.22, .17, .12, 16), redM[0], 1.2, .06, .7, dh);
   circles.push({ x: 14, z: 19, r: 1.3 });
@@ -2606,6 +2683,7 @@ startBtn.addEventListener('click', () => {
     started = true; startBtn.innerHTML = 'Keep playing ' + iconHTML('sparkle');
     document.getElementById('pickTitle').style.display = 'none'; charsEl.style.display = 'none'; document.getElementById('nickWrap').style.display = 'none';
     makerEl.hidden = true; closePortraits();
+    setKeys(keysWanted, false);
     loadSave();
     spawnNPCs();
     refreshQuestUI();
@@ -2615,11 +2693,19 @@ startBtn.addEventListener('click', () => {
     updateIsleRow(); setTimeout(checkIsleUnlocks, 7800);
     if (playerIsCustom) setTimeout(() => toast(`Welcome to Starvale, ${playerName}! Every wizard on the island has a quest for you.`, 4000, 'wand'), 400);
     else setTimeout(() => toast(`Welcome to Starvale, ${playerName}! Your house is right in front of you.`, 4000, 'home'), 400);
-    setTimeout(() => toast('Press 1 to 6 to cast spells. Wizards with a ! have a quest for you!', 4500, 'wand'), 2600);
+    setTimeout(() => toast('Wizards with a ! have a quest for you!', 4500, 'wand'), 2600);
     setTimeout(() => toast(`Pick up ingredients around the island and brew potions in ${playerName === 'Nikki' ? 'your' : "Nikki's"} cauldron!`, 4500, 'potion'), 5200);
   }
 });
-function toggleHelp() { overlay.classList.toggle('hidden'); }
+// key card bottom-left: shown by default when there is a mouse, H / help button toggles it
+const keysEl = document.getElementById('keys');
+let keysWanted = matchMedia('(any-pointer:fine)').matches;
+try { const k = localStorage.getItem('starvale-showkeys'); if (k !== null) keysWanted = k === '1'; } catch (e) { /* no storage */ }
+function setKeys(on, save = true) {
+  keysWanted = on; keysEl.classList.toggle('on', on);
+  if (save) try { localStorage.setItem('starvale-showkeys', on ? '1' : '0'); } catch (e) { /* ignore */ }
+}
+function toggleHelp() { if (started) setKeys(!keysWanted); }
 document.getElementById('helpBtn').addEventListener('click', e => { toggleHelp(); e.currentTarget.blur(); });
 document.getElementById('muteBtn').addEventListener('click', e => { toggleMute(); e.currentTarget.blur(); });
 
@@ -2923,6 +3009,11 @@ addEventListener('keydown', e => {
     return;
   }
   if (brewOpen()) { if (!e.repeat && (e.code === 'KeyE' || e.code === 'Escape')) closeBrew(); return; }
+  if (townOpen()) { if (!e.repeat && e.code === 'Escape') closeTown(); return; }
+  if (deco && started && overlay.classList.contains('hidden')) {   // carrying a decoration
+    const dk = { KeyR: decoTurn, KeyC: decoColour, KeyE: decoPlace, Enter: decoPlace, KeyX: decoAway, Delete: decoAway, Escape: decoCancel }[e.code];
+    if (dk) { e.preventDefault(); if (!e.repeat) dk(); return; }
+  }
   if (!started || !overlay.classList.contains('hidden')) { if (e.code === 'KeyH' && started) toggleHelp(); return; }
   keys[e.code] = true;
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
@@ -2987,6 +3078,8 @@ function onTap(x, y) {
     if (nearPortal() === pt) { openTravel(); return; }
     if (distXZ(pt.front) < 60) { moveTarget = pt.front.clone(); petTarget = null; moveTimer = 0; return; }
   }
+  // the Town Hall board, the doors to the rooms and the room book
+  if (townTap(ray)) return;
   const nh = ray.intersectObjects(npcs.map(n => n.g), true);
   if (nh.length) {
     const n = npcs.find(q => { let o = nh[0].object; while (o) { if (o === q.g) return true; o = o.parent; } return false; });
@@ -3011,7 +3104,7 @@ function onTap(x, y) {
     petTarget = null; moveTimer = 0;
     return;
   }
-  const gh = ray.intersectObjects([island, houseFloor, ...friendHouses.map(h => h.floor), ...skyTops, ...FAR.map(I => I.top)], false);
+  const gh = ray.intersectObjects([island, houseFloor, ...friendHouses.map(h => h.floor), ...skyTops, ...FAR.map(I => I.top), ...townFloors], false);
   if (gh.length) {
     moveTarget = gh[0].point.clone(); moveTarget.y = 0; petTarget = null; moveTimer = 0;
     burst(moveTarget.clone().setY(.2), 6, { speed: 1.5, colors: ['#ffffff', '#c9a0ff'], size: .25, life: .6, gravity: -1 });
@@ -3024,6 +3117,7 @@ function tryPet() {
   if (nearFishSpot()) { startFishing(); return; }
   if (skyInteract()) return;
   if (nearPortal()) { openTravel(); return; }
+  if (townAct(townStation())) return;
   const c = nearestCreature(2.8), n = nearestNPC(2.8), rp = nearestRemote(2.8);
   if (rp && (!c || distXZ(rp.g.position) < distXZ(c.g.position)) && (!n || distXZ(rp.g.position) < distXZ(n.g.position))) { waveAt(rp); return; }
   if (n && (!c || distXZ(n.g.position) < distXZ(c.g.position))) talkTo(n);
@@ -3122,6 +3216,7 @@ function updatePlayer(dt, time) {
   // entering the house
   let where = insideHouse(player.position) ? 'main' : null;
   if (!where) for (const h of friendHouses) if (h.inside(player.position)) { where = h; break; }
+  if (!where && curIsle === ROOM && inRoom(player.position)) where = roomHouse;
   if (where && where !== pState.where) {
     const owner = where === 'main' ? 'Nikki' : where.name;
     toast(owner === playerName ? `Welcome home, ${playerName}!` : where === 'main' ? "Welcome to Nikki's cottage!" : where.welcome, 3300, 'home');
@@ -3197,8 +3292,10 @@ function updateUI() {
   const rpNear = started ? nearestRemote(2.8) : null;
   const station = started ? nearStation() : null;
   const skyH = started && !station ? (nearPortal() ? `${iconHTML('portal')} Press <b>E</b> or tap the portal to travel to other islands` : skyHint()) : null;
-  if (fishing.state) hintEl.style.display = 'none';
+  const townH = started && !station ? townHint() : null;
+  if (fishing.state || deco) hintEl.style.display = 'none';
   else if (started && nearFishSpot()) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('fish')} Press <b>E</b> or tap the water to go fishing`; }
+  else if (townH) { hintEl.style.display = 'block'; hintEl.innerHTML = townH; }
   else if (skyH) { hintEl.style.display = 'block'; hintEl.innerHTML = skyH; }
   else if (station) { hintEl.style.display = 'block'; hintEl.innerHTML = station === 'brew' ? `${iconHTML('potion')} Press <b>E</b> or tap the cauldron to brew potions` : `${iconHTML('scroll')} Press <b>E</b> or tap the book to read your recipes`; }
   else if (rpNear && (!near || distXZ(rpNear.g.position) < distXZ(near.g.position))) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('wave')} Press <b>E</b> to wave at <b>${escHTML(who(rpNear))}</b>`; }
@@ -3281,13 +3378,14 @@ const SHOP = [
   { id: 'rainbowhat', icon: 'hatRainbow', name: 'Rainbow Hat', desc: 'A hat that keeps changing colour', price: 8, kind: 'hat', val: 'rainbow' },
   { id: 'galaxyrobe', icon: 'robe', name: 'Galaxy Robe', desc: 'A deep blue robe that glows like the night sky', price: 6, kind: 'robe', val: 'galaxy' },
 ];
-const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null, fish: {}, daily: null, streak: 0, lastDay: null, wisps: {}, isles: [] };
+const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null, fish: {}, daily: null, streak: 0, lastDay: null, wisps: {}, isles: [], room: null };
 const activeQ = {};          // giver name -> { q, progress, ready, target }
 const questItems = [];       // collectible things in the world
 const bugs = [];
 const saveKey = () => 'starvale-save-' + (playerIsCustom ? '*custom' : playerName);
 function loadSave() {
   try { const d = JSON.parse(localStorage.getItem(saveKey()) || 'null'); if (d) Object.assign(save, d); } catch (e) { /* no storage, start fresh */ }
+  if (save.room && (!Array.isArray(save.room.items) || !Array.isArray(save.room.up))) save.room = null;   // your own room in the Town Hall
   for (const id of save.owned) { const sp = SPELLS.findIndex(s => s.id === id); if (sp >= 0) unlockSpell(sp); }
   applyCosmetics(); updateStarsUI();
 }
@@ -4128,10 +4226,11 @@ async function connectSupabase() {
     for (const pid of [...known.keys()]) if (!ps[pid]) { known.delete(pid); removeRemote(pid, true); }
     refreshOnline();
   });
-  ch.on('presence', { event: 'join' }, () => { mpLastKey = ''; mpLastSend = 0; });   // newcomer: send my position again
+  ch.on('presence', { event: 'join' }, () => { mpLastKey = ''; mpLastSend = 0; townHello(); });   // newcomer: send my position again
   ch.on('broadcast', { event: 'pos' }, ({ payload: p }) => { if (p && okId(p.id) && known.has(p.id)) upd(p.id, { x: p.x, y: p.y, z: p.z, h: p.h, s: p.s }); });
   ch.on('broadcast', { event: 'spell' }, ({ payload: p }) => { if (p && okId(p.id)) onRemoteSpell({ peer: p.id, data: p.d }); });
   ch.on('broadcast', { event: 'wave' }, ({ payload: p }) => { if (p && okId(p.id)) onRemoteWave({ peer: p.id, data: p.d }); });
+  ch.on('broadcast', { event: 'town' }, ({ payload: p }) => { if (p && okId(p.id)) onRemoteTown(p.d); });
   await new Promise((res, rej) => {
     const t = setTimeout(() => rej(new Error('timeout')), 10000);
     ch.subscribe(status => { if (status === 'SUBSCRIBED') { clearTimeout(t); res(); } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { clearTimeout(t); rej(new Error(status)); } });
@@ -4147,6 +4246,7 @@ async function connectSupabase() {
     },
     emit(topic, d) { return ch.send({ type: 'broadcast', event: topic, payload: { id, d } }); },
   };
+  townDbConnect(sb);
   return true;
 }
 async function connectClaudeRoom() {
@@ -4158,10 +4258,12 @@ async function connectClaudeRoom() {
     for (const p of ch.peers) if (p.sameTab) myPeer = p.peer;
     for (const p of ch.left) removeRemote(p.peer, true);
     for (const p of ch.joined.concat(ch.updated)) if (!p.sameTab && p.kind === 'viewer') syncRemote(p);
+    if (ch.joined.length) townHello();
     refreshOnline();
   }, () => {});
   room.on('spell', onRemoteSpell, () => {});
   room.on('wave', onRemoteWave, () => {});
+  room.on('town', m => { if (m && !m.sameTab) onRemoteTown(m.data); }, () => {});
   net = { interval: 100, presence: p => room.presence(p), emit: (t, d) => room.emit(t, d) };
   return true;
 }
@@ -4258,6 +4360,10 @@ function updateRemotes(dt, time) {
   if (!net) return;
   sendPresence(false);
   for (const r of remotes.values()) {
+    // a player in their own room stays hidden: everyone's room is in the same far-away spot
+    const away = Math.hypot(r.tx - ROOM.x, r.tz - ROOM.z) < 80;
+    if (away === r.g.visible) { r.g.visible = !away; if (away) r.label.style.display = 'none'; }
+    if (away) { r.g.position.set(r.tx, r.ty, r.tz); continue; }
     const p = r.g.position, a = damp(10, dt);
     if (Math.hypot(r.tx - p.x, r.tz - p.z) > 12) p.set(r.tx, r.ty, r.tz); // teleport instead of sliding across the island
     else { p.x = lerp(p.x, r.tx, a); p.z = lerp(p.z, r.tz, a); p.y = lerp(p.y, r.ty, damp(16, dt)); }
@@ -4291,7 +4397,7 @@ function updateRemotes(dt, time) {
 }
 function nearestRemote(maxD) {
   let best = null, bd = maxD;
-  for (const r of remotes.values()) { const d = distXZ(r.g.position); if (d < bd) { bd = d; best = r; } }
+  for (const r of remotes.values()) { if (!r.g.visible) continue; const d = distXZ(r.g.position); if (d < bd) { bd = d; best = r; } }
   return best;
 }
 const mpNear = (x, z, d = 28) => Math.hypot(x - player.position.x, z - player.position.z) < d;
@@ -4316,6 +4422,7 @@ function onRemoteSpell(msg) {
   if (msg.sameTab) return;
   const r = remotes.get(msg.peer), d = msg.data || {};
   if (!r || typeof d.id !== 'string') return;
+  if (!r.g.visible && d.id !== 'night' && d.id !== 'potion') return;   // they are in their own room
   const x = num(d.x, r.g.position.x), z = num(d.z, r.g.position.z), h = num(d.h, r.g.rotation.y);
   const close = mpNear(x, z);
   r.castT = .4;
@@ -4382,6 +4489,1064 @@ function onRemoteWave(msg) {
   const to = msg.data && msg.data.to;
   if (to && to === myPeer) { toast(`${who(r)} waves at you! Press E near them to wave back`, 3500, 'wave'); sfx('hello'); }
 }
+
+// ================= town hall =================
+// One Town Hall on Starvale that every player decorates and builds on together:
+//  - decorations: anyone places furniture (paid with stars); you can only move or put away your own
+//  - projects: everyone gives stars towards new parts (fountain, garden, chandelier, back wing, clock tower)
+//  - your own room: bought with stars, upgraded and decorated only by you (kept in your save)
+// The shared part is a last-writer-wins map: every player keeps a copy in localStorage, swaps it with
+// the players online, and keeps it in the Supabase table `starvale_town` when that table exists
+// (see supabase-town.sql), so it also stays when nobody is online.
+// Everything here uses its own seeded random (tr / TR), so the rest of the world stays put.
+let tseed = 7331;
+const tr = () => (tseed = (tseed * 16807) % 2147483647, (tseed - 1) / 2147483646);
+const TR = (a, b) => a + tr() * (b - a);
+// the hall faces west (like Kevin's house): local +z = world -x, local +x = world +z
+const TOWN = { key: 'town', x: 23.4, z: 13.5, rot: -Math.PI / 2, hw: 7, hd: 5.5, wh: 5 };
+const thCs = Math.cos(TOWN.rot), thSn = Math.sin(TOWN.rot);
+const thWorld = (lx, lz) => [TOWN.x + lx * thCs + lz * thSn, TOWN.z - lx * thSn + lz * thCs];
+const thLocal = (x, z) => { const dx = x - TOWN.x, dz = z - TOWN.z; return [dx * thCs - dz * thSn, dx * thSn + dz * thCs]; };
+const thBox = (x0, x1, z0, z1) => { const a = thWorld(x0, z0), b = thWorld(x1, z1); return { x0: Math.min(a[0], b[0]), x1: Math.max(a[0], b[0]), z0: Math.min(a[1], b[1]), z1: Math.max(a[1], b[1]) }; };
+const WING = { hw: 5, z0: -11.5, z1: -TOWN.hd, wh: 4.2 };     // the back wing (a project), behind the hall
+const PLAZA = { x: 0, z: 10, r: 3 };                          // the square in front of the door
+const TH_PATH = [...thWorld(0, PLAZA.z + PLAZA.r - .2), 6, 13.5]; // from the square to the path to Dusty's
+const dropFrom = (arr, o) => { const i = arr.indexOf(o); if (i >= 0) arr.splice(i, 1); };
+
+// ---------- make room on the island: trees, mushrooms and grass that stood here move out ----------
+{
+  const clearZone = (x, z, m = 0) => { const [lx, lz] = thLocal(x, z); return Math.abs(lx) < 11.2 + m && lz > WING.z0 - 1.4 - m && lz < PLAZA.z + PLAZA.r + m; };
+  const onThPath = (x, z, m = 0) => segDist(x, z, ...TH_PATH) < 1.3 + m;
+  for (const o of islandDeco) if (clearZone(o.position.x, o.position.z, 1) || onThPath(o.position.x, o.position.z, 1)) scene.remove(o);
+  for (let i = islandCircles[1] - 1; i >= islandCircles[0]; i--) { const c = circles[i]; if (clearZone(c.x, c.z, .5) || onThPath(c.x, c.z, .6)) circles.splice(i, 1); }
+  // grass tufts and tiny flowers: only off the floor, the square and the path
+  const floorZone = (x, z) => { const [lx, lz] = thLocal(x, z); return (Math.abs(lx) < TOWN.hw + .5 && lz > WING.z0 - .5 && lz < TOWN.hd + 2) || Math.hypot(lx - PLAZA.x, lz - PLAZA.z) < PLAZA.r + .3; };
+  const m4 = new THREE.Matrix4(), p3 = new THREE.Vector3(), none = new THREE.Matrix4().makeScale(0, 0, 0);
+  for (const o of scene.children) {
+    if (!o.isInstancedMesh) continue;
+    for (let i = 0; i < o.count; i++) {
+      o.getMatrixAt(i, m4); p3.setFromMatrixPosition(m4);
+      if (floorZone(p3.x, p3.z) || onThPath(p3.x, p3.z, -.2)) o.setMatrixAt(i, none);
+    }
+    o.instanceMatrix.needsUpdate = true;
+  }
+  TOWN_FOOT = (x, z, m) => { const [lx, lz] = thLocal(x, z); return Math.abs(lx) < TOWN.hw + .6 + m && lz > WING.z0 - .6 - m && lz < TOWN.hd + .6 + m; };
+  for (const lx of [-9, 0, 9]) for (const lz of [-9, -1, 7]) { const [x, z] = thWorld(lx, lz); placed.push({ x, z, r: 5 }); }
+  creatureBoxes.push(thBox(-TOWN.hw - .6, TOWN.hw + .6, WING.z0 - .6, TOWN.hd + .6));
+  // a stone path from the square to the path to Dusty's house
+  const [ax, az, bx, bz] = TH_PATH, len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(len / 1.25)), sm = toon('#e4dcef');
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, s = ball(sm, 0, .03, 0, TR(.6, .8), .09, TR(.6, .8) * .82, scene, false);
+    s.position.x = lerp(ax, bx, t) + TR(-.3, .3); s.position.z = lerp(az, bz, t) + TR(-.3, .3); s.rotation.y = TR(0, 3);
+  }
+}
+
+// ---------- the building ----------
+const townHall = buildHouse(TOWN, {
+  name: 'Town Hall', welcome: 'Welcome to the Starvale Town Hall!', wall: '#f4eeff', beam: '#a58be0', door: '#8a5bd6', floor: '#ecd2ac',
+  glass: ['#fff6c2', '#ffc94d'], sign: ['Town Hall', '#fffaf0', '#a58be0', '#7a4fc9', 60], light: ['#ffe2b8', 12, 24],
+  windows: [[-4.6, 2.7, 'f'], [4.6, 2.7, 'f'], [-2.6, 2.7, 'l'], [2.2, 2.7, 'l'], [2.2, 2.7, 'r'], [-4.6, 2.7, 'b'], [4.6, 2.7, 'b']],
+  backGap: 1.6, backGapH: 3.4,
+});
+const townFloors = [];   // extra floors you can tap to walk on (the back wing)
+const TH = {};           // the parts that change: projects, interaction spots
+{
+  const G = townHall.g, RF = townHall.roof, { hw, hd, wh } = TOWN;
+  const beamM = townHall.beamMat, stoneM = toon('#ece4f7'), colM = toon('#ffffff'), roofM = toon('#9cc0ff');
+  for (let i = -4; i <= 4; i++) mk(Box(.04, .065, hd * 2), toon('#d9b88a'), i * 1.5, .033, 0, G, false);   // parquet
+  // roof with a soft star on top
+  mk(softRoofGeo((hw + .94) * Math.SQRT2, 4.2), roofM, 0, wh + 2.1, 0, RF).scale.z = (hd + .9) / (hw + .94);
+  // front porch: two round columns and a little roof over the door, and a wide soft step
+  for (const s of [-1, 1]) {
+    mk(new CylGeo(.26, .32, 3.4, 20), colM, s * 2.1, 1.7, hd + .6, G);
+    ball(colM, s * 2.1, 3.42, hd + .6, .4, .15, .4, G);
+    ball(stoneM, s * 2.1, .1, hd + .6, .44, .14, .44, G);
+    townHall.circ(s * 2.1, hd + .6, .38);
+  }
+  mk(Box(5.1, .28, 1.6), beamM, 0, 3.58, hd + .55, G);
+  ball(stoneM, 0, .04, hd + 1.5, 2.8, .12, 1, G, false);
+  // flower boxes under the front windows
+  for (const sx of [-1, 1]) {
+    mk(Box(1.6, .35, .45), beamM, sx * 4.6, 1.85, hd + .2, G);
+    for (let k = 0; k < 4; k++) ball(toon(PASTELS[(k + (sx > 0 ? 3 : 0)) % 7]), sx * 4.6 - .55 + k * .37, 2.12, hd + .2, .16, .13, .16, G);
+  }
+  // inside: strings of pastel pom-poms along the walls
+  const pomM = PASTELS.map(c => toon(c));
+  const poms = (ax, az, bx, bz, n, y = wh - .7) => {
+    for (let i = 0; i <= n; i++) { const t = i / n; ball(pomM[i % pomM.length], lerp(ax, bx, t), y - Math.sin(t * Math.PI) * .35, lerp(az, bz, t), .13, .13, .13, G, false); }
+  };
+  poms(-hw + .45, -hd + .6, -hw + .45, hd - .6, 14); poms(hw - .45, -hd + .6, hw - .45, hd - .6, 14);
+  poms(-hw + .6, -hd + .45, -1.9, -hd + .45, 8); poms(1.9, -hd + .45, hw - .6, -hd + .45, 8);
+  // two banners with a star beside the archway
+  for (const s of [-1, 1]) {
+    mk(Box(1.1, 1.8, .06), toon(s < 0 ? '#ffb3d9' : '#8fd0ff'), s * 2.6, 3.2, -hd + .38, G, false);
+    const st = mk(new THREE.OctahedronGeometry(.22), toon('#ffd84d'), s * 2.6, 3.3, -hd + .44, G, false); st.scale.z = .4;
+  }
+
+  // ---- the Town Board: projects and decorating (E / tap) ----
+  TH.board = { x: -4.4, z: 4.2 };
+  const boardTex = canvasTex(256, 168, (c, w, h) => {
+    c.fillStyle = '#e9c99a'; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#7a4fc9'; c.font = '600 30px Fredoka, sans-serif'; c.textAlign = 'center'; c.fillText('Town Board', w / 2, 36);
+    const notes = [['#fffaf0', 18, 52, -.06], ['#ffe3f1', 96, 58, .05], ['#e2f4ff', 176, 50, -.04], ['#fff6c2', 50, 108, .04], ['#e9fff1', 140, 110, -.05]];
+    for (const [col, x, y, a] of notes) {
+      c.save(); c.translate(x + 32, y + 26); c.rotate(a); c.fillStyle = col; c.fillRect(-32, -26, 64, 52);
+      c.fillStyle = '#c9b8ef'; for (let k = 0; k < 3; k++) c.fillRect(-24, -12 + k * 12, 48 - k * 10, 4);
+      c.fillStyle = '#ff6fae'; c.beginPath(); c.arc(0, -24, 4, 0, 7); c.fill(); c.restore();
+    }
+  });
+  const bg = TH.boardG = new THREE.Group(); bg.position.set(TH.board.x, 0, TH.board.z); bg.rotation.y = Math.PI; G.add(bg);
+  for (const s of [-1, 1]) mk(new CylGeo(.07, .09, 1.6, 10), beamM, s * .95, .8, 0, bg);
+  mk(Box(2.3, 1.5, .16), toon('#c98d55'), 0, 1.75, 0, bg);
+  mk(new THREE.PlaneGeometry(2.1, 1.38), new THREE.MeshBasicMaterial({ map: boardTex }), 0, 1.75, .09, bg, false);
+  mk(Box(2.5, .16, .4), beamM, 0, 2.58, 0, bg);
+  townHall.circ(TH.board.x, TH.board.z, .5);
+
+  // ---- the door to the guest rooms, on the right wall ----
+  TH.rdoor = { x: hw - 1.15, z: -2.5 };
+  const dg = TH.rdoorG = new THREE.Group(); dg.position.set(hw - .37, 0, TH.rdoor.z); dg.rotation.y = -Math.PI / 2; G.add(dg);
+  mk(Box(1.5, 2.55, .12), toon('#b48cff'), 0, 1.28, 0, dg);
+  ball(toon('#ffd84d'), .5, 1.25, .1, .08, .08, .06, dg);
+  const dw = mk(new CircGeo(.26, 24), glow(toon('#fff6c2', { emissive: '#ffc94d', emissiveIntensity: .2 }), .2, 1.6), 0, 2.05, .07, dg, false);
+  for (const s of [-1, 1]) mk(Box(.18, 2.7, .2), beamM, s * .84, 1.35, 0, dg);
+  mk(Box(1.86, .18, .2), beamM, 0, 2.7, 0, dg);
+  const rsTex = canvasTex(256, 80, (c, w, h) => {
+    c.fillStyle = '#fffaf0'; c.strokeStyle = '#a58be0'; c.lineWidth = 6; c.beginPath(); c.roundRect(4, 4, w - 8, h - 8, 30); c.fill(); c.stroke();
+    c.fillStyle = '#7a4fc9'; c.font = '600 40px Fredoka, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Rooms', w / 2, h / 2 + 2);
+  });
+  mk(new THREE.PlaneGeometry(1.3, .4), new THREE.MeshBasicMaterial({ map: rsTex, transparent: true }), 0, 3.1, .08, dg, false);
+
+  // "coming soon" signs for projects that are not built yet
+  const soon = (parent, x, z, rot, text) => {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; parent.add(g);
+    mk(new CylGeo(.06, .08, 1.2, 8), beamM, 0, .6, 0, g);
+    const tex = canvasTex(256, 128, (c, w, h) => {
+      c.fillStyle = '#fffaf0'; c.strokeStyle = '#c98d55'; c.lineWidth = 8; c.beginPath(); c.roundRect(6, 6, w - 12, h - 12, 26); c.fill(); c.stroke();
+      c.fillStyle = '#7a4fc9'; c.textAlign = 'center'; c.font = '600 34px Fredoka, sans-serif'; c.fillText(text, w / 2, 58);
+      c.fillStyle = '#a58be0'; c.font = '500 24px Fredoka, sans-serif'; c.fillText('coming soon!', w / 2, 94);
+    });
+    mk(Box(1.3, .68, .1), toon('#c98d55'), 0, 1.35, 0, g);
+    for (const sz of [1, -1]) { const p = mk(new THREE.PlaneGeometry(1.18, .58), new THREE.MeshBasicMaterial({ map: tex }), 0, 1.35, sz * .056, g, false); if (sz < 0) p.rotation.y = Math.PI; }
+    return g;
+  };
+
+  // ---- project: the Star Fountain on the square ----
+  mk(new CircGeo(PLAZA.r, 48), stoneM, PLAZA.x, .035, PLAZA.z, G, false).rotation.x = -Math.PI / 2;
+  for (let i = 0; i < 22; i++) { const a = i / 22 * Math.PI * 2; ball(toon('#d9cdef'), PLAZA.x + Math.cos(a) * PLAZA.r, .05, PLAZA.z + Math.sin(a) * PLAZA.r, .34, .1, .3, G, false).rotation.y = -a; }
+  const F = TH.fountain = new THREE.Group(); F.position.set(PLAZA.x, 0, PLAZA.z); G.add(F);
+  const basin = mk(new TorGeo(1.9, .32, 12, 56), toon('#e4dcf7'), 0, .42, 0, F); basin.rotation.x = Math.PI / 2;
+  mk(new CylGeo(2, 2, .5, 40), toon('#d9cdef'), 0, .25, 0, F);
+  TH.water = glow(toon('#9fdcff', { emissive: '#6fc8ff', emissiveIntensity: .2 }), .2, .9);
+  mk(new CircGeo(1.85, 40), TH.water, 0, .55, 0, F, false).rotation.x = -Math.PI / 2;
+  mk(new CylGeo(.22, .32, 1.6, 16), toon('#e4dcf7'), 0, 1.2, 0, F);
+  mk(new CylGeo(.85, .3, .3, 28), toon('#e4dcf7'), 0, 2.05, 0, F);
+  mk(new CircGeo(.75, 32), TH.water, 0, 2.21, 0, F, false).rotation.x = -Math.PI / 2;
+  TH.fStar = mk(new THREE.OctahedronGeometry(.32), glow(toon('#ffd84d', { emissive: '#ffb800', emissiveIntensity: .4 }), .4, 1.6), 0, 2.75, 0, F, false);
+  TH.fStar.scale.z = .5;
+  TH.fountainCirc = { x: thWorld(PLAZA.x, PLAZA.z)[0], z: thWorld(PLAZA.x, PLAZA.z)[1], r: 2.3 };
+  TH.fountainSoon = soon(G, PLAZA.x - 1.6, PLAZA.z + .6, .3, 'Star Fountain');
+
+  // ---- project: flower gardens with benches on both sides ----
+  const GD = TH.garden = new THREE.Group(); G.add(GD);
+  TH.gardenCircs = [];
+  for (const s of [-1, 1]) {
+    const x = s * (hw + 2);
+    ball(dirtMat, x, .08, -1, .7, .2, 2.4, GD);
+    for (let k = 0; k < 12; k++) {
+      const z = -3 + (k % 6) * .8, xx = x + (k < 6 ? -.25 : .25);
+      mk(new CylGeo(.025, .025, .4, 5), toon('#5cbf5c'), xx, .3, z, GD, false);
+      ball(pomM[(k * 3 + (s > 0 ? 1 : 0)) % 7], xx, .52, z, .15, .13, .15, GD);
+    }
+    const b = new THREE.Group(); b.position.set(x, 0, 2.6); b.rotation.y = s * Math.PI / 2; GD.add(b);
+    mk(Box(1.8, .14, .55), toon('#c98d55'), 0, .5, 0, b); mk(Box(1.8, .5, .12), toon('#c98d55'), 0, .85, -.24, b);
+    for (const e of [-1, 1]) mk(Box(.12, .5, .5), beamM, e * .78, .25, 0, b);
+    mk(new CylGeo(.06, .08, 2.4, 10), toon('#6a5584'), x, 1.2, -3.9, GD);
+    ball(glow(toon('#fff3c4', { emissive: '#ffcb5c', emissiveIntensity: .2 }), .2, 2.2), x, 2.55, -3.9, .24, .28, .24, GD, false);
+    for (const [lz, r] of [[-1, .9], [-2.4, .8], [.4, .8], [2.6, .9], [-3.9, .25]]) { const [wx, wz] = thWorld(x, lz); TH.gardenCircs.push({ x: wx, z: wz, r }); }
+  }
+  TH.gardenSoon = soon(G, -(hw + 2), 0, 0, 'Flower Garden');
+
+  // ---- project: the crystal chandelier ----
+  const CH = TH.chand = new THREE.Group(); CH.position.set(0, wh - 1.05, -.4); G.add(CH);
+  const chM = glow(toon('#e2c8ff', { emissive: '#b48cff', emissiveIntensity: .35, flatShading: true }), .35, 1.6);
+  mk(new CylGeo(.03, .03, 1, 6), toon('#ffd84d'), 0, .55, 0, CH, false);
+  const ring = mk(new TorGeo(1, .06, 8, 48), toon('#ffd84d'), 0, 0, 0, CH, false); ring.rotation.x = Math.PI / 2;
+  const ring2 = mk(new TorGeo(.55, .05, 8, 36), toon('#ffd84d'), 0, .3, 0, CH, false); ring2.rotation.x = Math.PI / 2;
+  for (let i = 0; i < 10; i++) {
+    const a = i / 10 * Math.PI * 2, c = mk(new THREE.OctahedronGeometry(.14), chM, Math.cos(a), -.22, Math.sin(a), CH, false); c.scale.set(.7, 1.6, .7);
+    if (i % 2 === 0) { const c2 = mk(new THREE.OctahedronGeometry(.11), chM, Math.cos(a) * .55, .1, Math.sin(a) * .55, CH, false); c2.scale.set(.7, 1.6, .7); }
+  }
+  const cc = mk(new THREE.OctahedronGeometry(.24), chM, 0, -.25, 0, CH, false); cc.scale.set(.7, 1.7, .7);
+
+  // ---- project: the back wing (a second big room behind the hall) ----
+  const WG = TH.wing = new THREE.Group(); G.add(WG);
+  const wd = WING.z1 - WING.z0, wcz = (WING.z0 + WING.z1) / 2, T = .35, wallM = toon('#f4eeff');
+  const wf = mk(Box(WING.hw * 2, .06, wd), toon('#ecd2ac'), 0, .03, wcz, WG, false); townFloors.push(wf);
+  for (let i = -3; i <= 3; i++) mk(Box(.04, .065, wd), toon('#d9b88a'), i * 1.5, .033, wcz, WG, false);
+  mk(Box(WING.hw * 2, WING.wh, T), wallM, 0, WING.wh / 2, WING.z0 + T / 2, WG);
+  for (const s of [-1, 1]) {
+    mk(Box(T, WING.wh, wd), wallM, s * (WING.hw - T / 2), WING.wh / 2, wcz, WG);
+    mk(Box(.5, WING.wh + .1, .5), beamM, s * (WING.hw - .15), WING.wh / 2, WING.z0 + .15, WG);
+    const wg = new THREE.Group(); wg.position.set(s * (WING.hw - T / 2), 2.4, wcz); wg.rotation.y = Math.PI / 2; WG.add(wg);
+    mk(Box(1.2, 1.2, T + .06), glassMatTH(), 0, 0, 0, wg, false);
+    for (const e of [-1, 1]) { mk(Box(1.45, .14, T + .16), beamM, 0, e * .66, 0, wg); mk(Box(.14, 1.45, T + .16), beamM, e * .66, 0, 0, wg); }
+  }
+  const wr = mk(softRoofGeo((WING.hw + .94) * Math.SQRT2, 3.2), roofM, 0, WING.wh + 1.6, wcz, RF); wr.scale.z = (wd / 2 + .9) / (WING.hw + .94);
+  TH.wingRoof = wr;
+  // a round window in the back wall of the wing
+  const rw = mk(new CircGeo(.7, 32), glassMatTH(), 0, 2.5, WING.z0 + T + .01, WG, false);
+  mk(new TorGeo(.72, .1, 8, 40), beamM, 0, 2.5, WING.z0 + T + .02, WG, false);
+  poms(-WING.hw + .5, WING.z0 + .5, WING.hw - .5, WING.z0 + .5, 12, WING.wh - .6);
+  TH.wingBoxes = [
+    thBox(-WING.hw, WING.hw, WING.z0, WING.z0 + T),
+    thBox(-WING.hw, -WING.hw + T, WING.z0, WING.z1), thBox(WING.hw - T, WING.hw, WING.z0, WING.z1),
+  ];
+  // before it is built: planks across the archway
+  const PL = TH.planks = new THREE.Group(); PL.position.set(0, 0, -hd + .5); G.add(PL);
+  for (let i = 0; i < 4; i++) { const p = mk(Box(3.6, .32, .12), toon(i % 2 ? '#c98d55' : '#b07a4a'), 0, .5 + i * .8, 0, PL); p.rotation.z = (i % 2 ? .08 : -.06); }
+  TH.wingSoon = soon(PL, 0, .45, 0, 'Back Wing');
+  TH.planksBox = thBox(-1.7, 1.7, -hd, -hd + .65);
+
+  // ---- project: the clock tower on the roof ----
+  const TW = TH.tower = new THREE.Group(); TW.position.set(0, wh + 2.3, -.3); RF.add(TW);
+  mk(Box(2.1, 3.4, 2.1), toon('#f4eeff'), 0, 1.7, 0, TW);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) mk(Box(.32, 3.5, .32), beamM, sx * .95, 1.75, sz * .95, TW);
+  const faceTex = canvasTex(128, 128, (c, w) => {
+    c.fillStyle = '#fffaf0'; c.beginPath(); c.arc(64, 64, 62, 0, 7); c.fill();
+    c.fillStyle = '#a58be0'; for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; c.beginPath(); c.arc(64 + Math.cos(a) * 48, 64 + Math.sin(a) * 48, i % 3 ? 4 : 7, 0, 7); c.fill(); }
+  });
+  TH.hands = [];
+  for (const sz of [1, -1]) {
+    const fg = new THREE.Group(); fg.position.set(0, 2.25, sz * 1.07); if (sz < 0) fg.rotation.y = Math.PI; TW.add(fg);
+    mk(new CircGeo(.7, 40), new THREE.MeshBasicMaterial({ map: faceTex }), 0, 0, .01, fg, false);
+    mk(new TorGeo(.72, .08, 8, 40), toon('#ffd84d'), 0, 0, .02, fg, false);
+    const hh = new THREE.Group(), mh = new THREE.Group(); hh.position.z = mh.position.z = .05; fg.add(hh, mh);
+    mk(Box(.07, .38, .03), toon('#5a3f8f'), 0, .16, 0, hh, false); mk(Box(.05, .56, .03), toon('#5a3f8f'), 0, .25, .01, mh, false);
+    ball(toon('#ffd84d'), 0, 0, .06, .07, .07, .03, fg, false);
+    TH.hands.push([hh, mh]);
+  }
+  mk(softRoofGeo(1.95, 1.9), roofM, 0, 3.4 + .95, 0, TW);
+  const ts = mk(new THREE.OctahedronGeometry(.3), glow(toon('#ffd84d', { emissive: '#ffcc33', emissiveIntensity: .4 }), .4, 1.8), 0, 5.6, 0, TW, false); ts.scale.z = .5;
+  TH.towerStar = ts;
+  finishRoof(townHall);
+}
+function glassMatTH() { return TH.glass || (TH.glass = glow(toon('#fff6c2', { emissive: '#ffc94d', emissiveIntensity: .2 }), .2, 1.7)); }
+// the hall plus the back wing (once it's built) count as "inside"
+{
+  const inMain = townHall.inside;
+  townHall.inside = p => {
+    if (inMain(p)) return true;
+    if (!townBuilt('wing')) return false;
+    const [lx, lz] = thLocal(p.x, p.z);
+    return Math.abs(lx) < WING.hw - .35 && lz > WING.z0 + .35 && lz < WING.z1 + .3;
+  };
+}
+
+// ---------- furniture: everything you can place in the hall or in your own room ----------
+const fmats = new Map();
+const fm = (col, extra) => { const k = col + (extra ? JSON.stringify(extra) : ''); if (!fmats.has(k)) fmats.set(k, toon(col, extra)); return fmats.get(k); };
+const fglow = (col, flat) => { const k = 'glow' + col + (flat ? 'f' : ''); if (!fmats.has(k)) fmats.set(k, glow(toon(col, { emissive: col, emissiveIntensity: .3, side: THREE.DoubleSide, ...(flat ? { flatShading: true } : {}) }), .3, 1.5)); return fmats.get(k); };
+const WOOD = '#c98d55', WOOD2 = '#a8714a', CREAM = '#fffaf0';
+const legs = (g, w, d, h = .07) => { for (const sx of [-1, 1]) for (const sz of [-1, 1]) ball(fm(WOOD2), sx * w, h, sz * d, .08, .08, .08, g, false); };
+const FURNI = [
+  { id: 'plant', name: 'Potted Plant', price: 1, r: .45, c: 6, build(g, c) {
+    mk(new CylGeo(.3, .22, .5, 16), fm(c), 0, .25, 0, g); ball(fm('#8a5a3a'), 0, .5, 0, .27, .04, .27, g, false);
+    ball(leafMats[0], 0, .95, 0, .42, .45, .42, g); ball(leafMats[1], .2, 1.22, .1, .28, .3, .28, g); ball(leafMats[3], -.18, 1.15, -.12, .26, .28, .26, g);
+  } },
+  { id: 'vase', name: 'Flower Vase', price: 1, r: .35, c: 3, build(g, c) {
+    ball(fm(c), 0, .32, 0, .26, .34, .26, g); mk(new CylGeo(.12, .16, .22, 14), fm(c), 0, .7, 0, g);
+    for (let i = 0; i < 5; i++) {
+      const a = i * 1.26;
+      mk(new CylGeo(.015, .015, .5, 5), fm('#5cbf5c'), Math.cos(a) * .06, .95, Math.sin(a) * .06, g, false);
+      ball(fm(PASTELS[(i + 2) % 7]), Math.cos(a) * .14, 1.2 + (i % 2) * .08, Math.sin(a) * .14, .1, .09, .1, g);
+    }
+  } },
+  { id: 'rug', name: 'Round Rug', price: 1, r: 1.1, flat: true, c: 1, build(g, c) {
+    mk(new CircGeo(1.1, 40), fm(c), 0, .075, 0, g, false).rotation.x = -Math.PI / 2;
+    mk(new RingGeo(.62, .74, 40), fm(CREAM), 0, .08, 0, g, false).rotation.x = -Math.PI / 2;
+    mk(new CircGeo(.3, 30), fm(CREAM), 0, .08, 0, g, false).rotation.x = -Math.PI / 2;
+  } },
+  { id: 'beanbag', name: 'Beanbag', price: 1, r: .6, c: 2, build(g, c) {
+    ball(fm(c), 0, .32, 0, .62, .36, .6, g); ball(fm(c), 0, .58, -.26, .5, .36, .3, g);
+  } },
+  { id: 'cake', name: 'Cake Stand', price: 1, r: .45, c: 0, build(g, c) {
+    mk(new CylGeo(.06, .16, .8, 12), fm(CREAM), 0, .4, 0, g); mk(new CylGeo(.42, .42, .06, 24), fm(CREAM), 0, .8, 0, g);
+    mk(new CylGeo(.3, .3, .22, 24), fm(c), 0, .94, 0, g); mk(new CylGeo(.21, .21, .18, 24), fm(CREAM), 0, 1.14, 0, g);
+    ball(fm('#ff4d5e'), 0, 1.3, 0, .07, .07, .07, g);
+  } },
+  { id: 'lamp', name: 'Floor Lamp', price: 2, r: .35, c: 4, build(g, c) {
+    mk(new CylGeo(.26, .3, .06, 16), fm(WOOD2), 0, .03, 0, g); mk(new CylGeo(.035, .035, 1.8, 8), fm(WOOD2), 0, .95, 0, g);
+    mk(new CylGeo(.24, .4, .48, 20, 1, true), fglow(c), 0, 1.95, 0, g); ball(fglow('#fff6c2'), 0, 1.82, 0, .12, .12, .12, g, false);
+  } },
+  { id: 'armchair', name: 'Armchair', price: 2, r: .7, c: 2, build(g, c) {
+    mk(Box(1.1, .45, .95), fm(c), 0, .38, 0, g); mk(Box(1.1, .85, .28), fm(c), 0, .8, -.36, g);
+    for (const s of [-1, 1]) mk(Box(.24, .6, .95), fm(c), s * .5, .55, 0, g);
+    mk(Box(.68, .14, .6), fm(CREAM), 0, .66, .08, g); legs(g, .42, .36);
+  } },
+  { id: 'table', name: 'Round Table', price: 2, r: .85, c: 3, build(g, c) {
+    mk(new CylGeo(.42, .46, .06, 20), fm(WOOD), 0, .03, 0, g); mk(new CylGeo(.1, .22, 1, 12), fm(WOOD), 0, .5, 0, g);
+    mk(new CylGeo(.8, .8, .1, 28), fm(WOOD), 0, 1, 0, g); mk(new CylGeo(.84, .84, .03, 28), fm(c), 0, 1.06, 0, g, false);
+    ball(fm(CREAM), .2, 1.2, .1, .17, .14, .17, g); mk(new ConeGeo(.04, .22, 8), fm(CREAM), .4, 1.24, .1, g).rotation.z = -1.1;
+    mk(new CylGeo(.08, .07, .1, 12), fm(CREAM), -.25, 1.12, -.15, g);
+  } },
+  { id: 'teddy', name: 'Big Teddy', price: 2, r: .55, c: 6, build(g, c) {
+    const m = fm(c);
+    ball(m, 0, .45, 0, .45, .45, .4, g); ball(fm(CREAM), 0, .42, .28, .26, .28, .14, g, false);
+    ball(m, 0, 1.05, 0, .34, .32, .32, g);
+    for (const s of [-1, 1]) { ball(m, s * .26, 1.33, 0, .12, .12, .08, g); ball(m, s * .4, .52, .1, .14, .22, .14, g); ball(m, s * .2, .12, .28, .16, .12, .2, g); }
+    ball(fm(CREAM), 0, .99, .28, .13, .1, .08, g, false); ball(eyeMat, 0, 1.04, .35, .045, .035, .03, g, false);
+    for (const s of [-1, 1]) ball(eyeMat, s * .11, 1.13, .29, .035, .045, .03, g, false);
+    ball(fm('#ff8fc7'), 0, .78, .3, .12, .07, .05, g, false);
+  } },
+  { id: 'globe', name: 'Star Globe', price: 2, r: .45, c: 3, build(g, c) {
+    mk(new CylGeo(.3, .34, .08, 18), fm(WOOD2), 0, .04, 0, g); mk(new CylGeo(.04, .05, .7, 8), fm(WOOD2), 0, .4, 0, g);
+    ball(fm(c), 0, 1.05, 0, .32, .32, .32, g);
+    for (const [x, y, z] of [[.15, 1.15, .25], [-.22, .98, .2], [.05, .9, -.28], [.27, 1.05, -.1]]) ball(fm('#9ff0c8'), x, y, z, .12, .08, .1, g, false);
+    const ring = mk(new TorGeo(.39, .025, 8, 40), fm('#ffd84d'), 0, 1.05, 0, g); ring.rotation.y = Math.PI / 2; ring.rotation.x = .4;
+  } },
+  { id: 'bench', name: 'Bench', price: 2, r: .95, c: 5, build(g, c) {
+    mk(Box(1.8, .14, .55), fm(c), 0, .5, 0, g); mk(Box(1.8, .5, .12), fm(c), 0, .85, -.24, g);
+    for (const s of [-1, 1]) mk(Box(.12, .5, .5), fm(WOOD2), s * .78, .25, 0, g);
+  } },
+  { id: 'sofa', name: 'Sofa', price: 3, r: 1.15, c: 0, build(g, c) {
+    const m = fm(c);
+    mk(Box(2.2, .45, .95), m, 0, .35, 0, g); mk(Box(2.2, .8, .3), m, 0, .8, -.34, g);
+    for (const s of [-1, 1]) { mk(Box(.3, .62, .95), m, s * 1.0, .5, 0, g); mk(Box(.86, .16, .62), fm(CREAM), s * .44, .64, .07, g); }
+    ball(fm('#fff09a'), -.55, .92, -.12, .22, .2, .08, g); ball(fm('#9ff0c8'), .55, .92, -.12, .22, .2, .08, g); legs(g, .95, .36);
+  } },
+  { id: 'shelf', name: 'Bookshelf', price: 3, r: .95, c: 2, build(g, c) {
+    const w = fm(c);
+    mk(Box(1.8, 2.2, .1), w, 0, 1.1, -.2, g);
+    for (const s of [-1, 1]) mk(Box(.12, 2.2, .45), w, s * .84, 1.1, 0, g);
+    for (const y of [.08, .78, 1.48, 2.16]) mk(Box(1.8, .1, .45), w, 0, y, 0, g);
+    const ws = [.14, .18, .12, .2, .16, .13, .17], hs = [.5, .42, .55, .46, .5, .38, .52];
+    for (const [k, y] of [.13, .83, 1.53].entries()) {
+      let x = -.74, i = k * 3;
+      while (x < .62) { const bw = ws[i % 7], bh = hs[(i + k) % 7]; mk(Box(bw, bh, .32), fm(PASTELS[(i + k) % 7]), x + bw / 2, y + bh / 2, .02, g); x += bw + .02; i++; }
+    }
+  } },
+  { id: 'clock', name: 'Grandfather Clock', price: 3, r: .5, c: 5, build(g, c) {
+    mk(Box(.7, 2.1, .45), fm(c), 0, 1.05, 0, g); ball(fm(c), 0, 2.15, 0, .38, .22, .25, g);
+    mk(new CircGeo(.26, 28), fm(CREAM), 0, 1.72, .232, g, false);
+    mk(new TorGeo(.27, .03, 8, 32), fm('#ffd84d'), 0, 1.72, .232, g, false);
+    mk(Box(.03, .18, .02), fm('#5a3f8f'), 0, 1.79, .25, g, false); mk(Box(.13, .03, .02), fm('#5a3f8f'), .05, 1.72, .25, g, false);
+    mk(Box(.36, .8, .04), fm('#fff6c2'), 0, .95, .22, g, false); ball(fm('#ffd84d'), 0, .75, .25, .1, .1, .03, g, false);
+  } },
+  { id: 'crystal', name: 'Crystal Lamp', price: 3, r: .5, c: 2, build(g, c) {
+    ball(fm('#e4dcef'), 0, .08, 0, .5, .14, .5, g);
+    for (let k = 0; k < 3; k++) { const m = mk(new THREE.OctahedronGeometry(.32), fglow(c, true), (k - 1) * .24, .45 + (k === 1 ? .2 : 0), (k % 2) * .12, g); m.scale.set(.6, k === 1 ? 2.2 : 1.5, .6); m.rotation.z = (k - 1) * .35; }
+  } },
+  { id: 'starlamp', name: 'Star Lamp', price: 3, r: .35, c: 4, build(g, c) {
+    mk(new CylGeo(.24, .28, .06, 16), fm(WOOD2), 0, .03, 0, g); mk(new CylGeo(.035, .035, 1.6, 8), fm(WOOD2), 0, .85, 0, g);
+    const s = mk(new THREE.OctahedronGeometry(.34), fglow(c, true), 0, 1.9, 0, g); s.scale.z = .45;
+  } },
+  { id: 'bed', name: 'Cosy Bed', price: 4, r: 1.35, c: 2, build(g, c) {
+    mk(Box(1.6, .45, 2.5), fm(WOOD), 0, .27, 0, g); mk(Box(1.5, .26, 2.35), fm('#ffffff'), 0, .6, 0, g);
+    mk(Box(1.56, .3, 1.5), fm(c), 0, .66, .45, g); mk(Box(.9, .24, .5), fm(CREAM), 0, .86, -.82, g);
+    mk(Box(1.6, 1.2, .18), fm(WOOD), 0, .6, -1.2, g);
+    for (let i = 0; i < 4; i++) ball(fm('#ffe066'), -.5 + i * .33, .82, .25 + (i % 2) * .45, .07, .02, .07, g, false);
+  } },
+  { id: 'tank', name: 'Fish Tank', price: 4, r: .8, c: 6, build(g, c) {
+    mk(Box(1.4, .7, .7), fm(WOOD2), 0, .35, 0, g);
+    mk(Box(1.3, .08, .6), fm('#fff3c4'), 0, .76, 0, g, false);
+    ball(fm(c), -.3, 1.12, 0, .15, .1, .06, g, false); mk(new ConeGeo(.08, .14, 8), fm(c), -.12, 1.12, 0, g, false).rotation.z = Math.PI / 2;
+    ball(fm('#8fd0ff'), .3, .98, .1, .11, .08, .05, g, false);
+    for (const x of [.48, .38]) ball(leafMats[2], x, .95, -.15, .06, .2, .06, g, false);
+    mk(Box(1.4, .8, .7), fm('#bfe8ff', { transparent: true, opacity: .4, depthWrite: false }), 0, 1.11, 0, g, false);
+  } },
+  { id: 'piano', name: 'Piano', price: 5, r: 1.0, c: 2, build(g, c) {
+    mk(Box(1.8, 1.4, .6), fm(c), 0, .8, -.2, g); mk(Box(1.8, .14, .5), fm(c), 0, .92, .3, g);
+    mk(Box(1.7, .06, .34), fm('#ffffff'), 0, 1.01, .3, g, false);
+    for (let i = 0; i < 10; i++) if (i % 7 !== 2 && i % 7 !== 6) mk(Box(.07, .05, .18), fm('#2b1d3a'), -.72 + i * .16, 1.06, .24, g, false);
+    for (const s of [-1, 1]) mk(Box(.12, .86, .12), fm(c), s * .82, .43, .46, g);
+    mk(Box(.55, .4, .03), fm(CREAM), 0, 1.75, .12, g, false);
+  } },
+];
+const FURNI_BY_ID = new Map(FURNI.map(f => [f.id, f]));
+function buildFurni(F, c) {
+  const g = new THREE.Group();
+  F.build(g, PASTELS[clamp(c | 0, 0, PASTELS.length - 1)]);
+  return g;
+}
+// little pictures of each piece for the panels (rendered once, with a small extra renderer)
+const thumbs = new Map();
+function furniThumb(F) {
+  if (thumbs.has(F.id)) return thumbs.get(F.id);
+  try {
+    if (!furniThumb.r) {
+      const r = furniThumb.r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+      r.setSize(96, 96, false); r.setPixelRatio(1);
+      const s = furniThumb.s = new THREE.Scene();
+      s.add(new THREE.HemisphereLight('#ffffff', '#d3ddff', 1.4));
+      const d = new THREE.DirectionalLight('#fff0d8', 2.2); d.position.set(3, 5, 4); s.add(d);
+      furniThumb.cam = new THREE.PerspectiveCamera(32, 1, .1, 50);
+    }
+    const g = buildFurni(F, F.c); furniThumb.s.add(g);
+    const box = new THREE.Box3().setFromObject(g), ctr = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3()).length();
+    const cam = furniThumb.cam; cam.position.set(ctr.x + size * .85, ctr.y + size * .6, ctr.z + size * 1.15); cam.lookAt(ctr);
+    furniThumb.r.render(furniThumb.s, cam);
+    const url = furniThumb.r.domElement.toDataURL();
+    furniThumb.s.remove(g); thumbs.set(F.id, url);
+    return url;
+  } catch (e) { thumbs.set(F.id, ''); return ''; }
+}
+
+// ---------- the shared state ----------
+const TOWN_PROJECTS = [
+  { id: 'fountain', name: 'Star Fountain', icon: 'sparkle', desc: 'A sparkling fountain on the square in front of the hall', goal: 20 },
+  { id: 'garden', name: 'Flower Garden', icon: 'flower', desc: 'Flower beds, benches and lamps beside the hall', goal: 25 },
+  { id: 'chandelier', name: 'Crystal Chandelier', icon: 'ingCrystal', desc: 'A glittering chandelier for the big hall', goal: 30 },
+  { id: 'wing', name: 'Back Wing', icon: 'home', desc: 'A whole new room behind the hall, with space for 30 more decorations', goal: 40 },
+  { id: 'tower', name: 'Clock Tower', icon: 'sun', desc: 'A tower on the roof with a real clock', goal: 50 },
+];
+const PROJ_BY_ID = new Map(TOWN_PROJECTS.map(p => [p.id, p]));
+const myPid = (() => {
+  let p = null;
+  try { p = localStorage.getItem('starvale-pid'); } catch (e) { /* no storage */ }
+  if (!p || !/^[a-z0-9]{6,16}$/.test(p)) { p = Math.random().toString(36).slice(2, 12).padEnd(8, '0'); try { localStorage.setItem('starvale-pid', p); } catch (e) { /* ignore */ } }
+  return p;
+})();
+const okPid = v => typeof v === 'string' && /^[a-z0-9]{6,16}$/.test(v);
+const okItemId = id => typeof id === 'string' && /^[a-z0-9]{6,16}-[a-z0-9]{1,12}$/.test(id);
+const townItems = new Map();   // id -> { k, x, z, a, c, by, n, t } or { del: 1, by, t }
+const townDon = new Map();     // 'pid:project' -> stars given (only ever goes up)
+const hallMeshes = new Map();  // id -> { g, c }
+const townCap = () => 30 + (townBuilt('wing') ? 30 : 0);
+const liveTownItems = () => [...townItems.entries()].filter(([, v]) => !v.del);
+function projGiven(id) { let n = 0; for (const [k, v] of townDon) if (k.endsWith(':' + id)) n += v; return n; }
+function townBuilt(id) { const p = PROJ_BY_ID.get(id); return !!p && projGiven(id) >= p.goal; }
+function cleanTownItem(v) {
+  if (!v || typeof v !== 'object') return null;
+  const t = num(v.t);
+  if (t <= 0 || t > Date.now() + 864e5 || !okPid(v.by)) return null;
+  if (v.del) return { del: 1, by: v.by, t };
+  if (typeof v.k !== 'string' || !FURNI_BY_ID.has(v.k)) return null;
+  return { k: v.k, x: r2(clamp(num(v.x), -TOWN.hw, TOWN.hw)), z: r2(clamp(num(v.z), WING.z0, TOWN.hd)), a: r2(num(v.a) % 6.3), c: clamp(Math.round(num(v.c)), 0, PASTELS.length - 1), by: v.by, n: cleanNick(v.n), t };
+}
+function mergeTownItem(id, raw) {
+  if (!okItemId(id)) return false;
+  const v = cleanTownItem(raw);
+  if (!v || !id.startsWith(v.by + '-')) return false;      // an item id starts with its owner's id
+  const cur = townItems.get(id);
+  if (cur && (v.t < cur.t || (v.t === cur.t && JSON.stringify(v) <= JSON.stringify(cur)))) return false;
+  townItems.set(id, v); showHallItem(id);
+  return true;
+}
+function mergeTownDon(k, n) {
+  if (typeof k !== 'string') return false;
+  const [pid, proj, extra] = k.split(':');
+  if (extra !== undefined || !okPid(pid) || !PROJ_BY_ID.has(proj)) return false;
+  n = clamp(Math.floor(num(n)), 0, 1000);
+  if (n <= (townDon.get(k) || 0)) return false;
+  townDon.set(k, n);
+  return true;
+}
+function applyTownEntries(entries, announce) {
+  if (!Array.isArray(entries)) return;
+  let any = false;
+  for (const e of entries.slice(0, 1500)) {
+    if (!Array.isArray(e) || typeof e[0] !== 'string') continue;
+    const [k, v] = e;
+    if (k.startsWith('i:')) any = mergeTownItem(k.slice(2), v) || any;
+    else if (k.startsWith('d:')) any = mergeTownDon(k.slice(2), v) || any;
+  }
+  if (!any) return;
+  applyTownProjects(announce); storeTownSoon();
+  if (townOpen()) renderTown();
+}
+function townEntries() {
+  const items = [...townItems.entries()].sort((a, b) => b[1].t - a[1].t).slice(0, 600);
+  return [...items.map(([id, v]) => ['i:' + id, v]), ...[...townDon.entries()].map(([k, v]) => ['d:' + k, v])];
+}
+// --- keeping it: localStorage, players online, and the Supabase table ---
+let townStoreT = 0;
+function storeTownSoon() { townStoreT = .6; }
+function storeTown() { try { localStorage.setItem('starvale-town', JSON.stringify(townEntries())); } catch (e) { /* ignore */ } }
+function loadTown() { try { applyTownEntries(JSON.parse(localStorage.getItem('starvale-town') || '[]'), false); } catch (e) { /* start empty */ } }
+let townDb = null, townDbT = 0, townHelloAt = 0;
+const townDbQueue = new Map();
+function townChanged(entries) {
+  applyTownProjects(true); storeTownSoon();
+  if (net) Promise.resolve().then(() => net.emit('town', { e: entries })).catch(() => {});
+  for (const [k, v] of entries) townDbQueue.set(k, v);
+  if (townOpen()) renderTown();
+}
+function onRemoteTown(d) { if (d && Array.isArray(d.e)) applyTownEntries(d.e, true); }
+// someone joined: after a moment, send them everything we know (they do the same for us)
+function townHello() {
+  if (!net) return;
+  const now = performance.now();
+  if (now < townHelloAt) return;
+  townHelloAt = now + 2500;
+  setTimeout(() => { if (net) Promise.resolve().then(() => net.emit('town', { e: townEntries() })).catch(() => {}); }, 300 + Math.random() * 1200);
+}
+async function townDbConnect(sb) {
+  try {
+    const { data, error } = await sb.from('starvale_town').select('k,v').limit(5000);
+    if (error || !Array.isArray(data)) return;   // no table (yet): share with the players online only
+    townDb = sb;
+    const have = new Map(data.map(r => [r.k, JSON.stringify(r.v)]));
+    applyTownEntries(data.map(r => [r.k, r.v]), false);
+    for (const [k, v] of townEntries()) if (have.get(k) !== JSON.stringify(v)) townDbQueue.set(k, v);   // made while offline
+  } catch (e) { townDb = null; }
+}
+function townDbFlush() {
+  if (!townDb || !townDbQueue.size) return;
+  const rows = [...townDbQueue.entries()].slice(0, 200).map(([k, v]) => ({ k, v }));
+  for (const r of rows) townDbQueue.delete(r.k);
+  townDb.from('starvale_town').upsert(rows, { onConflict: 'k' }).then(({ error }) => { if (error) console.warn('Starvale: could not save the Town Hall', error.message); }, () => {});
+}
+
+// ---------- showing it ----------
+function showHallItem(id) {
+  const old = hallMeshes.get(id);
+  if (old) { townHall.g.remove(old.g); if (old.c) dropFrom(circles, old.c); hallMeshes.delete(id); }
+  const v = townItems.get(id);
+  if (!v || v.del || hallMeshes.size >= 150) return;
+  if (deco && deco.id === id) return;   // you are carrying it right now
+  const F = FURNI_BY_ID.get(v.k), g = buildFurni(F, v.c);
+  g.position.set(v.x, 0, v.z); g.rotation.y = v.a; townHall.g.add(g);
+  let c = null;
+  if (!F.flat) { const [x, z] = thWorld(v.x, v.z); c = { x, z, r: F.r * .8 }; circles.push(c); }
+  hallMeshes.set(id, { g, c });
+}
+const shownProj = {};
+function applyTownProjects(announce) {
+  for (const p of TOWN_PROJECTS) {
+    const b = townBuilt(p.id);
+    if (shownProj[p.id] === b) continue;
+    const first = shownProj[p.id] === false;
+    shownProj[p.id] = b;
+    if (p.id === 'fountain') { TH.fountain.visible = b; TH.fountainSoon.visible = !b; (b ? circles.push(TH.fountainCirc) : dropFrom(circles, TH.fountainCirc)); }
+    if (p.id === 'garden') { TH.garden.visible = b; TH.gardenSoon.visible = !b; for (const c of TH.gardenCircs) b ? circles.push(c) : dropFrom(circles, c); }
+    if (p.id === 'chandelier') TH.chand.visible = b;
+    if (p.id === 'tower') TH.tower.visible = b;
+    if (p.id === 'wing') {
+      TH.wing.visible = TH.wingRoof.visible = b; TH.planks.visible = !b;
+      for (const bx of TH.wingBoxes) b ? playerBoxes.push(bx) : dropFrom(playerBoxes, bx);
+      b ? dropFrom(playerBoxes, TH.planksBox) : playerBoxes.push(TH.planksBox);
+    }
+    if (b && first && announce && started) {
+      toast(`The ${p.name} at the Town Hall is finished! Thank you to everyone who helped.`, 5000, 'sparkle'); sfx('fanfare');
+      if (mpNear(TOWN.x, TOWN.z, 40)) burst(new THREE.Vector3(TOWN.x, 6, TOWN.z), 50, { speed: 7, colors: ['#ffd84d', '#ffb3d9', '#c9a0ff', '#8fd0ff'], size: .6, life: 1.6, gravity: 2 });
+    }
+  }
+  for (const l of townHall.lights) l.night = 24 + (townBuilt('chandelier') ? 10 : 0);
+  applyTime();
+}
+
+// ---------- your own room: a cosy room on a little cloud, only for you ----------
+const ROOM = { id: 'room', name: 'Your Room', x: 0, z: -2600, r: 15 };
+FAR.push(ROOM);
+const ROOM_HD = 4, ROOM_WH = 3.4, ROOM_PRICE = 15, PAINT_PRICE = 2, ROOM_CAP = 40;
+const WALLPAPERS = ['#fff0dc', '#ffd6e8', '#e2d4ff', '#d4ecff', '#d8f5e4', '#fff3b8'];
+const FLOORS = ['#e0a96e', '#c98d55', '#ffc2dc', '#bfe6cf', '#d2c4f2'];
+const ROOM_UPS = [
+  { id: 'lights', name: 'Fairy Lights', icon: 'sparkle', desc: 'Twinkly lights all along the walls', price: 3 },
+  { id: 'windows', name: 'Round Windows', icon: 'sun', desc: 'Two round windows that glow at night', price: 4 },
+  { id: 'fireplace', name: 'Fireplace', icon: 'flame', desc: 'A cosy fireplace with a crackling fire', price: 8 },
+  { id: 'bigger', name: 'Bigger Room', icon: 'home', desc: 'Push the walls out for lots more space', price: 12 },
+];
+const hasUp = id => !!(save.room && save.room.up.includes(id));
+const roomW = () => hasUp('bigger') ? 6.5 : 4.5;
+const roomG = new THREE.Group(); roomG.position.set(ROOM.x, 0, ROOM.z); scene.add(roomG);
+{
+  const g = new THREE.Group(); g.position.set(ROOM.x, 0, ROOM.z); scene.add(g);
+  const side = toon('#e4dcf7');
+  ROOM.top = new THREE.Mesh(new CylGeo(ROOM.r - .7, ROOM.r - 1.2, 3, 64), [side, toon('#fbf8ff'), side]);
+  ROOM.top.position.y = -1.5; ROOM.top.receiveShadow = true; g.add(ROOM.top);
+  softEdge(g, ROOM.r, 0, .7);
+  for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; ball(cloudMat, Math.cos(a) * (ROOM.r - 2.5), TR(-3.6, -2.2), Math.sin(a) * (ROOM.r - 2.5), TR(2.6, 3.6), TR(1.6, 2.4), TR(2.6, 3.6), g, false); }
+  ball(cloudMat, 0, -4.2, 0, ROOM.r * .8, 3, ROOM.r * .8, g, false);
+  for (let i = 0; i < 26; i++) {   // little flowers around the room
+    const a = TR(0, 6.28), d = TR(8.5, ROOM.r - 2.5);
+    ball(toon(PASTELS[i % 7]), Math.cos(a) * d, .12, Math.sin(a) * d, .14, .11, .14, g);
+  }
+}
+let roomShell = null, roomBoxes = [], roomItemMeshes = [], roomFire = null, roomFairy = [];
+const RM = { door: new THREE.Vector3(), lect: { x: 0, z: 0 }, fireMat: null, fairyMat: null, winMat: null };
+function buildRoomShell() {
+  if (roomShell) roomG.remove(roomShell);
+  for (const b of roomBoxes) dropFrom(playerBoxes, b);
+  roomBoxes = []; roomFire = null; roomFairy = [];
+  const R0 = save.room, hw = roomW(), hd = ROOM_HD, wh = ROOM_WH, T = .3, DG = 1.1, DH = 2.5;
+  const S = roomShell = new THREE.Group(); roomG.add(S);
+  const wall = new THREE.Color(WALLPAPERS[R0.wall] || WALLPAPERS[0]);
+  // walls and floor glow softly at night, as if the lamps are on
+  const wallM = glow(toon(wall, { emissive: wall, emissiveIntensity: 0 }), 0, .3), lowM = toon(wall.clone().multiplyScalar(.9)), trimM = toon('#ffffff');
+  const frontM = toon(wall, { transparent: true, opacity: .25, depthWrite: false });
+  const fc = FLOORS[R0.floor] || FLOORS[0], floor = mk(Box(hw * 2, .06, hd * 2), glow(toon(fc, { emissive: fc, emissiveIntensity: 0 }), 0, .25), 0, .03, 0, S, false);
+  const plank = toon(new THREE.Color(FLOORS[R0.floor] || FLOORS[0]).multiplyScalar(.88));
+  for (let x = -hw + 1.1; x < hw - .5; x += 1.1) mk(Box(.04, .065, hd * 2), plank, x, .033, 0, S, false);
+  // walls: back, sides (with a darker band at the bottom) and a see-through front with the door
+  const wallAt = (w, d, x, z) => { mk(Box(w, wh, d), wallM, x, wh / 2, z, S); };
+  wallAt(hw * 2, T, 0, -hd + T / 2); wallAt(T, hd * 2, -hw + T / 2, 0); wallAt(T, hd * 2, hw - T / 2, 0);
+  mk(Box(hw * 2 - T * 2, .9, .06), lowM, 0, .45, -hd + T + .03, S, false);
+  for (const s of [-1, 1]) mk(Box(.06, .9, hd * 2 - T * 2), lowM, s * (hw - T - .03), .45, 0, S, false);
+  mk(Box(hw * 2 - T * 2, .1, .1), trimM, 0, .92, -hd + T + .05, S, false);
+  for (const s of [-1, 1]) mk(Box(.1, .1, hd * 2 - T * 2), trimM, s * (hw - T - .05), .92, 0, S, false);
+  const segW = hw - DG;
+  for (const s of [-1, 1]) mk(Box(segW, wh, T), frontM, s * (DG + segW / 2), wh / 2, hd - T / 2, S, false);
+  mk(Box(DG * 2, wh - DH, T), frontM, 0, DH + (wh - DH) / 2, hd - T / 2, S, false);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) mk(Box(.36, wh + .1, .36), trimM, sx * (hw - .12), wh / 2, sz * (hd - .12), S);
+  // the door back to the Town Hall
+  const dg = RM.doorG = new THREE.Group(); dg.position.set(0, 0, hd - T - .04); S.add(dg);
+  mk(Box(DG * 2 - .2, DH - .05, .1), toon('#b48cff', { transparent: true, opacity: .35, depthWrite: false }), 0, (DH - .05) / 2, 0, dg, false);
+  ball(toon('#ffd84d'), .62, 1.2, -.07, .08, .08, .06, dg);
+  mk(new CircGeo(.22, 24), glassMatTH(), 0, 1.95, -.06, dg, false).rotation.y = Math.PI;
+  RM.door.set(ROOM.x, 0, ROOM.z + hd - 1.2);
+  roomBoxes.push(
+    { x0: ROOM.x - hw, x1: ROOM.x + hw, z0: ROOM.z - hd, z1: ROOM.z - hd + T },
+    { x0: ROOM.x - hw, x1: ROOM.x - hw + T, z0: ROOM.z - hd, z1: ROOM.z + hd },
+    { x0: ROOM.x + hw - T, x1: ROOM.x + hw, z0: ROOM.z - hd, z1: ROOM.z + hd },
+    { x0: ROOM.x - hw, x1: ROOM.x + hw, z0: ROOM.z + hd - T - .15, z1: ROOM.z + hd },
+  );
+  // a framed star picture on the back wall
+  const pic = canvasTex(128, 96, (c, w, h) => {
+    c.fillStyle = '#2a2152'; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#fff09a'; for (let i = 0; i < 18; i++) { c.beginPath(); c.arc((i * 37) % w, (i * 23) % h, i % 4 ? 1.5 : 3, 0, 7); c.fill(); }
+    c.fillStyle = '#ffd84d'; c.beginPath(); c.arc(84, 34, 14, 0, 7); c.fill(); c.fillStyle = '#2a2152'; c.beginPath(); c.arc(90, 30, 12, 0, 7); c.fill();
+  });
+  mk(Box(1.5, 1.15, .08), toon('#c98d55'), -hw + 2, 2.2, -hd + T + .04, S, false);
+  mk(new THREE.PlaneGeometry(1.3, .95), new THREE.MeshBasicMaterial({ map: pic }), -hw + 2, 2.2, -hd + T + .09, S, false);
+  // the Room Book on a little stand next to the door: open it to decorate
+  RM.lect = { x: -hw + 1.1, z: hd - 1.3 };
+  const lg = RM.lectG = new THREE.Group(); lg.position.set(RM.lect.x, 0, RM.lect.z); lg.rotation.y = Math.PI * .75; S.add(lg);
+  mk(new CylGeo(.08, .12, 1, 10), toon(WOOD2), 0, .5, 0, lg); ball(toon(WOOD2), 0, .05, 0, .3, .08, .3, lg);
+  const bk = mk(Box(.6, .06, .45), toon('#7a4fc9'), 0, 1.05, 0, lg); bk.rotation.x = -.3;
+  for (const s of [-1, 1]) { const p = mk(Box(.27, .03, .4), toon(CREAM), s * .14, 1.1, .02, lg, false); p.rotation.x = -.3; p.rotation.z = -s * .1; }
+  roomBoxes.push({ x0: ROOM.x + RM.lect.x - .3, x1: ROOM.x + RM.lect.x + .3, z0: ROOM.z + RM.lect.z - .3, z1: ROOM.z + RM.lect.z + .3 });
+  // upgrades
+  if (hasUp('windows')) {
+    RM.winMat = RM.winMat || glow(toon('#fff6c2', { emissive: '#ffc94d', emissiveIntensity: .2 }), .2, 1.8);
+    for (const s of [-1, 1]) {
+      const wg = new THREE.Group(); wg.position.set(s * (hw - T / 2), 2.1, -.6); wg.rotation.y = Math.PI / 2; S.add(wg);
+      mk(new CylGeo(.62, .62, T + .04, 32), RM.winMat, 0, 0, 0, wg, false).rotation.x = Math.PI / 2;
+      mk(new TorGeo(.64, .1, 8, 40), trimM, 0, 0, T / 2 + .02, wg, false); mk(new TorGeo(.64, .1, 8, 40), trimM, 0, 0, -T / 2 - .02, wg, false);
+      mk(Box(1.2, .06, .1), trimM, 0, 0, s * (T / 2 + .03), wg, false); mk(Box(.06, 1.2, .1), trimM, 0, 0, s * (T / 2 + .03), wg, false);
+    }
+  }
+  if (hasUp('lights')) {
+    RM.fairyMat = RM.fairyMat || [0, 1, 2, 3].map(i => glow(toon(PASTELS[i * 2 % 7], { emissive: PASTELS[i * 2 % 7], emissiveIntensity: .4 }), .4, 1.6));
+    const run = (ax, az, bx, bz, n) => { for (let i = 0; i <= n; i++) { const t = i / n; roomFairy.push(ball(RM.fairyMat[i % 4], lerp(ax, bx, t), wh - .35 - Math.sin(t * Math.PI * 2) ** 2 * .22, lerp(az, bz, t), .07, .09, .07, S, false)); } };
+    run(-hw + .4, -hd + .4, hw - .4, -hd + .4, Math.round(hw * 3)); run(-hw + .4, -hd + .4, -hw + .4, hd - .4, 10); run(hw - .4, -hd + .4, hw - .4, hd - .4, 10);
+  }
+  if (hasUp('fireplace')) {
+    const fg = new THREE.Group(); fg.position.set(0, 0, -hd + T); S.add(fg);
+    const st = toon('#e4dcef'), st2 = toon('#cfc2e6');
+    mk(Box(2.4, 1.6, .7), st, 0, .8, .25, fg); mk(Box(2.7, .2, .9), st2, 0, 1.68, .3, fg);
+    mk(Box(1.3, 1, .3), toon('#3d3550'), 0, .55, .48, fg, false);
+    mk(Box(2, .14, .5), st2, 0, .07, .75, fg, false);
+    RM.fireMat = RM.fireMat || glow(toon('#ffb347', { emissive: '#ff7a1a', emissiveIntensity: .8 }), .8, 1.4);
+    roomFire = [];
+    for (let i = 0; i < 3; i++) roomFire.push(ball(RM.fireMat, (i - 1) * .28, .32, .55, .16, .26, .12, fg, false));
+    for (let i = 0; i < 3; i++) ball(toon('#9c6b48'), (i - 1) * .3, .14, .55, .16, .07, .1, fg, false).rotation.z = (i - 1) * .3;
+    for (const x of [-.8, .8]) ball(toon(PASTELS[x < 0 ? 0 : 3]), x, 1.92, .3, .12, .16, .12, fg);   // little vases on the mantel
+    roomBoxes.push({ x0: ROOM.x - 1.3, x1: ROOM.x + 1.3, z0: ROOM.z - hd, z1: ROOM.z - hd + T + .7 });
+  }
+  for (const b of roomBoxes) playerBoxes.push(b);
+  renderRoomItems();
+}
+function renderRoomItems() {
+  for (const m of roomItemMeshes) { roomG.remove(m.g); if (m.c) dropFrom(circles, m.c); }
+  roomItemMeshes = [];
+  if (!save.room) return;
+  save.room.items.forEach((v, i) => {
+    const F = FURNI_BY_ID.get(v.k);
+    if (!F || (deco && deco.where === 'room' && deco.idx === i)) { roomItemMeshes.push({ g: new THREE.Group() }); return; }
+    const g = buildFurni(F, v.c); g.position.set(v.x, 0, v.z); g.rotation.y = v.a; roomG.add(g);
+    let c = null;
+    if (!F.flat) { c = { x: ROOM.x + v.x, z: ROOM.z + v.z, r: F.r * .8 }; circles.push(c); }
+    roomItemMeshes.push({ g, c });
+  });
+}
+const inRoomArea = p => Math.hypot(p.x - ROOM.x, p.z - ROOM.z) < ROOM.r + 30;
+const inRoom = p => Math.abs(p.x - ROOM.x) < roomW() && Math.abs(p.z - ROOM.z) < ROOM_HD;
+const roomHouse = { get name() { return playerName; }, welcome: '' };
+let roomWarp = false;
+function roomWarpTo(into) {
+  if (roomWarp || (into && !save.room)) return;
+  roomWarp = true; if (deco) decoCancel();
+  closeTown();
+  const warpEl = document.getElementById('warp'), nameEl = document.getElementById('isleName');
+  warpEl.classList.add('on'); sfx('warp');
+  setTimeout(() => {
+    let h;
+    if (into) {
+      buildRoomShell();
+      curIsle = ROOM;
+      player.position.set(ROOM.x, 0, ROOM.z + ROOM_HD - 1.3); h = Math.PI;
+      setSkyCenter(ROOM.x, ROOM.z);
+    } else {
+      curIsle = null;
+      const [x, z] = thWorld(TH.rdoor.x, TH.rdoor.z); player.position.set(x, 0, z);
+      const [fx, fz] = thWorld(TH.rdoor.x - 1, TH.rdoor.z); h = Math.atan2(fx - x, fz - z);
+      setSkyCenter(0, 0);
+    }
+    pState.vy = 0; pState.grounded = true; pVel.set(0, 0, 0); selfLev = 0;
+    pState.heading = player.rotation.y = h; camYaw = into ? h + Math.PI : h;   // in the hall: look from the hall side, not through the wall
+    moveTarget = petTarget = null;
+    camTarget.set(player.position.x, 1.4, player.position.z);
+    applyTime(); updateIsleRow();
+    warpEl.classList.remove('on');
+    if (into) {
+      nameEl.innerHTML = `${escHTML(playerName)}'s Room<small>Only you can decorate it</small>`; nameEl.classList.add('on');
+      setTimeout(() => nameEl.classList.remove('on'), 2400);
+    }
+    burst(player.position.clone().add(new THREE.Vector3(0, 1, 0)), 30, { speed: 4, colors: ['#ffffff', '#d8c4ff', '#ffd1f0', '#fff09a'], size: .45, life: 1.1, gravity: -.5 });
+    roomWarp = false;
+  }, 520);
+}
+
+// ---------- decorating: carry a piece around, turn it, pick a colour and put it down ----------
+let deco = null;   // { where: 'hall' | 'room', kind, a, c, id?, idx?, ghost, ring, ok, lx, lz }
+const decoBar = document.getElementById('decoBar'), decoMsg = document.getElementById('decoMsg');
+function startDeco(where, kind, from) {
+  if (deco) decoCancel();
+  const F = FURNI_BY_ID.get(kind);
+  if (!F) return;
+  deco = { where, kind, a: from ? from.a : 0, c: from ? from.c : (startDeco.lastC ?? F.c), id: from && from.id, idx: from && from.idx, ok: false, lx: 0, lz: 0 };
+  closeTown();
+  if (where === 'hall' && deco.id) showHallItem(deco.id);
+  if (where === 'room' && deco.idx !== undefined) renderRoomItems();
+  decoGhost();
+  decoBar.style.display = 'flex';
+  document.getElementById('dAway').style.display = deco.id || deco.idx !== undefined ? '' : 'none';
+  sfx('pop');
+}
+function decoGhost() {
+  if (deco.ghost) deco.ghost.parent.remove(deco.ghost);
+  const F = FURNI_BY_ID.get(deco.kind), g = buildFurni(F, deco.c);
+  g.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = .62; o.castShadow = false; } });
+  deco.ring = mk(new RingGeo(F.r + .05, F.r + .2, 40), new THREE.MeshBasicMaterial({ color: '#3ccf7f', transparent: true, opacity: .85, depthWrite: false }), 0, .1, 0, g, false);
+  deco.ring.rotation.x = -Math.PI / 2;
+  deco.ghost = g; (deco.where === 'hall' ? townHall.g : roomG).add(g);
+}
+function decoSpotOk(where, kind, lx, lz, skip) {
+  const F = FURNI_BY_ID.get(kind), r = F.r;
+  if (where === 'hall') {
+    const inMain = Math.abs(lx) <= TOWN.hw - .4 - r && lz >= -TOWN.hd + .4 + r && lz <= TOWN.hd - .4 - r;
+    const inWing = townBuilt('wing') && Math.abs(lx) <= WING.hw - .4 - r && lz >= WING.z0 + .4 + r && lz <= WING.z1 - .4 - r;
+    if (!inMain && !inWing) return false;
+    if (Math.abs(lx) < 1.6 + r && lz > TOWN.hd - 2.4 - r) return false;                         // the front door
+    if (Math.abs(lx) < 1.8 + r && lz > WING.z1 - 1.3 - r && lz < WING.z1 + 1.4 + r) return false; // the archway
+    if (Math.hypot(lx - TH.board.x, lz - TH.board.z) < 1.4 + r) return false;
+    if (Math.hypot(lx - TH.rdoor.x, lz - TH.rdoor.z) < 1.3 + r) return false;
+    for (const [id, v] of liveTownItems()) {
+      if (id === skip) continue;
+      const G = FURNI_BY_ID.get(v.k);
+      if (!!G.flat === !!F.flat && Math.hypot(v.x - lx, v.z - lz) < (G.r + r) * .85) return false;
+    }
+    return true;
+  }
+  const hw = roomW();
+  if (Math.abs(lx) > hw - .35 - r || lz < -ROOM_HD + .35 + r || lz > ROOM_HD - .35 - r) return false;
+  if (Math.abs(lx) < 1.4 + r && lz > ROOM_HD - 2.1 - r) return false;            // the door
+  if (Math.hypot(lx - RM.lect.x, lz - RM.lect.z) < .9 + r) return false;
+  if (hasUp('fireplace') && Math.abs(lx) < 1.4 + r && lz < -ROOM_HD + 1.3 + r) return false;
+  for (const [i, v] of save.room.items.entries()) {
+    if (i === skip) continue;
+    const G = FURNI_BY_ID.get(v.k);
+    if (G && !!G.flat === !!F.flat && Math.hypot(v.x - lx, v.z - lz) < (G.r + r) * .85) return false;
+  }
+  return true;
+}
+function updateDeco() {
+  if (!deco) return;
+  const leftHall = deco.where === 'hall' && pState.where !== townHall, leftRoom = deco.where === 'room' && !inRoom(player.position);
+  if (leftHall || leftRoom) { decoCancel(); toast('You put it back: decorate inside!', 2500, 'home'); return; }
+  const F = FURNI_BY_ID.get(deco.kind), P = player.position, h = pState.heading, d = F.r + .75;
+  const wx = P.x + Math.sin(h) * d, wz = P.z + Math.cos(h) * d;
+  let [lx, lz] = deco.where === 'hall' ? thLocal(wx, wz) : [wx - ROOM.x, wz - ROOM.z];
+  lx = Math.round(lx * 4) / 4; lz = Math.round(lz * 4) / 4;
+  deco.lx = lx; deco.lz = lz;
+  deco.ok = decoSpotOk(deco.where, deco.kind, lx, lz, deco.where === 'hall' ? deco.id : deco.idx);
+  deco.ghost.position.set(lx, 0, lz); deco.ghost.rotation.y = deco.a;
+  deco.ring.material.color.set(deco.ok ? '#3ccf7f' : '#ff6f91');
+  const cost = deco.id || deco.idx !== undefined ? 0 : F.price;
+  decoMsg.innerHTML = `<b>${F.name}</b>${cost ? ` · ${cost} ${iconHTML('star')}` : ''} <span>${deco.ok ? 'walk to where you want it' : 'no room here, walk a bit further'}</span>`;
+  document.getElementById('dPlace').disabled = !deco.ok;
+}
+function decoTurn() { if (deco) { deco.a = (deco.a + Math.PI / 4) % (Math.PI * 2); sfx('pop'); } }
+function decoColour() { if (deco) { deco.c = (deco.c + 1) % PASTELS.length; startDeco.lastC = deco.c; decoGhost(); sfx('pop'); } }
+function decoEnd() {
+  if (!deco) return;
+  if (deco.ghost) deco.ghost.parent.remove(deco.ghost);
+  const d = deco; deco = null; decoBar.style.display = 'none';
+  if (d.where === 'hall' && d.id) showHallItem(d.id);
+  if (d.where === 'room') renderRoomItems();
+}
+function decoCancel() { decoEnd(); }
+function decoPlace() {
+  if (!deco || !deco.ok) { if (deco) sfx('nomana'); return; }
+  const F = FURNI_BY_ID.get(deco.kind), moving = deco.id || deco.idx !== undefined;
+  const v = { k: deco.kind, x: deco.lx, z: deco.lz, a: r2(deco.a), c: deco.c };
+  if (!moving && save.stars < F.price) { toast(`You need ${F.price} stars for the ${F.name}.`, 3000, 'star'); sfx('nomana'); return; }
+  if (deco.where === 'hall') {
+    if (!moving && liveTownItems().length >= townCap()) { toast(townBuilt('wing') ? 'The hall is full! Put something of yours away first.' : 'The hall is full! Build the Back Wing together for more space.', 3800, 'home'); sfx('nomana'); return; }
+    const id = deco.id || myPid + '-' + Date.now().toString(36);
+    Object.assign(v, { by: myPid, n: myNick || playerName, t: Date.now() });
+    deco.id = id; townItems.set(id, v);
+    if (!moving) { save.stars -= F.price; storeSave(); updateStarsUI(); }
+    decoEnd(); showHallItem(id);
+    townChanged([['i:' + id, v]]);
+  } else {
+    if (!moving && save.room.items.length >= ROOM_CAP) { toast('Your room is full! Put something away first.', 3000, 'home'); sfx('nomana'); return; }
+    if (moving) save.room.items[deco.idx] = v; else { save.room.items.push(v); save.stars -= F.price; updateStarsUI(); }
+    storeSave(); decoEnd();
+  }
+  sfx('coin');
+  burst(player.position.clone().add(new THREE.Vector3(Math.sin(pState.heading) * 1.5, .6, Math.cos(pState.heading) * 1.5)), 16, { speed: 3, colors: ['#ffd84d', '#ffb3d9', '#c9a0ff'], size: .35, life: .8, gravity: 2 });
+  if (!moving) toast(`You placed the ${F.name}!`, 2200, 'home');
+}
+function decoAway() {
+  if (!deco || (!deco.id && deco.idx === undefined)) return;
+  const F = FURNI_BY_ID.get(deco.kind);
+  if (deco.where === 'hall') {
+    const v = { del: 1, by: myPid, t: Date.now() }, id = deco.id;
+    decoEnd(); townItems.set(id, v); showHallItem(id); townChanged([['i:' + id, v]]);
+  } else {
+    save.room.items.splice(deco.idx, 1); decoEnd();
+  }
+  save.stars += F.price; storeSave(); updateStarsUI();
+  toast(`You put the ${F.name} away and got ${F.price} ${F.price === 1 ? 'star' : 'stars'} back.`, 3000, 'star'); sfx('pickup');
+}
+// the nearest decoration you can see from where you stand
+function nearDecoItem() {
+  const P = player.position;
+  let best = null, bd = Infinity;
+  if (pState.where === townHall) {
+    for (const [id, v] of liveTownItems()) {
+      const F = FURNI_BY_ID.get(v.k), [x, z] = thWorld(v.x, v.z), d = Math.hypot(P.x - x, P.z - z) - F.r;
+      if (d < 1 && d < bd) { bd = d; best = { where: 'hall', id, v, own: v.by === myPid }; }
+    }
+  } else if (save.room && inRoom(P)) {
+    save.room.items.forEach((v, idx) => {
+      const F = FURNI_BY_ID.get(v.k); if (!F) return;
+      const d = Math.hypot(P.x - ROOM.x - v.x, P.z - ROOM.z - v.z) - F.r;
+      if (d < 1 && d < bd) { bd = d; best = { where: 'room', idx, v, own: true }; }
+    });
+  }
+  return best;
+}
+
+// ---------- interaction: E / tap at the board, the doors, the room book and your own things ----------
+function townStation() {
+  if (!started || deco || roomWarp) return null;
+  const P = player.position;
+  if (save.room && inRoom(P)) {
+    if (distXZ(RM.door) < 1.7) return { k: 'exit' };
+    if (distXZ(new THREE.Vector3(ROOM.x + RM.lect.x, 0, ROOM.z + RM.lect.z)) < 1.8) return { k: 'book' };
+  } else if (pState.where === townHall) {
+    const [bx, bz] = thWorld(TH.board.x, TH.board.z - 1), [dx, dz] = thWorld(TH.rdoor.x, TH.rdoor.z);
+    if (Math.hypot(P.x - bx, P.z - bz) < 1.9) return { k: 'board' };
+    if (Math.hypot(P.x - dx, P.z - dz) < 1.6) return { k: 'rooms' };
+  } else return null;
+  const it = nearDecoItem();
+  return it ? { k: 'item', it } : null;
+}
+function townAct(st) {
+  if (!st) return false;
+  if (st.k === 'board') { openTown('hall'); return true; }
+  if (st.k === 'book') { openTown('room'); return true; }
+  if (st.k === 'exit') { roomWarpTo(false); return true; }
+  if (st.k === 'rooms') { if (save.room) roomWarpTo(true); else openTown('buy'); return true; }
+  if (st.k === 'item' && st.it.own) { startDeco(st.it.where, st.it.v.k, { id: st.it.id, idx: st.it.idx, a: st.it.v.a, c: st.it.v.c }); return true; }
+  return false;
+}
+function townHint() {
+  const st = townStation();
+  if (!st) return null;
+  if (st.k === 'board') return `${iconHTML('hall')} Press <b>E</b> or tap the board to build and decorate together`;
+  if (st.k === 'rooms') return save.room ? `${iconHTML('home')} Press <b>E</b> or tap the door to go to your room` : `${iconHTML('home')} Press <b>E</b> or tap the door to get a room of your own`;
+  if (st.k === 'exit') return `${iconHTML('hall')} Press <b>E</b> or tap the door to go back to the Town Hall`;
+  if (st.k === 'book') return `${iconHTML('scroll')} Press <b>E</b> or tap the book to decorate your room`;
+  const F = FURNI_BY_ID.get(st.it.v.k);
+  if (st.it.own) return `${iconHTML('home')} Press <b>E</b> to move your <b>${F.name}</b>`;
+  return `${iconHTML('heart')} <b>${F.name}</b>${st.it.v.n ? ` · from <b>${escHTML(st.it.v.n)}</b>` : ''}`;
+}
+// tapping the board, the doors or the room book: use it when close, walk there when not
+function townTap(ray) {
+  if (deco) return false;
+  const spots = [[TH.boardG, thWorld(TH.board.x, TH.board.z - 1)], [TH.rdoorG, thWorld(TH.rdoor.x, TH.rdoor.z)]];
+  if (save.room && RM.doorG) spots.push([RM.doorG, [RM.door.x, RM.door.z]], [RM.lectG, [ROOM.x + RM.lect.x, ROOM.z + RM.lect.z + .9]]);
+  for (const [g, [x, z]] of spots) {
+    if (!g || !ray.intersectObject(g, true).length) continue;
+    const st = townStation();
+    if (st && st.k !== 'item') { townAct(st); return true; }
+    if (Math.hypot(x - player.position.x, z - player.position.z) < 30) { moveTarget = new THREE.Vector3(x, 0, z); petTarget = null; moveTimer = 0; return true; }
+  }
+  return false;
+}
+
+// ---------- the panel: projects and decorations for the hall, upgrades for your room ----------
+const townEl = document.getElementById('town'), townBody = document.getElementById('townBody');
+const townOpen = () => !townEl.classList.contains('hidden');
+let townMode = 'hall';
+function openTown(mode) {
+  if (!started) return;
+  townMode = mode; renderTown(); townEl.classList.remove('hidden');
+  for (const k in keys) keys[k] = false;
+  sfx('door');
+}
+function closeTown() { townEl.classList.add('hidden'); }
+function townBtn(html, disabled, onclick, cls = '') {
+  const b = document.createElement('button'); b.innerHTML = html; b.disabled = !!disabled; if (cls) b.className = cls;
+  b.onclick = e => { e.stopPropagation(); onclick(); };
+  return b;
+}
+function furniTiles(where) {
+  const box = document.createElement('div'); box.className = 'ftiles';
+  const full = where === 'hall' ? liveTownItems().length >= townCap() : save.room.items.length >= ROOM_CAP;
+  for (const F of FURNI) {
+    const t = document.createElement('button'); t.className = 'ingtile';
+    const img = furniThumb(F);
+    t.innerHTML = `${img ? `<img src="${img}" alt="">` : `<div class="ico">${ICON.home}</div>`}<b>${F.name}</b><span>${F.price} ${iconHTML('star', 'ic sm')}</span>`;
+    t.disabled = save.stars < F.price || full;
+    t.onclick = () => startDeco(where, F.id);
+    box.appendChild(t);
+  }
+  return box;
+}
+const tlabel = (txt, small) => { const d = document.createElement('div'); d.className = 'brewlabel'; d.innerHTML = txt + (small ? ` <small>${small}</small>` : ''); return d; };
+function renderTown() {
+  document.getElementById('townStars').textContent = save.stars;
+  const title = document.getElementById('townTitle'), sub = document.getElementById('townSub');
+  townBody.innerHTML = '';
+  if (townMode === 'hall') {
+    title.innerHTML = `${iconHTML('hall')} Town Hall`;
+    sub.textContent = 'Everyone on Starvale builds and decorates this hall together.';
+    townBody.appendChild(tlabel('Build together', '(give stars: when a project is full, it gets built for everyone)'));
+    const list = document.createElement('div'); list.className = 'tlist';
+    for (const p of TOWN_PROJECTS) {
+      const given = projGiven(p.id), mine = townDon.get(myPid + ':' + p.id) || 0, built = given >= p.goal, left = p.goal - given;
+      const row = document.createElement('div'); row.className = 'item' + (built ? ' done' : '');
+      row.innerHTML = `<div class="ico">${ICON[p.icon]}</div><div class="txt"><b>${p.name}</b><span>${p.desc}</span>
+        <div class="tbar"><i style="width:${Math.min(100, given / p.goal * 100)}%"></i></div>
+        <span>${built ? 'Built!' : `${given} / ${p.goal} stars`}${mine ? ` · you gave ${mine}` : ''}</span></div>`;
+      if (built) row.appendChild(townBtn(`${iconHTML('check')} Built`, true, () => {}, 'owned'));
+      else {
+        const col = document.createElement('div'); col.className = 'bcol';
+        col.appendChild(townBtn(`Give 1 ${iconHTML('star')}`, save.stars < 1, () => giveStars(p, 1)));
+        const five = Math.min(5, left);
+        if (five > 1) col.appendChild(townBtn(`Give ${five} ${iconHTML('star')}`, save.stars < five, () => giveStars(p, five)));
+        row.appendChild(col);
+      }
+      list.appendChild(row);
+    }
+    townBody.appendChild(list);
+    townBody.appendChild(tlabel('Decorate the hall', `(${liveTownItems().length} / ${townCap()} things · press E next to your own things to move them)`));
+    townBody.appendChild(furniTiles('hall'));
+  } else if (townMode === 'buy') {
+    title.innerHTML = `${iconHTML('home')} Guest Rooms`;
+    sub.textContent = 'Get a cosy room of your own up in the clouds above the Town Hall. Only you can decorate it, and you can make it bigger and cosier with upgrades.';
+    const row = document.createElement('div'); row.className = 'tlist';
+    const it = document.createElement('div'); it.className = 'item';
+    it.innerHTML = `<div class="ico">${ICON.home}</div><div class="txt"><b>A room of your own</b><span>Wallpaper, floors, a fireplace and all the furniture you like</span></div>`;
+    it.appendChild(townBtn(`${ROOM_PRICE} ${iconHTML('star')}`, save.stars < ROOM_PRICE, buyRoom));
+    row.appendChild(it); townBody.appendChild(row);
+    if (save.stars < ROOM_PRICE) townBody.appendChild(tlabel(`You need ${ROOM_PRICE - save.stars} more ${ROOM_PRICE - save.stars === 1 ? 'star' : 'stars'}. Help the other wizards with their quests!`));
+  } else {
+    title.innerHTML = `${iconHTML('home')} ${escHTML(playerName)}'s Room`;
+    sub.textContent = 'Only you can decorate this room. Make it yours!';
+    const swatches = (name, cols, cur, set) => {
+      townBody.appendChild(tlabel(name, `(${PAINT_PRICE} stars to change)`));
+      const r = document.createElement('div'); r.className = 'swatches';
+      cols.forEach((col, i) => {
+        const b = document.createElement('button'); b.className = 'sw' + (i === cur ? ' sel' : ''); b.style.background = col;
+        b.disabled = i !== cur && save.stars < PAINT_PRICE;
+        b.onclick = () => { if (i === cur || save.stars < PAINT_PRICE) return; save.stars -= PAINT_PRICE; set(i); storeSave(); updateStarsUI(); buildRoomShell(); renderTown(); sfx('coin'); };
+        r.appendChild(b);
+      });
+      townBody.appendChild(r);
+    };
+    swatches('Wallpaper', WALLPAPERS, save.room.wall, i => { save.room.wall = i; });
+    swatches('Floor', FLOORS, save.room.floor, i => { save.room.floor = i; });
+    townBody.appendChild(tlabel('Upgrades'));
+    const list = document.createElement('div'); list.className = 'tlist';
+    for (const u of ROOM_UPS) {
+      const own = hasUp(u.id), row = document.createElement('div'); row.className = 'item';
+      row.innerHTML = `<div class="ico">${ICON[u.icon]}</div><div class="txt"><b>${u.name}</b><span>${u.desc}</span></div>`;
+      row.appendChild(own ? townBtn(`${iconHTML('check')} Done`, true, () => {}, 'owned') : townBtn(`${u.price} ${iconHTML('star')}`, save.stars < u.price, () => buyRoomUp(u)));
+      list.appendChild(row);
+    }
+    townBody.appendChild(list);
+    townBody.appendChild(tlabel('Furniture', `(${save.room.items.length} / ${ROOM_CAP} · press E next to something to move it)`));
+    townBody.appendChild(furniTiles('room'));
+  }
+}
+function giveStars(p, n) {
+  n = Math.min(n, p.goal - projGiven(p.id));
+  if (n <= 0 || save.stars < n) return;
+  const k = myPid + ':' + p.id, total = (townDon.get(k) || 0) + n;
+  save.stars -= n; storeSave(); updateStarsUI();
+  townDon.set(k, total);
+  sfx('coin');
+  if (!townBuilt(p.id)) toast(`Thank you! The ${p.name} needs ${p.goal - projGiven(p.id)} more stars.`, 2600, 'star');
+  townChanged([['d:' + k, total]]);
+}
+function buyRoom() {
+  if (save.room || save.stars < ROOM_PRICE) return;
+  save.stars -= ROOM_PRICE; save.room = { wall: 0, floor: 0, up: [], items: [] };
+  storeSave(); updateStarsUI(); sfx('fanfare');
+  toast('You have your own room! Step through the door to go there.', 4000, 'home');
+  roomWarpTo(true);
+}
+function buyRoomUp(u) {
+  if (hasUp(u.id) || save.stars < u.price) return;
+  save.stars -= u.price; save.room.up.push(u.id); storeSave(); updateStarsUI();
+  if (u.id === 'bigger') {   // keep everything inside the new walls
+    for (const v of save.room.items) v.x = clamp(v.x, -roomW() + 1, roomW() - 1);
+  }
+  buildRoomShell(); renderTown(); sfx('fanfare');
+  toast(`${u.name}: done! Your room looks lovely.`, 3000, u.icon);
+}
+document.getElementById('townClose').addEventListener('click', () => closeTown());
+document.getElementById('townBtn').addEventListener('click', e => {
+  e.currentTarget.blur();
+  if (save.room && inRoom(player.position)) openTown('room'); else openTown('hall');
+});
+document.getElementById('dRot').addEventListener('click', e => { e.currentTarget.blur(); decoTurn(); });
+document.getElementById('dCol').addEventListener('click', e => { e.currentTarget.blur(); decoColour(); });
+document.getElementById('dPlace').addEventListener('click', e => { e.currentTarget.blur(); decoPlace(); });
+document.getElementById('dAway').addEventListener('click', e => { e.currentTarget.blur(); decoAway(); });
+document.getElementById('dCancel').addEventListener('click', e => { e.currentTarget.blur(); decoCancel(); });
+
+// ---------- every frame ----------
+const townBtnEl = document.getElementById('townBtn');
+let townFxT = 0;
+function updateTown(dt, time) {
+  updateDeco();
+  const P = player.position, hereRoom = save.room && inRoom(P);
+  townBtnEl.style.display = started && (pState.where === townHall || hereRoom) ? '' : 'none';
+  if (townStoreT > 0 && (townStoreT -= dt) <= 0) storeTown();
+  if ((townDbT -= dt) <= 0) { townDbT = 1.5; townDbFlush(); }
+  const nearTown = Math.hypot(P.x - TOWN.x, P.z - TOWN.z) < 60;
+  townFxT -= dt;
+  if (nearTown && townBuilt('fountain')) {
+    TH.fStar.rotation.y += dt * 1.5; TH.fStar.position.y = 2.75 + Math.sin(time * 2) * .08;
+    if (townFxT <= 0) {
+      townFxT = .07;
+      const [x, z] = thWorld(PLAZA.x, PLAZA.z), a = Math.random() * 6.28;
+      emit({ pos: new THREE.Vector3(x, 2.3, z), vel: new THREE.Vector3(Math.cos(a) * rr(.6, 1.1), rr(1.6, 2.4), Math.sin(a) * rr(.6, 1.1)), life: 1, size: rr(.14, .24), color: rpick(['#bfe8ff', '#ffffff', '#9fdcff']), gravity: 5 });
+    }
+  }
+  if (nearTown && townBuilt('chandelier')) TH.chand.rotation.y += dt * .25;
+  if (nearTown && townBuilt('tower')) {
+    const d = new Date(), m = d.getMinutes() + d.getSeconds() / 60, h = (d.getHours() % 12) + m / 60;
+    for (const [hh, mh] of TH.hands) { hh.rotation.z = -h / 12 * Math.PI * 2; mh.rotation.z = -m / 60 * Math.PI * 2; }
+    TH.towerStar.rotation.y += dt * 1.2;
+  }
+  if (hereRoom) {
+    if (roomFire) {
+      roomFire.forEach((f, i) => { f.scale.y = .26 + Math.sin(time * 9 + i * 2) * .05; f.scale.x = .16 + Math.sin(time * 7 + i) * .02; });
+      if (Math.random() < dt * 5) emit({ pos: new THREE.Vector3(ROOM.x + rr(-.3, .3), .6, ROOM.z - ROOM_HD + .9), vel: new THREE.Vector3(rr(-.1, .1), rr(.6, 1), rr(0, .1)), life: .8, size: rr(.1, .2), color: rpick(['#ffb347', '#ffd84d', '#ff8a3d']), gravity: -.5 });
+    }
+    if (RM.fairyMat) RM.fairyMat.forEach((m, i) => { m.emissiveIntensity = (.6 + night * 1.2) * (.6 + .4 * Math.sin(time * 2.5 + i * 1.7)); });
+  }
+}
+loadTown();
+applyTownProjects(false);
 
 // ================= christmas =================
 const xmasBulbs = [];   // twinkling glow sprites {s, ph, base}
@@ -4604,7 +5769,7 @@ ball(toon('#ffffff'), 0, -.02, 0, .12, .07, .12, bobber, false);
 mk(new CylGeo(.015, .015, .16, 5), toon('#ffffff'), 0, .22, 0, bobber, false);
 const biteTex = canvasTex(64, 64, g => {
   g.fillStyle = '#ffffff'; g.beginPath(); g.arc(32, 32, 28, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#ff5c7a'; g.font = 'bold 44px Fredoka, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('!', 32, 35);
+  g.fillStyle = '#ff5c7a'; g.font = 'bold 44px Delius, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('!', 32, 35);
 });
 const biteMark = new THREE.Sprite(new THREE.SpriteMaterial({ map: biteTex, transparent: true, depthWrite: false, depthTest: false }));
 biteMark.visible = false; biteMark.renderOrder = 5; scene.add(biteMark);
@@ -5470,6 +6635,7 @@ function frame() {
   updateFishing(dt, time);
   updateSky(dt, time);
   updateFar(dt, time);
+  updateTown(dt, time);
   updateChristmas(dt, time);
   updateCamera(dt);
   updateParticles(dt);
