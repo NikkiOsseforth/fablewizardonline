@@ -2541,7 +2541,7 @@ charsEl.appendChild(mineBtn);
 const makerRow = (label, inner) => `<div class="mrow"><span class="mlab">${label}</span><div class="opts">${inner}</div></div>`;
 const swatches = key => MAKER[key].map(c => `<button class="sw" data-k="${key}" data-v="${c}" style="background:${c}" aria-label="${key} ${c}"></button>`).join('');
 makerEl.innerHTML =
-  makerRow('Name', `<input id="makerName" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Little Wizard"><span id="makerWarn"></span>`) +
+  makerRow('Name', `<input id="makerName" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Type your own name"><span id="makerWarn"></span>`) +
   makerRow('Hair', MAKER.style.map(([k, t]) => `<button class="pill" data-k="style" data-v="${k}">${t}</button>`).join('')) +
   makerRow('Hair colour', swatches('hair')) +
   makerRow('Skin', swatches('skin')) +
@@ -2558,13 +2558,13 @@ function refreshMaker(rebuild = true) {
   });
   const L = makerLook(myWizard), url = portraitOf(L), img = mineBtn.querySelector('img');
   if (url) img.src = url;
-  mineBtn.querySelector('b').textContent = makerName(myWizard);
-  const taken = RESERVED.includes(myWizard.name.toLowerCase());
+  mineBtn.querySelector('b').textContent = myWizard.name || 'Your wizard';
+  const taken = RESERVED.includes(myWizard.name.toLowerCase()), empty = !myWizard.name;
   makerWarn.textContent = taken ? `${myWizard.name} already lives here, pick another name!` : '';
   if (rebuild && mineBtn.classList.contains('sel')) {
     setPlayerCharacter(makerName(myWizard), L);
-    startBtn.disabled = taken;
-    startBtn.innerHTML = `Play as ${escText(makerName(myWizard))}! ${iconHTML('wand')}`;
+    startBtn.disabled = taken || empty;
+    startBtn.innerHTML = empty ? 'Type your name first!' : `Play as ${escText(myWizard.name)}! ${iconHTML('wand')}`;
   }
 }
 function pickCustom() {
