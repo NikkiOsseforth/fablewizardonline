@@ -132,6 +132,21 @@
   .item button .ic{width:14px;height:14px}
   .item button:disabled{opacity:.45;cursor:default}
   .item button.owned{background:var(--paper-2);border-color:var(--edge);box-shadow:none;color:var(--ink-soft)}
+  #shop .card{position:relative}
+  .item.mystery{background:linear-gradient(135deg,#fff0fa,#f1eaff);border-style:dashed;border-color:#d9a0e6}
+  .item.secret .ico{filter:grayscale(1) brightness(.35);opacity:.35}
+  .item.secret .txt b{color:var(--ink-soft)}
+  .shophead{font-family:var(--title);font-size:17px;color:var(--plum);margin:6px 0 -2px}
+  #boxReveal{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(255,250,240,.96);border-radius:22px;z-index:2;padding:20px;text-align:center}
+  #boxReveal.hidden{display:none}
+  #boxReveal .big{width:120px;height:120px}
+  #boxReveal .big svg{width:100%;height:100%}
+  #boxReveal .shake{animation:boxShake .5s ease-in-out infinite}
+  #boxReveal .pop{animation:boxPop .5s cubic-bezier(.3,1.6,.5,1)}
+  #boxReveal h3{margin:0;font-family:var(--title);font-weight:400;font-size:26px;color:var(--plum)}
+  #boxReveal p{margin:0;color:var(--ink-soft)}
+  @keyframes boxShake{0%,100%{transform:rotate(0) scale(1)}25%{transform:rotate(-9deg) scale(1.05)}75%{transform:rotate(9deg) scale(1.05)}}
+  @keyframes boxPop{0%{transform:scale(.2) rotate(-20deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
   @media (max-width:640px){ #quests{position:fixed;bottom:178px;left:8px;min-width:0;max-width:60vw;font-size:12px} }
   #pickTitle{font-family:var(--title);font-weight:400;font-size:24px;color:var(--plum);margin:0 0 10px}
   #chars{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 0 18px}
@@ -336,6 +351,7 @@
     <div class="shopstars"><span class="ic" data-ic="star"></span> <b id="shopStars">0</b> stars</div>
     <div id="shopItems"></div>
     <button class="bigbtn" id="shopClose">Close</button>
+    <div id="boxReveal" class="hidden"></div>
   </div>
 </div>
 
@@ -475,6 +491,16 @@ ICON.hall = svg('<path d="M3.2 10L12 4.2l8.8 5.8z" fill="#9cc0ff" stroke="#6a8fd
 document.querySelectorAll('[data-ic="flame"]').forEach(el => { el.innerHTML = ICON.flame; });
 const fishSVG = (col, line = '#5a3f8f') => svg(`<path d="M3.2 12c2.6-4.4 6.4-6 10-5.4 2.6.4 4.4 2.4 5.4 5.4-1 3-2.8 5-5.4 5.4-3.6.6-7.4-1-10-5.4z" fill="${col}" stroke="${line}" stroke-width="1.3" stroke-opacity=".7"/><path d="M18.4 12l3.2-3.6v7.2z" fill="${col}" stroke="${line}" stroke-width="1.3" stroke-opacity=".7"/><path d="M10.5 7.2c.6 1.6.6 3.2 0 4.8" stroke="#ffffff" stroke-width="1.2" opacity=".7"/><circle cx="7.4" cy="11" r="1.15" fill="#2b1d3a"/><circle cx="7.8" cy="10.6" r=".4" fill="#fff"/>`);
 ICON.fish = fishSVG('#8fd0ff');
+// prizes from the Mystery Star Box
+const hatSVG = (col, line, dot) => svg(`<path d="M12 2.8c1.6 0 4.6 10 5 13.2H7c.4-3.2 3.4-13.2 5-13.2z" fill="${col}" stroke="${line}" stroke-width="1.4"/><ellipse cx="12" cy="17" rx="8.5" ry="2.6" fill="${col}" stroke="${line}" stroke-width="1.4"/><circle cx="11" cy="9.5" r="1.1" fill="${dot}"/><circle cx="13.2" cy="12.8" r=".8" fill="${dot}"/>`);
+const robeSVG = (col, line, dot) => svg(`<path d="M12 4c-2 0-3 1.4-3.6 3L5.5 19.5h13L15.6 7C15 5.4 14 4 12 4z" fill="${col}" stroke="${line}" stroke-width="1.4"/><circle cx="10" cy="11" r=".9" fill="${dot}"/><circle cx="14" cy="14" r=".9" fill="${dot}"/><circle cx="10.5" cy="16.5" r=".7" fill="${dot}"/>`);
+ICON.hatCandy = hatSVG('#ff9ed8', '#d9579b', '#fff');
+ICON.hatMoon = hatSVG('#c9b8ff', '#8f7bff', '#fff09a');
+ICON.robeMint = robeSVG('#9ff0c8', '#2fa36b', '#fff');
+ICON.robeSunset = robeSVG('#ffb38a', '#e8673e', '#fff09a');
+ICON.petBunny = svg('<ellipse cx="9" cy="6" rx="1.8" ry="4.2" fill="#ffd1f0" stroke="#d9579b" stroke-width="1.2"/><ellipse cx="15" cy="6" rx="1.8" ry="4.2" fill="#ffd1f0" stroke="#d9579b" stroke-width="1.2"/><circle cx="12" cy="14" r="6.6" fill="#ffd1f0" stroke="#d9579b" stroke-width="1.3"/><path d="M12 4.2l1 3.6h-2z" fill="#ffe066" stroke="#e0a800" stroke-width=".8"/><circle cx="9.6" cy="13.4" r="1" fill="#2b1d3a"/><circle cx="14.4" cy="13.4" r="1" fill="#2b1d3a"/><ellipse cx="12" cy="16" rx=".9" ry=".6" fill="#ff6fae"/>');
+ICON.petSpirit = svg('<path d="M12 3.5c3.8 0 6.5 3 6.5 7.2 0 4.6-3 8.3-6.5 9.8-3.5-1.5-6.5-5.2-6.5-9.8 0-4.2 2.7-7.2 6.5-7.2z" fill="#e2d0ff" stroke="#9b6bff" stroke-width="1.3"/><circle cx="9.8" cy="11" r="1" fill="#2b1d3a"/><circle cx="14.2" cy="11" r="1" fill="#2b1d3a"/><path d="M10.6 13.6q1.4 1.2 2.8 0" stroke="#2b1d3a" stroke-width="1"/><circle cx="20" cy="5" r="1" fill="#ffd84d"/><circle cx="4" cy="7" r=".8" fill="#ffd84d"/>');
+ICON.petDragon = svg('<path d="M4 10l4.5 1.5L7 15zM20 10l-4.5 1.5L17 15z" fill="#fff3c4" stroke="#e0a800" stroke-width="1"/><circle cx="12" cy="13" r="6.4" fill="#9fdcff" stroke="#4a9fd8" stroke-width="1.3"/><ellipse cx="12" cy="15.6" rx="3" ry="2.2" fill="#fff3c4"/><path d="M9 7.4l-.6-2.6 2 1.6M15 7.4l.6-2.6-2 1.6" fill="#fff3c4" stroke="#e0a800" stroke-width=".9"/><circle cx="9.8" cy="12" r="1" fill="#2b1d3a"/><circle cx="14.2" cy="12" r="1" fill="#2b1d3a"/>');
 const iconHTML = (name, cls = 'ic') => `<span class="${cls}">${ICON[name] || ''}</span>`;
 document.querySelectorAll('[data-ic]').forEach(el => { el.innerHTML = ICON[el.dataset.ic] || ''; });
 
@@ -3409,7 +3435,18 @@ const SHOP = [
   { id: 'rainbowhat', icon: 'hatRainbow', name: 'Rainbow Hat', desc: 'A hat that keeps changing colour', price: 8, kind: 'hat', val: 'rainbow' },
   { id: 'galaxyrobe', icon: 'robe', name: 'Galaxy Robe', desc: 'A deep blue robe that glows like the night sky', price: 6, kind: 'robe', val: 'galaxy' },
 ];
-const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null, fish: {}, daily: null, streak: 0, lastDay: null, wisps: {}, isles: [], room: null, at: 0 };
+// prizes you can only find in the Mystery Star Box (it also holds everything in SHOP you don't have yet)
+const BOX_PRICE = 6;
+const BOX_ONLY = [
+  { id: 'candyhat', icon: 'hatCandy', name: 'Candy Hat', desc: 'A sweet pink hat, fresh from the box', kind: 'hat', val: 'candy' },
+  { id: 'moonhat', icon: 'hatMoon', name: 'Moonbeam Hat', desc: 'A lilac hat that glows softly', kind: 'hat', val: 'moon' },
+  { id: 'mintrobe', icon: 'robeMint', name: 'Mint Robe', desc: 'A fresh minty robe', kind: 'robe', val: 'mint' },
+  { id: 'sunsetrobe', icon: 'robeSunset', name: 'Sunset Robe', desc: 'A warm peachy robe like the evening sky', kind: 'robe', val: 'sunset' },
+  { id: 'petbunny', icon: 'petBunny', name: 'Mini Unicorn Bunny', desc: 'A tiny pet that hops after you', kind: 'pet', val: 'bunny' },
+  { id: 'petspirit', icon: 'petSpirit', name: 'Mini Star Spirit', desc: 'A tiny glowing pet that floats by your side', kind: 'pet', val: 'spirit' },
+  { id: 'petdragon', icon: 'petDragon', name: 'Mini Dragon', desc: 'A tiny dragon pet that flaps along with you', kind: 'pet', val: 'dragon' },
+];
+const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, pet: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null, fish: {}, daily: null, streak: 0, lastDay: null, wisps: {}, isles: [], room: null, at: 0 };
 const activeQ = {};          // giver name -> { q, progress, ready, target }
 const questItems = [];       // collectible things in the world
 const bugs = [];
@@ -3422,7 +3459,8 @@ function loadSave() {
   if (!Array.isArray(save.owned)) save.owned = [];
   if (save.room && (!Array.isArray(save.room.items) || !Array.isArray(save.room.up))) save.room = null;   // your own room in the Town Hall
   for (const id of save.owned) { const sp = SPELLS.findIndex(s => s.id === id); if (sp >= 0) unlockSpell(sp); }
-  applyCosmetics(); updateStarsUI();
+  if (!Object.hasOwn(PET_DEFS, save.pet) || !save.owned.includes('pet' + save.pet)) save.pet = null;   // pet ids are 'pet' + type
+  applyCosmetics(); applyPet(); updateStarsUI();
 }
 function storeSave() {
   save.at = Date.now();
@@ -3834,46 +3872,161 @@ const shopOpen = () => !shopEl.classList.contains('hidden');
 function toggleShop() {
   if (!started) return;
   shopEl.classList.toggle('hidden');
-  if (shopOpen()) { renderShop(); for (const k in keys) keys[k] = false; }
+  if (shopOpen()) { if (!boxBusy) closeReveal(); renderShop(); for (const k in keys) keys[k] = false; }
 }
+function shopRow(it, cls = '') {
+  const row = document.createElement('div'); row.className = 'item' + cls;
+  row.innerHTML = `<div class="ico">${ICON[it.icon]}</div><div class="txt"><b>${it.name}</b><span>${it.desc}</span></div>`;
+  const btn = document.createElement('button');
+  row.appendChild(btn);
+  document.getElementById('shopItems').appendChild(row);
+  return btn;
+}
+// the button of something you own: spells are just owned, clothes are worn, a pet comes along
+function ownedButton(btn, it) {
+  if (it.kind === 'spell') { btn.className = 'owned'; btn.innerHTML = `${iconHTML('check')} Owned`; btn.disabled = true; return; }
+  const on = save[it.kind] === it.val, pet = it.kind === 'pet';
+  btn.className = on ? 'owned' : '';
+  btn.textContent = on ? (pet ? 'Send home' : 'Take off') : (pet ? 'Bring along' : 'Wear');
+  btn.onclick = () => { save[it.kind] = on ? null : it.val; applyCosmetics(); applyPet(); storeSave(); renderShop(); };
+}
+const boxPool = () => [...SHOP, ...BOX_ONLY].filter(it => !save.owned.includes(it.id));
 function renderShop() {
   updateStarsUI();
   const box = document.getElementById('shopItems'); box.innerHTML = '';
+  // the Mystery Star Box comes first
+  const left = boxPool().length;
+  const bb = shopRow({ icon: 'gift', name: 'Mystery Star Box', desc: left ? `A surprise inside: clothes, a spell or a pet! ${left} prize${left > 1 ? 's' : ''} left` : 'You found every prize. Amazing!' }, ' mystery');
+  if (left) { bb.innerHTML = `${BOX_PRICE} ${iconHTML('star')}`; bb.disabled = save.stars < BOX_PRICE; bb.onclick = openBox; }
+  else { bb.className = 'owned'; bb.innerHTML = `${iconHTML('check')} All found`; bb.disabled = true; }
   for (const it of SHOP) {
-    const owned = save.owned.includes(it.id);
-    const row = document.createElement('div'); row.className = 'item';
-    row.innerHTML = `<div class="ico">${ICON[it.icon]}</div><div class="txt"><b>${it.name}</b><span>${it.desc}</span></div>`;
-    const btn = document.createElement('button');
-    if (!owned) {
-      btn.innerHTML = `${it.price} ${iconHTML('star')}`;
-      btn.disabled = save.stars < it.price;
-      btn.onclick = () => buy(it);
-    } else if (it.kind === 'spell') {
-      btn.className = 'owned'; btn.innerHTML = `${iconHTML('check')} Owned`; btn.disabled = true;
-    } else {
-      const wearing = save[it.kind] === it.val;
-      btn.className = wearing ? 'owned' : '';
-      btn.textContent = wearing ? 'Take off' : 'Wear';
-      btn.onclick = () => { save[it.kind] = wearing ? null : it.val; applyCosmetics(); storeSave(); renderShop(); };
-    }
-    row.appendChild(btn); box.appendChild(row);
+    const btn = shopRow(it);
+    if (save.owned.includes(it.id)) { ownedButton(btn, it); continue; }
+    btn.innerHTML = `${it.price} ${iconHTML('star')}`;
+    btn.disabled = save.stars < it.price;
+    btn.onclick = () => buy(it);
   }
+  // treasures from the box: a secret until you find them
+  const h = document.createElement('div'); h.className = 'shophead'; h.textContent = 'Box treasures'; box.appendChild(h);
+  for (const it of BOX_ONLY) {
+    if (save.owned.includes(it.id)) { ownedButton(shopRow(it), it); continue; }
+    const btn = shopRow({ icon: it.icon, name: '???', desc: 'Only found in the Mystery Star Box' }, ' secret');
+    btn.className = 'owned'; btn.textContent = '?'; btn.disabled = true;
+  }
+}
+// what you get when you buy or unbox something
+function grant(it) {
+  save.owned.push(it.id);
+  if (it.kind === 'spell') { const i = SPELLS.findIndex(s => s.id === it.id); unlockSpell(i); return `New spell! Press ${i + 1} to cast it.`; }
+  save[it.kind] = it.val; applyCosmetics(); applyPet();
+  return it.kind === 'pet' ? 'Your new pet is following you!' : 'You are wearing it now!';
 }
 function buy(it) {
   if (save.stars < it.price || save.owned.includes(it.id)) return;
-  save.stars -= it.price; save.owned.push(it.id);
-  if (it.kind === 'spell') { const i = SPELLS.findIndex(s => s.id === it.id); unlockSpell(i); toast(`New spell unlocked: ${it.name}! Press ${i + 1} to cast it.`, 4000, it.icon); }
-  else { save[it.kind] = it.val; applyCosmetics(); toast(`You are now wearing the ${it.name}!`, 3500, it.icon); }
+  save.stars -= it.price;
+  toast(`${it.name}: ${grant(it)}`, 4000, it.icon);
   sfx('coin'); storeSave(); renderShop();
+}
+const revealEl = document.getElementById('boxReveal');
+let boxBusy = false;
+function openBox() {
+  const pool = boxPool();
+  if (boxBusy || !pool.length || save.stars < BOX_PRICE) return;
+  boxBusy = true;
+  const it = rpick(pool);
+  save.stars -= BOX_PRICE; updateStarsUI();
+  const msg = grant(it);
+  storeSave();   // save straight away, so closing the shop mid-animation keeps the prize
+  shopEl.querySelector('.card').scrollTop = 0;
+  revealEl.innerHTML = `<div class="big shake">${ICON.gift}</div><h3>Opening…</h3>`;
+  revealEl.classList.remove('hidden');
+  sfx('float');
+  setTimeout(() => {
+    revealEl.innerHTML = `<div class="big pop">${ICON[it.icon]}</div><h3>${it.name}!</h3><p>${it.desc}</p><p><b>${msg}</b></p><button class="bigbtn" id="boxOk">Yay!</button>`;
+    sfx('fanfare');
+    if (!shopOpen()) toast(`From the Mystery Star Box: ${it.name}! ${msg}`, 4500, it.icon);
+    burst(player.position.clone().add(new THREE.Vector3(0, 2.2, 0)), 40, { speed: 6, colors: PASTELS, size: .5, life: 1.4, gravity: 3 });
+    if (it.kind === 'pet') hearts(player.position.clone().add(new THREE.Vector3(0, 1.5, 0)), 8);
+    document.getElementById('boxOk').onclick = closeReveal;
+    boxBusy = false;
+  }, 1300);
+}
+function closeReveal() { revealEl.classList.add('hidden'); revealEl.innerHTML = ''; boxBusy = false; if (shopOpen()) renderShop(); }
+// hats and robes from the shop and the box: [colour, glow colour, glow strength]
+const LOOKS = {
+  hat: { gold: ['#ffc93c', '#ffae00', .35], candy: ['#ff9ed8', '#ff6fae', .15], moon: ['#c9b8ff', '#8f7bff', .4] },
+  robe: { galaxy: ['#232760', '#6b4cff', .3], mint: ['#9ff0c8', '#2fa36b', .08], sunset: ['#ffb38a', '#ff7a5c', .15] },
+};
+function wearLooks(w, L, hat, robe) {
+  for (const [part, val, base] of [['hat', hat, L.hat], ['robe', robe, L.robe]]) {
+    const m = w[part + 'Mat'], v = LOOKS[part][val];
+    if (v) { m.color.set(v[0]); m.emissive.set(v[1]); m.emissiveIntensity = v[2]; }
+    else { m.color.set(base); m.emissive.set('#000000'); m.emissiveIntensity = 0; }
+  }
 }
 function applyCosmetics() {
   if (!W) return;
-  const L = playerLook;
-  if (save.hat === 'gold') { W.hatMat.color.set('#ffc93c'); W.hatMat.emissive.set('#ffae00'); W.hatMat.emissiveIntensity = .35; }
-  else { W.hatMat.color.set(L.hat); W.hatMat.emissive.set('#000000'); W.hatMat.emissiveIntensity = 0; }
-  if (save.robe === 'galaxy') { W.robeMat.color.set('#232760'); W.robeMat.emissive.set('#6b4cff'); W.robeMat.emissiveIntensity = .3; }
-  else { W.robeMat.color.set(L.robe); W.robeMat.emissive.set('#000000'); W.robeMat.emissiveIntensity = 0; }
+  wearLooks(W, playerLook, save.hat, save.robe);
   if (pfx.id === 'colour') { W.robeMat.color.setHSL(pfx.hue, .75, .62); W.robeMat.emissive.set('#000000'); W.robeMat.emissiveIntensity = 0; }
+}
+
+// --- pets: tiny critters from the Mystery Star Box that follow their wizard ---
+const PET_DEFS = {
+  bunny: () => makeBunny('#ffd1f0'),
+  spirit: () => makeSpirit('#c9a0ff'),
+  dragon: () => makeDragon('#9fdcff', '#fff3c4'),
+};
+const PET_SCALE = .45;
+function makePet(type) {
+  const c = PET_DEFS[type]();
+  Object.assign(c, { type, phase: rr(0, 6), heading: 0, moving: false });
+  c.g.scale.setScalar(PET_SCALE);
+  c.g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  scene.add(c.g);
+  return c;
+}
+let myPet = null;
+function applyPet() {
+  const want = save.pet && Object.hasOwn(PET_DEFS, save.pet) ? save.pet : null;
+  if ((myPet && myPet.type) === want || (!myPet && !want)) return;
+  if (myPet) scene.remove(myPet.g);
+  myPet = want ? makePet(want) : null;
+  if (myPet) myPet.g.position.copy(player.position).add(new THREE.Vector3(1, 0, 1));
+}
+// walk after the owner, stay a little to the side, and jump over when they are far away (another island, their room)
+function followPet(c, own, dt, time) {
+  const p = c.g.position, dx = own.x - p.x, dz = own.z - p.z, d = Math.hypot(dx, dz);
+  if (d > 20 || Math.abs(own.y - p.y) > 6) { p.set(own.x - 1, own.y, own.z - 1); c.moving = false; }
+  else if (d > 1.7) {
+    const sp = Math.min(9, 2.5 + (d - 1.7) * 3);
+    p.x += dx / d * sp * dt; p.z += dz / d * sp * dt;
+    c.heading = Math.atan2(dx, dz); c.moving = true;
+  } else {
+    c.moving = false;
+    c.heading = Math.atan2(dx, dz);   // look up at the owner
+  }
+  const s = supportAt(p.x, p.z, own.y + .3);
+  p.y = lerp(p.y, s > own.y - 2 ? s : own.y, damp(10, dt));
+  c.g.rotation.y = angleLerp(c.g.rotation.y, c.heading, damp(8, dt));
+  c.phase += dt;
+  if (c.type === 'bunny') {
+    c.body.position.y = c.moving ? Math.abs(Math.sin(c.phase * 9)) * .5 : lerp(c.body.position.y, 0, damp(10, dt));
+    c.ears.forEach((e, i) => e.rotation.x = Math.sin(time * 3 + i + c.phase) * .15 - (c.moving ? .25 : 0));
+  } else if (c.type === 'spirit') {
+    c.body.position.y = c.baseY + 1.6 + Math.sin(time * 2.2 + c.phase) * .3;   // floats at shoulder height
+    c.orbit.rotation.y += dt * 3;
+    if (Math.random() < dt * 2) emit({ pos: c.body.getWorldPosition(tmpV), vel: new THREE.Vector3(rr(-.2, .2), rr(-.5, -.2), rr(-.2, .2)), life: 1, size: .12, color: '#e2d0ff' });
+  } else if (c.type === 'dragon') {
+    const flap = Math.sin(time * (c.moving ? 16 : 5) + c.phase) * (c.moving ? .7 : .25);
+    c.wings.forEach(w => { w.pv.rotation.y = w.sx * flap; });
+    c.body.position.y = lerp(c.body.position.y, c.moving ? 1 + Math.sin(c.phase * 8) * .15 : 0, damp(6, dt));
+  }
+  if (!c.moving && Math.random() < dt * .25) hearts(c.g.position.clone().add(new THREE.Vector3(0, .9, 0)), 1);
+}
+function updatePet(dt, time) {
+  if (!myPet) return;
+  myPet.g.visible = started;
+  if (started) followPet(myPet, player.position, dt, time);
 }
 document.getElementById('shopBtn').addEventListener('click', e => { toggleShop(); e.currentTarget.blur(); });
 document.getElementById('shopClose').addEventListener('click', () => toggleShop());
@@ -4258,7 +4411,7 @@ async function connectSupabase() {
     for (const [pid, metas] of Object.entries(ps)) {
       if (pid === id || !okId(pid) || !metas || !metas.length) continue;
       const m = metas[metas.length - 1];
-      const patch = { c: m.c, n: m.n, hat: m.hat, robe: m.robe, t: m.t, ta: m.ta };
+      const patch = { c: m.c, n: m.n, hat: m.hat, robe: m.robe, pet: m.pet, t: m.t, ta: m.ta };
       if (!known.has(pid)) Object.assign(patch, { x: m.x, y: m.y, z: m.z, h: m.h, s: 0 });
       upd(pid, patch);
     }
@@ -4278,7 +4431,7 @@ async function connectSupabase() {
   net = {
     interval: 200,
     presence(p) {
-      const meta = { c: p.c, n: p.n, hat: p.hat, robe: p.robe, t: p.t, ta: p.ta };
+      const meta = { c: p.c, n: p.n, hat: p.hat, robe: p.robe, pet: p.pet, t: p.t, ta: p.ta };
       const mk = JSON.stringify(meta);
       if (mk !== lastMeta) { lastMeta = mk; ch.track({ ...meta, x: p.x, y: p.y, z: p.z, h: p.h }); }
       return ch.send({ type: 'broadcast', event: 'pos', payload: { id, x: p.x, y: p.y, z: p.z, h: p.h, s: p.s } });
@@ -4317,7 +4470,7 @@ function sendPresence(force) {
   if (!net || !started) return;
   const now = performance.now();
   if (!force && now - mpLastSend < net.interval) return;
-  const p = { c: playerIsCustom ? '*' : playerName, n: myNick, x: r2(player.position.x), y: r2(player.position.y), z: r2(player.position.z), h: r2(pState.heading), s: r2(Math.hypot(pVel.x, pVel.z)), hat: save.hat || '', robe: save.robe || '', t: nightTarget, ta: nightAt };
+  const p = { c: playerIsCustom ? '*' : playerName, n: myNick, x: r2(player.position.x), y: r2(player.position.y), z: r2(player.position.z), h: r2(pState.heading), s: r2(Math.hypot(pVel.x, pVel.z)), hat: save.hat || '', robe: save.robe || '', pet: save.pet || '', t: nightTarget, ta: nightAt };
   if (playerIsCustom) { const { name, ...look } = myWizard; p.w = playerName; p.L = look; }
   const key = JSON.stringify(p);
   if (!force && key === mpLastKey && now - mpLastSend < 3000) return;   // resend every 3 s as a keepalive
@@ -4350,8 +4503,14 @@ function syncRemote(peer) {
   const nick = cleanNick(pr.n);
   if (nick !== r.nick) { r.nick = nick; setRemoteLabel(r); refreshOnline(); }
   r.tx = num(pr.x); r.ty = clamp(num(pr.y), 0, 30); r.tz = num(pr.z); r.th = num(pr.h); r.s = clamp(num(pr.s), 0, 12);
-  const hat = pr.hat === 'gold' || pr.hat === 'rainbow' ? pr.hat : null, robe = pr.robe === 'galaxy' ? 'galaxy' : null;
+  const hat = pr.hat === 'rainbow' || Object.hasOwn(LOOKS.hat, pr.hat) ? pr.hat : null, robe = Object.hasOwn(LOOKS.robe, pr.robe) ? pr.robe : null;
   if (hat !== r.hat || robe !== r.robe) { r.hat = hat; r.robe = robe; remoteCosmetics(r); }
+  const pet = Object.hasOwn(PET_DEFS, pr.pet) ? pr.pet : null;
+  if (pet !== (r.pet ? r.pet.type : null)) {
+    if (r.pet) scene.remove(r.pet.g);
+    r.pet = pet ? makePet(pet) : null;
+    if (r.pet) r.pet.g.position.copy(r.g.position);
+  }
   // day/night: take theirs if it changed more recently than ours (e.g. we just joined)
   const ta = num(pr.ta);
   if (ta > nightAt && ta <= Date.now() + 864e5) {
@@ -4369,13 +4528,7 @@ function setRemoteLabel(r) {
   const sm = document.createElement('small'); sm.textContent = n ? '(' + r.c + ')' : '(player)';
   r.label.appendChild(sm);
 }
-function remoteCosmetics(r) {
-  const L = r.L, w = r.w;
-  if (r.hat === 'gold') { w.hatMat.color.set('#ffc93c'); w.hatMat.emissive.set('#ffae00'); w.hatMat.emissiveIntensity = .35; }
-  else { w.hatMat.color.set(L.hat); w.hatMat.emissive.set('#000000'); w.hatMat.emissiveIntensity = 0; }
-  if (r.robe === 'galaxy') { w.robeMat.color.set('#232760'); w.robeMat.emissive.set('#6b4cff'); w.robeMat.emissiveIntensity = .3; }
-  else { w.robeMat.color.set(L.robe); w.robeMat.emissive.set('#000000'); w.robeMat.emissiveIntensity = 0; }
-}
+function remoteCosmetics(r) { wearLooks(r.w, r.L, r.hat, r.robe); }
 function endRemotePotion(r) {
   if (!r.fx) return;
   const was = r.fx.id; r.fx = null;
@@ -4386,6 +4539,7 @@ function removeRemote(peerId, announce) {
   const r = remotes.get(peerId);
   if (!r) return;
   scene.remove(r.g); r.label.remove(); remotes.delete(peerId);
+  if (r.pet) scene.remove(r.pet.g);
   if (announce && started) toast(`${who(r)} left the island. Bye bye!`, 3000, 'wave');
 }
 function refreshOnline() {
@@ -4402,7 +4556,9 @@ function updateRemotes(dt, time) {
     // a player in their own room stays hidden: everyone's room is in the same far-away spot
     const away = Math.hypot(r.tx - ROOM.x, r.tz - ROOM.z) < 80;
     if (away === r.g.visible) { r.g.visible = !away; if (away) r.label.style.display = 'none'; }
+    if (r.pet) r.pet.g.visible = !away;
     if (away) { r.g.position.set(r.tx, r.ty, r.tz); continue; }
+    if (r.pet) followPet(r.pet, r.g.position, dt, time);
     const p = r.g.position, a = damp(10, dt);
     if (Math.hypot(r.tx - p.x, r.tz - p.z) > 12) p.set(r.tx, r.ty, r.tz); // teleport instead of sliding across the island
     else { p.x = lerp(p.x, r.tx, a); p.z = lerp(p.z, r.tz, a); p.y = lerp(p.y, r.ty, damp(16, dt)); }
@@ -6815,6 +6971,7 @@ function frame() {
   for (const n of npcs) updateNPC(n, dt, time);
   updateRemotes(dt, time);
   updateQuests(dt, time);
+  updatePet(dt, time);
   updateDaily(dt, time);
   updatePotions(dt, time);
   updateRockets(dt);
