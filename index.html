@@ -1149,12 +1149,14 @@ function gameTex() {
   mk(Box(.1, 1.25, 2.25), toon('#0b0c10'), 4.08, 1.75, 1.2, G);
   mk(new THREE.PlaneGeometry(2.1, 1.12), new THREE.MeshBasicMaterial({ map: gameTex() }), 4.02, 1.75, 1.2, G, false).rotation.y = -Math.PI / 2;
   h.box(3.5, 4.15, .15, 2.25);
-  // coffee table with pizza and chips
+  // coffee table with steak and chips
   mk(Box(1.3, .08, .8), dark, .1, .5, 1.2, G);
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) mk(Box(.06, .46, .06), dark, .1 + sx * .55, .25, 1.2 + sz * .32, G);
-  mk(Box(.6, .05, .6), toon('#e8c39e'), -.1, .57, 1.2, G);
-  mk(new THREE.CylinderGeometry(.26, .26, .03, 20, 1, false, 0, Math.PI * 1.6), toon('#ffcf6b'), -.1, .61, 1.2, G);
-  for (let i = 0; i < 5; i++) { const a = i * .9 + .2; ball(toon('#d9433b'), -.1 + Math.sin(a) * .15, .63, 1.2 + Math.cos(a) * .15, .04, .015, .04, G, false); }
+  mk(new THREE.CylinderGeometry(.3, .28, .03, 24), toon('#f2f4f7'), -.1, .555, 1.2, G);
+  ball(toon('#7a3d22'), -.1, .6, 1.2, .2, .045, .14, G, false);
+  for (let i = -1; i <= 1; i++) mk(Box(.02, .012, .22), toon('#3a1a0c'), -.1 + i * .08, .64, 1.2, G, false).rotation.y = .6;
+  ball(toon('#4caf50'), .08, .6, 1.08, .04, .02, .04, G, false);
+  mk(Box(.025, .01, .3), metal, -.1, .58, 1.47, G, false);
   mk(new THREE.CylinderGeometry(.18, .12, .1, 14), toon('#e53935'), .5, .59, 1.15, G);
   ball(toon('#ffd84d'), .5, .64, 1.15, .14, .05, .14, G, false);
   h.circ(.1, 1.2, .75);
@@ -1523,8 +1525,8 @@ const CHARACTERS = {
   },
   Kevin: {
     robe: '#3d4660', hat: '#2b2f3d', band: '#29d9ff', fluff: '#9fefff', shoes: '#2b2f3d', hair: '#6b4226', style: 'short', glasses: true, tip: '#c9f6ff', glow: '#29d9ff',
-    house: 'Man cave full of tech and pizza', spawn: [16.5, -3, Math.PI / 2], home: [15, -5, 4.5],
-    lines: ['Have you tried turning it off and on again?', 'My servers have 420 days of uptime!', 'Want a slice of pizza?', 'The BBQ is almost ready!'],
+    house: 'Man cave full of tech and steak', spawn: [16.5, -3, Math.PI / 2], home: [15, -5, 4.5],
+    lines: ['Have you tried turning it off and on again?', 'My servers have 420 days of uptime!', 'Want a piece of steak? Medium rare!', 'The BBQ is almost ready!'],
   },
   Ryan: {
     robe: '#2c3e70', hat: '#1f2d52', band: '#c9372c', fluff: '#f6efdc', shoes: '#c9372c', hair: '#5a3a22', style: 'spiky', tip: '#fff2d6', glow: '#ffb35a',
