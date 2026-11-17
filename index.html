@@ -16,7 +16,10 @@
   #hud{position:fixed;inset:0;pointer-events:none}
   #hud > *{pointer-events:auto}
   .panel{background:var(--panel);border:3px solid #fff;border-radius:22px;box-shadow:0 6px 20px rgba(90,63,143,.18);backdrop-filter:blur(6px)}
-  #status{position:absolute;top:14px;left:14px;padding:12px 16px;min-width:220px}
+  /* stats card and quest card stack in one column, so quests always sit below the (growing) stats card */
+  #leftCol{position:absolute;top:14px;left:14px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;pointer-events:none}
+  #leftCol > *{pointer-events:auto}
+  #status{padding:12px 16px;min-width:220px}
   #status .title{font-weight:700;font-size:22px;letter-spacing:.3px}
   #status .row{margin-top:4px;font-size:15px;color:var(--ink-soft)}
   #status .row b{color:var(--ink)}
@@ -74,7 +77,7 @@
   #nick:focus{border-color:#b48cff}
   .label .qm{display:inline-block;background:#ffd84d;color:#7a4a00;border-radius:50%;width:16px;height:16px;line-height:16px;text-align:center;font-size:12px}
   .label .ic{width:12px;height:12px;vertical-align:-1px}
-  #quests{position:absolute;top:150px;left:14px;padding:10px 14px;min-width:220px;max-width:280px;display:none;font-size:14px}
+  #quests{padding:10px 14px;box-sizing:border-box;min-width:220px;max-width:280px;display:none;font-size:14px}
   #quests h3{margin:0 0 6px;font-size:15px;display:flex;align-items:center;gap:6px}
   #quests .q{margin:5px 0;line-height:1.25}
   #quests .q b{color:var(--ink)}
@@ -97,7 +100,7 @@
   .item button .ic{width:14px;height:14px}
   .item button:disabled{opacity:.45;cursor:default}
   .item button.owned{background:#e9e2fb;color:var(--ink)}
-  @media (max-width:640px){ #quests{top:auto;bottom:178px;left:8px;min-width:0;max-width:60vw;font-size:12px} }
+  @media (max-width:640px){ #quests{position:fixed;bottom:178px;left:8px;min-width:0;max-width:60vw;font-size:12px} }
   #pickTitle{font-size:20px;font-weight:600;margin:0 0 8px}
   #chars{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 0 18px}
   .char{font-family:inherit;color:var(--ink);background:#fff;border:3px solid #ece4ff;border-radius:18px;padding:6px 6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:transform .12s,border-color .12s,box-shadow .12s}
@@ -166,7 +169,8 @@
     .spell{width:64px;height:70px;border-radius:14px}
     .spell .ico{font-size:24px}
     .spell .nm{display:none}
-    #status{min-width:0;padding:8px 12px;top:8px;left:8px}
+    #leftCol{top:8px;left:8px}
+    #status{min-width:0;padding:8px 12px}
     #status .title{font-size:17px}
     #topright{top:8px;right:8px}
     .roundbtn{width:40px;height:40px;font-size:18px}
@@ -189,15 +193,34 @@
   #fishList{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;text-align:left}
   .rar{font-size:11px;font-weight:700;font-style:normal;border-radius:8px;padding:1px 6px;color:#fff;margin-left:6px;vertical-align:1px}
   @media (max-width:640px){ #fishing{bottom:178px} }
+  /* star portal & other islands */
+  #travel{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(120,90,190,.45);z-index:11;padding:16px}
+  #travel.hidden{display:none}
+  #travel h2{margin:0;font-size:30px;display:flex;align-items:center;justify-content:center;gap:8px}
+  #travel h2 .ic{width:34px;height:34px}
+  #travelList{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;text-align:left}
+  #travelList .item.here{border-color:#b48cff;background:linear-gradient(90deg,#fff,#f6f0ff)}
+  #travelList .item.locked{background:#faf7ff;border-style:dashed}
+  #travelList .item.locked .ico{filter:grayscale(.85);opacity:.6}
+  .tbar{position:relative;height:9px;border-radius:6px;background:#ece4ff;overflow:hidden;margin-top:5px}
+  .tbar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#8fd0ff,#b48cff,#ff8fc7);border-radius:6px}
+  #warp{position:fixed;inset:0;z-index:12;pointer-events:none;opacity:0;transition:opacity .45s ease;background:radial-gradient(circle at 50% 50%,#ffffff 0%,#fff3fb 35%,#e2d4ff 70%,#b9a0ff 100%)}
+  #warp.on{opacity:1}
+  #isleName{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);z-index:13;pointer-events:none;font-size:42px;font-weight:700;color:#fff;text-shadow:0 3px 0 #b48cff,0 8px 24px rgba(90,63,143,.45);opacity:0;transition:opacity .6s ease;white-space:nowrap;text-align:center}
+  #isleName small{display:block;font-size:18px;font-weight:600;text-shadow:0 2px 0 #b48cff}
+  #isleName.on{opacity:1}
+  @media (max-width:640px){ #isleName{font-size:30px} }
 </style>
 <script type="importmap">
-{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
 </script>
 </head>
 <body>
 <div id="hud">
+  <div id="leftCol">
   <div id="status" class="panel">
     <div class="title"><span class="ic" data-ic="sparkle"></span> Starvale</div>
+    <div class="row" id="isleRow" style="display:none"><span class="ic sm" data-ic="portal"></span> <b id="isleNow">Starvale</b></div>
     <div class="row"><span class="ic sm" data-ic="heart"></span> Friends: <b id="friends">0 / 10</b></div>
     <div class="row"><span class="ic sm" data-ic="star"></span> Stars: <b id="stars">0</b></div>
     <div class="row" id="streakRow" style="display:none"><span class="ic sm" data-ic="flame"></span> Streak: <b id="streak">1 day</b></div>
@@ -207,6 +230,7 @@
     <div class="row" id="onlineRow" style="display:none"><span class="dot"></span> Online: <b id="online">1</b> <span id="onlineNames"></span></div>
   </div>
   <div id="quests" class="panel"></div>
+  </div>
   <div id="topright">
     <button class="roundbtn" id="shopBtn" title="Star Shop (B)"><span class="ic" data-ic="bag"></span></button>
     <button class="roundbtn" id="muteBtn" title="Sound (M)"><span class="ic" data-ic="soundOn"></span></button>
@@ -261,6 +285,17 @@
   </div>
 </div>
 
+<div id="travel" class="hidden">
+  <div class="card panel">
+    <h2><span class="ic" data-ic="portal"></span> Star Portal</h2>
+    <p class="shopsub" id="travelSub"></p>
+    <div id="travelList"></div>
+    <button class="bigbtn ghost" id="travelClose">Close</button>
+  </div>
+</div>
+<div id="warp"></div>
+<div id="isleName"></div>
+
 <div id="overlay">
   <div class="card panel">
     <h1><span class="ic big" data-ic="sparkle"></span> Starvale <span class="ic big" data-ic="sparkle"></span></h1>
@@ -275,6 +310,7 @@
       <span><kbd>B</kbd></span><span>Star Shop</span>
       <span>Every day</span><span>a new daily task, a gift for coming back and a rare visitor hiding somewhere</span>
       <span>Sky islands</span><span>cast <b>Rainbow</b> near the edge for a bridge, or <b>Levitate</b> yourself</span>
+      <span>Star Portal</span><span>finish every quest on an island to open the next one: a snowy isle, a volcano and a glowing mushroom wood</span>
       <span><kbd>E</kbd> at the cauldron</span><span>brew potions from ingredients you find</span>
       <span><kbd>E</kbd> at the end of the pier</span><span>go fishing · <kbd>F</kbd> Fish Book</span>
       <span><kbd>Q</kbd> / tap a potion</span><span>drink a potion</span>
@@ -291,6 +327,7 @@
 
 <script type="module">
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 // ================= helpers =================
 let seed = 20261116;
@@ -342,6 +379,8 @@ const potionSVG = (col) => svg(`<rect x="9.6" y="1.8" width="4.8" height="2.6" r
 ICON.potion = potionSVG('#c9a0ff');
 ICON.flame = svg('<path d="M12 2.8c.6 3.2 4.8 5.4 4.8 10.4a4.8 4.8 0 0 1-9.6 0c0-2.4 1.2-3.8 2.2-4.8.2 1.6 1 2.6 1.8 2.8-.4-3.2-.2-5.8.8-8.4z" fill="#ff8a3d" stroke="#e0561a" stroke-width="1.3"/><path d="M12 13c1 1.2 2 2.2 2 3.6a2 2 0 0 1-4 0c0-1.2.9-2.2 2-3.6z" fill="#ffd84d"/>');
 ICON.gift = svg('<rect x="3.5" y="9" width="17" height="11" rx="1.6" fill="#ff8fc7" stroke="#d9579b" stroke-width="1.3"/><rect x="2.5" y="6.5" width="19" height="4" rx="1.2" fill="#ffb3d9" stroke="#d9579b" stroke-width="1.3"/><path d="M12 6.5V20" stroke="#ffd84d" stroke-width="2.4"/><path d="M12 6.5C10 3 6.5 3.5 7.6 5.6 8.4 7 12 6.5 12 6.5zM12 6.5c2-3.5 5.5-3 4.4-.9-.8 1.4-4.4.9-4.4.9z" fill="#ffd84d" stroke="#e0a800" stroke-width="1.1"/>');
+ICON.portal = svg('<ellipse cx="12" cy="12.5" rx="7.6" ry="9" fill="#e9dcff" stroke="#8a6bd8" stroke-width="1.6"/><path d="M12 7.2c3 .2 4.4 2.6 3.6 5-.8 2.2-3.6 2.8-5 1.4-1.2-1.2-.6-3 .9-3.1" stroke="#b48cff" stroke-width="1.6"/><path d="M5 19.5h14" stroke="#a8714a" stroke-width="2"/><circle cx="12" cy="3" r="1.3" fill="#ffd84d"/>');
+const isleSVG = (top, side, dot) => svg(`<path d="M3 11.5h18l-2.6 3.2L12 21.5 5.6 14.7z" fill="${side}" stroke="#6b4c8f" stroke-width="1.1" stroke-opacity=".5"/><ellipse cx="12" cy="11.5" rx="9" ry="3" fill="${top}" stroke="#6b4c8f" stroke-width="1.1" stroke-opacity=".5"/><path d="M12 3.5l3.6 7h-7.2z" fill="${dot}" stroke="#6b4c8f" stroke-width="1" stroke-opacity=".5"/>`);
 ICON.sun = svg('<circle cx="12" cy="12" r="4.6" fill="#ffd84d" stroke="#e0a800" stroke-width="1.3"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" stroke="#f0a000" stroke-width="1.6"/>');
 document.querySelectorAll('[data-ic="flame"]').forEach(el => { el.innerHTML = ICON.flame; });
 const fishSVG = (col, line = '#5a3f8f') => svg(`<path d="M3.2 12c2.6-4.4 6.4-6 10-5.4 2.6.4 4.4 2.4 5.4 5.4-1 3-2.8 5-5.4 5.4-3.6.6-7.4-1-10-5.4z" fill="${col}" stroke="${line}" stroke-width="1.3" stroke-opacity=".7"/><path d="M18.4 12l3.2-3.6v7.2z" fill="${col}" stroke="${line}" stroke-width="1.3" stroke-opacity=".7"/><path d="M10.5 7.2c.6 1.6.6 3.2 0 4.8" stroke="#ffffff" stroke-width="1.2" opacity=".7"/><circle cx="7.4" cy="11" r="1.15" fill="#2b1d3a"/><circle cx="7.8" cy="10.6" r=".4" fill="#fff"/>`);
@@ -362,11 +401,20 @@ const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 60
 scene.fog = new THREE.Fog('#eef3ff', 70, 230);
 
 const gradientMap = (() => {
-  const t = new THREE.DataTexture(new Uint8Array([110, 185, 255]), 3, 1, THREE.RedFormat);
-  t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true; return t;
+  // soft ramp (linear filtering) instead of hard 3-step bands, so curved surfaces shade smoothly
+  const t = new THREE.DataTexture(new Uint8Array([118, 150, 190, 228, 255]), 5, 1, THREE.RedFormat);
+  t.minFilter = t.magFilter = THREE.LinearFilter; t.needsUpdate = true; return t;
 })();
+// smoother primitives: raise low segment counts (4 or fewer stays, for pyramids / roofs / tufts)
+const seg = (n, min) => n === undefined || n <= 4 ? n : Math.max(n, min);
+class CylGeo extends THREE.CylinderGeometry { constructor(rt, rb, h, rs, hs, ...r) { super(rt, rb, h, seg(rs, 28), hs, ...r); } }
+class ConeGeo extends THREE.ConeGeometry { constructor(rad, h, rs, hs, ...r) { super(rad, h, seg(rs, 28), hs, ...r); } }
+class SphGeo extends THREE.SphereGeometry { constructor(rad, ws, hs, ...r) { super(rad, seg(ws, 32), seg(hs, 20), ...r); } }
+class TorGeo extends THREE.TorusGeometry { constructor(rad, tube, rs, ts, ...r) { super(rad, tube, seg(rs, 14), seg(ts, 48), ...r); } }
+class CircGeo extends THREE.CircleGeometry { constructor(rad, s, ...r) { super(rad, seg(s, 40), ...r); } }
+class RingGeo extends THREE.RingGeometry { constructor(a, b, ts, ...r) { super(a, b, seg(ts, 48), ...r); } }
 const toon = (color, extra = {}) => new THREE.MeshToonMaterial({ color, gradientMap, ...extra });
-const SPH = new THREE.SphereGeometry(1, 20, 14);
+const SPH = new SphGeo(1, 20, 14);
 const eyeMat = toon('#2b1d3a'), whiteMat = new THREE.MeshBasicMaterial({ color: '#ffffff' }), blushMat = toon('#ff9ec7');
 function mk(geo, mat, x = 0, y = 0, z = 0, parent = scene, shadow = true) {
   const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z);
@@ -375,7 +423,13 @@ function mk(geo, mat, x = 0, y = 0, z = 0, parent = scene, shadow = true) {
 function ball(mat, x, y, z, sx, sy, sz, parent = scene, shadow = true) {
   const m = mk(SPH, mat, x, y, z, parent, shadow); m.scale.set(sx, sy, sz); return m;
 }
-const Box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
+// boxes get softly rounded edges (radius scales with the thinnest side; cached per size)
+const boxCache = new Map();
+const Box = (w, h, d) => {
+  const k = w + ',' + h + ',' + d;
+  if (!boxCache.has(k)) boxCache.set(k, new RoundedBoxGeometry(w, h, d, 3, Math.min(.14, Math.min(w, h, d) * .3)));
+  return boxCache.get(k);
+};
 
 function canvasTex(w, h, draw) {
   const c = document.createElement('canvas'); c.width = w; c.height = h;
@@ -404,7 +458,7 @@ const glow = (mat, day, night) => (glows.push({ mat, day, night }), mat);
 
 // ================= sky, lights =================
 const skyU = { top: { value: new THREE.Color('#8ecbff') }, bottom: { value: new THREE.Color('#ffd9f2') } };
-const sky = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), new THREE.ShaderMaterial({
+const sky = new THREE.Mesh(new SphGeo(400, 32, 16), new THREE.ShaderMaterial({
   uniforms: skyU, side: THREE.BackSide, depthWrite: false,
   vertexShader: `varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
   fragmentShader: `uniform vec3 top; uniform vec3 bottom; varying vec3 vP;
@@ -423,11 +477,11 @@ const starGeo = new THREE.BufferGeometry(); {
   starGeo.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
 }
 const starMat = new THREE.PointsMaterial({ color: '#fffbe6', size: 2.2, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false });
-scene.add(new THREE.Points(starGeo, starMat));
+const starPts = new THREE.Points(starGeo, starMat); scene.add(starPts);
 
 const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#fff4c8', fog: false, transparent: true, depthWrite: false }));
 sunSprite.position.set(110, 150, -230); sunSprite.scale.setScalar(90); scene.add(sunSprite);
-const moon = new THREE.Mesh(new THREE.SphereGeometry(9, 24, 16), new THREE.MeshBasicMaterial({ color: '#fff8dc', fog: false, transparent: true, opacity: 0 }));
+const moon = new THREE.Mesh(new SphGeo(9, 24, 16), new THREE.MeshBasicMaterial({ color: '#fff8dc', fog: false, transparent: true, opacity: 0 }));
 moon.position.set(-120, 140, -220); scene.add(moon);
 const moonGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#cdbaff', fog: false, transparent: true, opacity: 0, depthWrite: false }));
 moonGlow.position.copy(moon.position); moonGlow.scale.setScalar(60); scene.add(moonGlow);
@@ -468,6 +522,15 @@ function waveH(x, z, t) {
   const e = clamp((POND.r - Math.hypot(x - POND.x, z - POND.z)) / 1.4, 0, 1);
   return .08 + e * (.035 * Math.sin(x * 1.3 + t * 1.6) + .028 * Math.sin(z * 1.7 - t * 1.25) + .016 * Math.sin((x + z) * 2.6 + t * 2.4));
 }
+// the other islands far away across the sky (built in the "far islands" section). They are so far away
+// that the fog hides them, so each one feels like its own little world. null / 'main' = Starvale itself.
+const FAR = [];
+const PORTAL = { x: -9, z: 31 };   // the Star Portal on Starvale
+function isleAt(x, z) { for (const I of FAR) if (Math.hypot(x - I.x, z - I.z) < I.r + 40) return I; return null; }
+function onLand(x, z) {
+  if (Math.hypot(x, z) <= ISLAND_R - 2) return true;
+  return FAR.some(I => Math.hypot(x - I.x, z - I.z) <= I.r - 2);
+}
 const circles = [];        // {x,z,r}
 const playerBoxes = [];    // {x0,x1,z0,z1}
 const houseFoot = { x0: HOUSE.x - HOUSE.hw - 0.5, x1: HOUSE.x + HOUSE.hw + 0.5, z0: HOUSE.z - HOUSE.hd - 0.5, z1: HOUSE.z + HOUSE.hd + 0.6 };
@@ -489,6 +552,7 @@ const placed = [
   { x: -18.5, z: -13.2, r: 1.3 }, // stone lantern
   { x: -17, z: -17, r: 2 }, { x: -16.5, z: -1.5, r: 2 }, // cherry trees
   { x: 21, z: -9, r: 1.6 },      // Kevin's bbq
+  { x: PORTAL.x, z: PORTAL.z, r: 4 }, // the Star Portal
 ];
 const PATHS = [
   [0, -16, 0, 7],
@@ -545,17 +609,18 @@ function collide(p, r, boxes, free = false) {
     }
   }
   if (free) return;   // the player has their own edge rules (sky islands, bridges, floating)
-  const d = Math.hypot(p.x, p.z), lim = ISLAND_R - 2;
-  if (d > lim) { p.x *= lim / d; p.z *= lim / d; }
+  const I = isleAt(p.x, p.z), cx = I ? I.x : 0, cz = I ? I.z : 0;
+  const d = Math.hypot(p.x - cx, p.z - cz), lim = (I ? I.r : ISLAND_R) - 2;
+  if (d > lim) { p.x = cx + (p.x - cx) * lim / d; p.z = cz + (p.z - cz) * lim / d; }
 }
 
 // ================= island =================
 const grassMat = toon('#eef4ff'), dirtMat = toon('#b98257');
-const island = new THREE.Mesh(new THREE.CylinderGeometry(ISLAND_R, ISLAND_R - 1.2, 3, 72), [dirtMat, grassMat, dirtMat]);
+const island = new THREE.Mesh(new CylGeo(ISLAND_R, ISLAND_R - 1.2, 3, 72), [dirtMat, grassMat, dirtMat]);
 island.position.y = -1.5; island.receiveShadow = true; scene.add(island);
-const lip = new THREE.Mesh(new THREE.TorusGeometry(ISLAND_R - 0.3, 0.55, 8, 90), toon('#dfe9fb'));
+const lip = new THREE.Mesh(new TorGeo(ISLAND_R - 0.3, 0.55, 8, 90), toon('#dfe9fb'));
 lip.rotation.x = Math.PI / 2; lip.position.y = -0.15; scene.add(lip);
-const under = new THREE.Mesh(new THREE.ConeGeometry(ISLAND_R - 1.2, 36, 14, 4), toon('#a27052', { flatShading: true }));
+const under = new THREE.Mesh(new ConeGeo(ISLAND_R - 1.2, 36, 14, 4), toon('#a27052'));
 under.rotation.x = Math.PI; under.position.y = -3 - 18; scene.add(under);
 // little crystals hanging below the island
 for (let i = 0; i < 10; i++) {
@@ -567,7 +632,7 @@ for (let i = 0; i < 10; i++) {
 // grass tufts + tiny flowers (instanced)
 {
   const dummy = new THREE.Object3D();
-  const tufts = new THREE.InstancedMesh(new THREE.ConeGeometry(.09, .42, 4), toon('#8fc9a0'), 900);
+  const tufts = new THREE.InstancedMesh(new ConeGeo(.09, .42, 4), toon('#8fc9a0'), 900);
   let n = 0;
   while (n < 900) {
     const a = rand() * Math.PI * 2, d = Math.sqrt(rand()) * (ISLAND_R - 2);
@@ -577,7 +642,7 @@ for (let i = 0; i < 10; i++) {
     dummy.updateMatrix(); tufts.setMatrixAt(n++, dummy.matrix);
   }
   scene.add(tufts);
-  const fl = new THREE.InstancedMesh(new THREE.SphereGeometry(.13, 8, 6), toon('#ffffff'), 320);
+  const fl = new THREE.InstancedMesh(new SphGeo(.13, 8, 6), toon('#ffffff'), 320);
   const col = new THREE.Color(); n = 0;
   while (n < 320) {
     const a = rand() * Math.PI * 2, d = Math.sqrt(rand()) * (ISLAND_R - 2);
@@ -593,7 +658,7 @@ for (let i = 0; i < 10; i++) {
 {
   const stoneMat = toon('#e4dcef');
   for (let z = -15.6; z < 6.5; z += 1.25) {
-    const s = mk(new THREE.CylinderGeometry(R(.55, .75), R(.6, .8), .12, 9), stoneMat, R(-.35, .35), .04, z, scene, false);
+    const s = mk(new CylGeo(R(.55, .75), R(.6, .8), .12, 9), stoneMat, R(-.35, .35), .04, z, scene, false);
     s.rotation.y = R(0, 3);
   }
 }
@@ -601,12 +666,12 @@ for (let i = 0; i < 10; i++) {
 // pond
 {
   // a pond bed underneath, and wavy water on top (moved every frame in updatePond)
-  mk(new THREE.CircleGeometry(POND.r, 40), toon('#4f9fe0'), POND.x, -.12, POND.z, scene, false).rotation.x = -Math.PI / 2;
-  const geo = new THREE.RingGeometry(.001, POND.r + .05, 56, 12);
+  mk(new CircGeo(POND.r, 40), toon('#4f9fe0'), POND.x, -.12, POND.z, scene, false).rotation.x = -Math.PI / 2;
+  const geo = new RingGeo(.001, POND.r + .05, 56, 12);
   geo.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(geo.attributes.position.count * 3), 3));
   const water = mk(geo, toon('#ffffff', { vertexColors: true, transparent: true, opacity: .88 }), POND.x, 0, POND.z, scene, false);
   water.rotation.x = -Math.PI / 2; water.receiveShadow = true;
-  const rim = mk(new THREE.TorusGeometry(POND.r, .38, 8, 40), toon('#d8d0e6', { flatShading: true }), POND.x, .02, POND.z);
+  const rim = mk(new TorGeo(POND.r, .38, 8, 40), toon('#d8d0e6'), POND.x, .02, POND.z);
   rim.rotation.x = Math.PI / 2;
   circles.push({ x: POND.x, z: POND.z, r: POND.r + .2, pond: true });
   placed.push({ x: POND.x, z: POND.z, r: POND.r + 1 });
@@ -622,8 +687,8 @@ const pierLampMat = glow(toon('#fff3c4', { emissive: '#ffcb5c', emissiveIntensit
     p.rotation.y = Math.sin(i * 3.1) * .03;
   }
   for (const u of [.3, 2.6, PIER.len - .2]) for (const sx of [-1, 1]) {
-    mk(new THREE.CylinderGeometry(.11, .13, 1.1, 8), postMat, sx * (PIER.hw + .02), .15, u, pier);
-    mk(new THREE.CylinderGeometry(.13, .11, .06, 8), toon('#a8714a'), sx * (PIER.hw + .02), .72, u, pier, false);
+    mk(new CylGeo(.11, .13, 1.1, 8), postMat, sx * (PIER.hw + .02), .15, u, pier);
+    mk(new CylGeo(.13, .11, .06, 8), toon('#a8714a'), sx * (PIER.hw + .02), .72, u, pier, false);
   }
   // rope railing along the water part
   for (const sx of [-1, 1]) {
@@ -632,14 +697,14 @@ const pierLampMat = glow(toon('#fff3c4', { emissive: '#ffcb5c', emissiveIntensit
     pier.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: '#e8d2a8' })));
   }
   // lantern post at the tip
-  mk(new THREE.CylinderGeometry(.06, .06, 1.6, 6), postMat, PIER.hw - .15, 1.2, PIER.len - .2, pier);
+  mk(new CylGeo(.06, .06, 1.6, 6), postMat, PIER.hw - .15, 1.2, PIER.len - .2, pier);
   mk(Box(.5, .06, .06), postMat, PIER.hw - .35, 1.98, PIER.len - .2, pier);
   const lamp = mk(new THREE.OctahedronGeometry(.17), pierLampMat, PIER.hw - .55, 1.78, PIER.len - .2, pier, false);
   lamp.scale.y = 1.4;
   // a little sign: fishing spot
   const sign = new THREE.Group(); sign.position.set(-PIER.hw - .6, 0, -.3); sign.rotation.y = Math.PI - .3; pier.add(sign);
   mk(Box(.9, .45, .06), toon('#fff4d6'), 0, 1.05, 0, sign);
-  mk(new THREE.CylinderGeometry(.05, .05, .9, 6), postMat, 0, .45, -.04, sign);
+  mk(new CylGeo(.05, .05, .9, 6), postMat, 0, .45, -.04, sign);
   const tex = canvasTex(256, 128, g => {
     g.fillStyle = '#fff4d6'; g.fillRect(0, 0, 256, 128);
     g.fillStyle = '#5cc1e8'; g.beginPath(); g.ellipse(70, 64, 34, 20, 0, 0, Math.PI * 2); g.fill();
@@ -656,20 +721,20 @@ pierHit.visible = false;
 const boat = new THREE.Group(); scene.add(boat);
 {
   const hullMat = toon('#ff9ec4'), woodMat = toon('#c08a5c');
-  const hull = mk(new THREE.SphereGeometry(1, 22, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), hullMat, 0, .25, 0, boat);
+  const hull = mk(new SphGeo(1, 22, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), hullMat, 0, .25, 0, boat);
   hull.scale.set(.62, .42, 1.25);
-  const inner = mk(new THREE.CircleGeometry(1, 22), woodMat, 0, .2, 0, boat, false);
+  const inner = mk(new CircGeo(1, 22), woodMat, 0, .2, 0, boat, false);
   inner.rotation.x = -Math.PI / 2; inner.scale.set(.54, 1.12, 1);
-  const rimT = mk(new THREE.TorusGeometry(1, .06, 6, 30), toon('#ffffff'), 0, .26, 0, boat, false);
+  const rimT = mk(new TorGeo(1, .06, 6, 30), toon('#ffffff'), 0, .26, 0, boat, false);
   rimT.rotation.x = Math.PI / 2; rimT.scale.set(.62, 1.25, 1);
   mk(Box(1.1, .07, .3), woodMat, 0, .3, .15, boat);
   for (const sx of [-1, 1]) {   // oars resting in the boat
     const oar = new THREE.Group(); oar.position.set(sx * .3, .38, -.2); oar.rotation.set(0, sx * .25, sx * .15); boat.add(oar);
-    mk(new THREE.CylinderGeometry(.03, .03, 1.5, 6), woodMat, 0, 0, 0, oar, false).rotation.x = Math.PI / 2;
+    mk(new CylGeo(.03, .03, 1.5, 6), woodMat, 0, 0, 0, oar, false).rotation.x = Math.PI / 2;
     ball(woodMat, 0, 0, -.75, .1, .02, .22, oar, false);
   }
   // tiny star flag on the stern
-  mk(new THREE.CylinderGeometry(.025, .025, .7, 5), woodMat, 0, .6, -1.05, boat, false);
+  mk(new CylGeo(.025, .025, .7, 5), woodMat, 0, .6, -1.05, boat, false);
   const flag = mk(new THREE.PlaneGeometry(.3, .2), toon('#ffd84d', { side: THREE.DoubleSide }), .15, .85, -1.05, boat, false);
   flag.rotation.y = Math.PI / 2;
   boat.userData = { flag, home: pierPoint(3.2, PIER.hw + 1.2, 0), bow: new THREE.Vector3(0, .3, 1.2) };
@@ -681,7 +746,7 @@ const lilies = [];
 for (let i = 0; i < 5; i++) {
   const a = R(0, 6.28), d = R(1, 3.8);
   const g = new THREE.Group(); g.position.set(POND.x + Math.cos(a) * d, .07, POND.z + Math.sin(a) * d); scene.add(g);
-  const pad = mk(new THREE.CircleGeometry(.6, 16, .3, Math.PI * 1.8), toon('#5cc46b', { side: THREE.DoubleSide }), 0, 0, 0, g, false);
+  const pad = mk(new CircGeo(.6, 16, .3, Math.PI * 1.8), toon('#5cc46b', { side: THREE.DoubleSide }), 0, 0, 0, g, false);
   pad.rotation.x = -Math.PI / 2;
   if (i % 2 === 0) { ball(toon('#ffb3d9'), .1, .12, .05, .18, .12, .18, g, false); ball(toon('#fff09a'), .1, .2, .05, .07, .07, .07, g, false); }
   lilies.push({ g, ph: R(0, 6) });
@@ -700,12 +765,12 @@ const trunkMat = toon('#9c6b48');
 const leafMats = ['#5cc46b', '#7ad37a', '#4fb36e', '#8fe08a'].map(c => toon(c));
 const blossomMats = ['#ffb3d1', '#ff9ec4', '#ffc8e0'].map(c => toon(c));
 const pineMat = toon('#3fa66a');
-const coneGeo = new THREE.ConeGeometry(1, 1, 10);
+const coneGeo = new ConeGeo(1, 1, 10);
 const snowMat = toon('#ffffff');
 function makeTree(x, z, type) {
   const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = R(0, 6); scene.add(g);
   const s = R(.85, 1.3); g.scale.setScalar(s);
-  mk(new THREE.CylinderGeometry(.24, .34, 1.7, 8), trunkMat, 0, .85, 0, g);
+  mk(new CylGeo(.24, .34, 1.7, 8), trunkMat, 0, .85, 0, g);
   if (type === 'pine') {
     [[1.4, 1.7, 2.0], [1.1, 1.5, 2.9], [.75, 1.3, 3.7]].forEach(([r, h, y]) => {
       const c = mk(coneGeo, pineMat, 0, y, 0, g); c.scale.set(r, h, r);
@@ -728,11 +793,11 @@ makeTree(-9, -24, 'blossom'); makeTree(9.5, -23, 'round'); makeTree(8, -27, 'pin
 placed.push({ x: -9, z: -24, r: 2 }, { x: 9.5, z: -23, r: 2 }, { x: 8, z: -27, r: 2 });
 
 // mushrooms
-const capGeo = new THREE.SphereGeometry(.42, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+const capGeo = new SphGeo(.42, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
 const stemMat = toon('#fff4e0'), dotMat = toon('#ffffff');
 function makeMushroom(x, z, size, kind) {
   const g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(size); g.rotation.y = R(0, 6); scene.add(g);
-  mk(new THREE.CylinderGeometry(.12, .17, .5, 10), stemMat, 0, .25, 0, g);
+  mk(new CylGeo(.12, .17, .5, 10), stemMat, 0, .25, 0, g);
   let capMat;
   if (kind === 'glow') capMat = glow(toon('#7fdcff', { emissive: '#4cc3ff', emissiveIntensity: .15 }), .12, 1.4);
   else capMat = toon(kind === 'red' ? '#ff6b7a' : '#c38bff');
@@ -762,8 +827,8 @@ for (let i = 0; i < 6; i++) {
 const lanternMat = glow(toon('#fff3c4', { emissive: '#ffcb5c', emissiveIntensity: .2 }), .2, 2.2);
 for (const z of [-12, -5, 2]) for (const sx of [-1, 1]) {
   const x = sx * 2.4;
-  mk(new THREE.CylinderGeometry(.08, .12, 2.3, 8), toon('#6a5584'), x, 1.15, z);
-  mk(new THREE.ConeGeometry(.32, .3, 6), toon('#8a6bb8'), x, 2.65, z);
+  mk(new CylGeo(.08, .12, 2.3, 8), toon('#6a5584'), x, 1.15, z);
+  mk(new ConeGeo(.32, .3, 6), toon('#8a6bb8'), x, 2.65, z);
   ball(lanternMat, x, 2.4, z, .22, .26, .22, scene, false);
   circles.push({ x, z, r: .25 });
 }
@@ -783,10 +848,10 @@ for (let i = 0; i < 4; i++) {
   const g = new THREE.Group(); scene.add(g);
   const a = i * 1.57 + .6, d = R(68, 85);
   g.position.set(Math.cos(a) * d, R(-6, 10), Math.sin(a) * d);
-  const top = new THREE.Mesh(new THREE.CylinderGeometry(5, 4.6, 1.6, 24), [dirtMat, grassMat, dirtMat]); g.add(top);
-  const bot = mk(new THREE.ConeGeometry(4.6, 8, 8), toon('#a27052', { flatShading: true }), 0, -4.8, 0, g, false); bot.rotation.x = Math.PI;
+  const top = new THREE.Mesh(new CylGeo(5, 4.6, 1.6, 24), [dirtMat, grassMat, dirtMat]); g.add(top);
+  const bot = mk(new ConeGeo(4.6, 8, 8), toon('#a27052'), 0, -4.8, 0, g, false); bot.rotation.x = Math.PI;
   const t = new THREE.Group(); t.position.y = .8; g.add(t);
-  mk(new THREE.CylinderGeometry(.3, .4, 2, 8), trunkMat, 0, 1, 0, t, false);
+  mk(new CylGeo(.3, .4, 2, 8), trunkMat, 0, 1, 0, t, false);
   ball(pick([...leafMats, ...blossomMats]), 0, 2.8, 0, 1.6, 1.5, 1.6, t, false);
   minis.push({ g, by: g.position.y, ph: rand() * 6 });
 }
@@ -815,7 +880,7 @@ mk(Box(DG * 2 + .25, .25, WT + .16), beamMat, 0, DH, hd - WT / 2, house);
 const doorPivot = new THREE.Group(); doorPivot.position.set(-DG + .12, 0, hd); doorPivot.rotation.y = -1.25; house.add(doorPivot);
 mk(Box(DG * 2 - .24, DH - .1, .12), toon('#8a5bd6'), (DG * 2 - .24) / 2, (DH - .1) / 2, 0, doorPivot);
 ball(toon('#ffd84d'), DG * 2 - .5, 1.5, .1, .09, .09, .09, doorPivot);
-mk(new THREE.CircleGeometry(.35, 20), glow(toon('#fff6c2', { emissive: '#ffc94d', emissiveIntensity: .2 }), .2, 1.6), (DG * 2 - .24) / 2, 2.2, .065, doorPivot, false);
+mk(new CircGeo(.35, 20), glow(toon('#fff6c2', { emissive: '#ffc94d', emissiveIntensity: .2 }), .2, 1.6), (DG * 2 - .24) / 2, 2.2, .065, doorPivot, false);
 // windows
 const glassMat = glow(toon('#fff6c2', { emissive: '#ffc94d', emissiveIntensity: .2 }), .2, 1.7);
 function windowAt(x, y, z, rotY) {
@@ -834,7 +899,7 @@ for (const sx of [-1, 1]) {
   for (let k = 0; k < 4; k++) ball(toon(PASTELS[(k + (sx > 0 ? 2 : 0)) % 7]), sx * 3.15 - .55 + k * .37, 1.72, hd + .2, .16, .13, .16, house);
 }
 // roof
-const roofGeo = new THREE.ConeGeometry(8.4, 3.6, 4, 1); roofGeo.rotateY(Math.PI / 4);
+const roofGeo = new ConeGeo(8.4, 3.6, 4, 1); roofGeo.rotateY(Math.PI / 4);
 const roof = mk(roofGeo, roofMat, 0, wh + 1.8, 0, house); roof.scale.z = (hd + .9) / (hw + .94);
 const roofSnow = mk(roofGeo, toon('#ffffff', { transparent: true, flatShading: true }), 0, wh + 2.75, 0, house, false);
 roofSnow.scale.set(.6, .5, .6 * roof.scale.z);
@@ -853,7 +918,7 @@ mk(new THREE.PlaneGeometry(2.3, .58), new THREE.MeshBasicMaterial({ map: signTex
 mk(Box(2, .04, 1), toon('#c38bff'), 0, .02, hd + .8, house, false);
 {
   const mb = new THREE.Group(); mb.position.set(3, 0, hd + 2.2); house.add(mb);
-  mk(new THREE.CylinderGeometry(.07, .07, 1.1, 6), beamMat, 0, .55, 0, mb);
+  mk(new CylGeo(.07, .07, 1.1, 6), beamMat, 0, .55, 0, mb);
   mk(Box(.45, .4, .7), toon('#7fb8ff'), 0, 1.2, 0, mb);
   mk(Box(.04, .35, .08), toon('#ff6b7a'), .25, 1.4, .1, mb);
 }
@@ -878,24 +943,24 @@ const bookPos = new THREE.Vector3(HOUSE.x + 2.6, 1.1, HOUSE.z + 1.2);
 let cauldronG = null, cauldronLiquidMat = null, bookG = null;
 {
   const c = new THREE.Group(); c.position.set(3.2, 0, -2.4); house.add(c);
-  mk(new THREE.SphereGeometry(.85, 24, 16, 0, Math.PI * 2, Math.PI * .3, Math.PI * .7), toon('#3d3550', { side: THREE.DoubleSide }), 0, 1, 0, c);
-  const liquid = mk(new THREE.CircleGeometry(.72, 24), glow(toon('#8fff9f', { emissive: '#3dff6e', emissiveIntensity: .7 }), .7, 1.4), 0, 1.38, 0, c, false);
+  mk(new SphGeo(.85, 24, 16, 0, Math.PI * 2, Math.PI * .3, Math.PI * .7), toon('#3d3550', { side: THREE.DoubleSide }), 0, 1, 0, c);
+  const liquid = mk(new CircGeo(.72, 24), glow(toon('#8fff9f', { emissive: '#3dff6e', emissiveIntensity: .7 }), .7, 1.4), 0, 1.38, 0, c, false);
   liquid.rotation.x = -Math.PI / 2;
   cauldronG = c; cauldronLiquidMat = liquid.material;
-  const rim = mk(new THREE.TorusGeometry(.69, .08, 8, 24), toon('#2c2540'), 0, 1.5, 0, c); rim.rotation.x = Math.PI / 2;
+  const rim = mk(new TorGeo(.69, .08, 8, 24), toon('#2c2540'), 0, 1.5, 0, c); rim.rotation.x = Math.PI / 2;
   const fireMat = toon('#ffb347', { emissive: '#ff7a1a', emissiveIntensity: 1 });
-  for (let i = 0; i < 4; i++) { const a = i * 1.57; mk(new THREE.ConeGeometry(.14, .35, 6), fireMat, Math.cos(a) * .3, .17, Math.sin(a) * .3, c, false); }
+  for (let i = 0; i < 4; i++) { const a = i * 1.57; mk(new ConeGeo(.14, .35, 6), fireMat, Math.cos(a) * .3, .17, Math.sin(a) * .3, c, false); }
   circles.push({ x: HOUSE.x + 3.2, z: HOUSE.z - 2.4, r: 1 });
 }
 // table with potions
 {
   const tb = new THREE.Group(); tb.position.set(2.8, 0, 1.3); house.add(tb);
-  mk(new THREE.CylinderGeometry(1, 1, .12, 24), beamMat, 0, 1, 0, tb);
-  mk(new THREE.CylinderGeometry(.12, .25, 1, 10), beamMat, 0, .5, 0, tb);
+  mk(new CylGeo(1, 1, .12, 24), beamMat, 0, 1, 0, tb);
+  mk(new CylGeo(.12, .25, 1, 10), beamMat, 0, .5, 0, tb);
   [['#ff8fc7', -.4, .2], ['#8fd0ff', .1, -.4], ['#c9a0ff', .4, .3]].forEach(([col, x, z]) => {
     ball(glow(toon(col, { emissive: col, emissiveIntensity: .4, transparent: true, opacity: .9 }), .4, 1.2), x, 1.27, z, .18, .2, .18, tb);
-    mk(new THREE.CylinderGeometry(.05, .07, .18, 8), toon('#e9f6ff'), x, 1.5, z, tb);
-    mk(new THREE.CylinderGeometry(.06, .06, .07, 8), beamMat, x, 1.62, z, tb);
+    mk(new CylGeo(.05, .07, .18, 8), toon('#e9f6ff'), x, 1.5, z, tb);
+    mk(new CylGeo(.06, .06, .07, 8), beamMat, x, 1.62, z, tb);
   });
   // open spellbook
   const book = new THREE.Group(); book.position.set(-.2, 1.08, -.1); book.rotation.y = .4; tb.add(book);
@@ -922,10 +987,10 @@ let cauldronG = null, cauldronLiquidMat = null, bookG = null;
   playerBoxes.push({ x0: HOUSE.x - 4.65, x1: HOUSE.x - 3.95, z0: HOUSE.z + .5, z1: HOUSE.z + 2.7 });
 }
 // rug, plant, magic lamp
-mk(new THREE.CircleGeometry(1.9, 32), toon('#ff9ec7'), 0, .065, .6, house, false).rotation.x = -Math.PI / 2;
-mk(new THREE.CircleGeometry(1.35, 32), toon('#ffd1e6'), 0, .07, .6, house, false).rotation.x = -Math.PI / 2;
+mk(new CircGeo(1.9, 32), toon('#ff9ec7'), 0, .065, .6, house, false).rotation.x = -Math.PI / 2;
+mk(new CircGeo(1.35, 32), toon('#ffd1e6'), 0, .07, .6, house, false).rotation.x = -Math.PI / 2;
 {
-  mk(new THREE.CylinderGeometry(.3, .22, .5, 12), toon('#d9776b'), -4.1, .25, 3.3, house);
+  mk(new CylGeo(.3, .22, .5, 12), toon('#d9776b'), -4.1, .25, 3.3, house);
   ball(toon('#5cc46b'), -4.1, .8, 3.3, .45, .5, .45, house); ball(toon('#7ad37a'), -3.9, 1.1, 3.25, .3, .3, .3, house);
 }
 const lampOrb = ball(new THREE.MeshBasicMaterial({ color: '#ffe9a8' }), 0, 3.3, .4, .25, .25, .25, house, false);
@@ -1034,7 +1099,7 @@ function heartGeo() {
 function stonePath(ax, az, bx, bz) {
   const mat = toon('#e4dcef'), len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(len / 1.25));
   for (let i = 0; i <= n; i++) {
-    const t = i / n, s = mk(new THREE.CylinderGeometry(R(.55, .75), R(.6, .8), .12, 9), mat, lerp(ax, bx, t) + R(-.3, .3), .04, lerp(az, bz, t) + R(-.3, .3), scene, false);
+    const t = i / n, s = mk(new CylGeo(R(.55, .75), R(.6, .8), .12, 9), mat, lerp(ax, bx, t) + R(-.3, .3), .04, lerp(az, bz, t) + R(-.3, .3), scene, false);
     s.rotation.y = R(0, 3);
   }
 }
@@ -1092,10 +1157,10 @@ function gameTex() {
   const neon = new THREE.MeshBasicMaterial({ color: '#29d9ff' });
   for (const s of [-1, 1]) { mk(Box(hw * 2 + .9, .09, .09), neon, 0, wh + .05, s * (hd + .43), R2, false); mk(Box(.09, .09, hd * 2 + .9), neon, s * (hw + .43), wh + .05, 0, R2, false); }
   const dish = new THREE.Group(); dish.position.set(-2, wh + .45, -1.6); R2.add(dish);
-  mk(new THREE.CylinderGeometry(.06, .08, .7, 8), toon('#aab0bc'), 0, .35, 0, dish);
-  const dg = new THREE.SphereGeometry(.75, 18, 8, 0, Math.PI * 2, 0, Math.PI / 3); dg.translate(0, -.75, 0);
+  mk(new CylGeo(.06, .08, .7, 8), toon('#aab0bc'), 0, .35, 0, dish);
+  const dg = new SphGeo(.75, 18, 8, 0, Math.PI * 2, 0, Math.PI / 3); dg.translate(0, -.75, 0);
   const bowl = mk(dg, toon('#e6e9ef', { side: THREE.DoubleSide }), 0, .7, 0, dish); bowl.rotation.x = Math.PI - .6;
-  mk(new THREE.CylinderGeometry(.03, .05, 2.2, 6), toon('#aab0bc'), 2.6, wh + 1.5, -2.4, R2);
+  mk(new CylGeo(.03, .05, 2.2, 6), toon('#aab0bc'), 2.6, wh + 1.5, -2.4, R2);
   const blink = ball(new THREE.MeshBasicMaterial({ color: '#ff3b3b' }), 2.6, wh + 2.65, -2.4, .09, .09, .09, R2, false);
   finishRoof(h);
   // desk with three monitors
@@ -1111,11 +1176,11 @@ function gameTex() {
   mk(Box(1.1, .04, .34), toon('#111318'), -1.2, 1.07, -2.78, G);
   mk(Box(1.05, .01, .3), rgbMat, -1.2, 1.095, -2.78, G, false);
   ball(rgbMat, -.35, 1.08, -2.75, .07, .04, .1, G, false);
-  for (const [x, z] of [[-2.6, -2.75], [-2.4, -2.95], [-2.6, -3.2]]) mk(new THREE.CylinderGeometry(.06, .06, .2, 10), toon('#39ff88'), x, 1.15, z, G);
-  mk(new THREE.CylinderGeometry(.08, .07, .17, 12), toon('#ffffff'), .15, 1.14, -2.8, G);
+  for (const [x, z] of [[-2.6, -2.75], [-2.4, -2.95], [-2.6, -3.2]]) mk(new CylGeo(.06, .06, .2, 10), toon('#39ff88'), x, 1.15, z, G);
+  mk(new CylGeo(.08, .07, .17, 12), toon('#ffffff'), .15, 1.14, -2.8, G);
   // PC tower with RGB fans
   mk(Box(.5, 1.1, 1), toon('#16181f'), 1, .55, -3.05, G);
-  for (const y of [.35, .8]) mk(new THREE.TorusGeometry(.15, .03, 6, 18), rgbMat, 1, y, -2.54, G, false);
+  for (const y of [.35, .8]) mk(new TorGeo(.15, .03, 6, 18), rgbMat, 1, y, -2.54, G, false);
   h.box(-2.95, 1.3, -3.65, -2.5);
   // router with blinking LEDs
   mk(Box(.5, .08, .3), toon('#f2f4f7'), .05, 1.09, -3.4, G);
@@ -1123,7 +1188,7 @@ function gameTex() {
   for (let i = 0; i < 4; i++) leds.push(mk(Box(.04, .03, .02), new THREE.MeshBasicMaterial({ color: '#39ff88' }), -.1 + i * .1, 1.1, -3.24, G, false));
   // gaming chair
   const ch = new THREE.Group(); ch.position.set(-1.2, 0, -1.85); G.add(ch);
-  mk(new THREE.CylinderGeometry(.05, .05, .5, 8), metal, 0, .3, 0, ch);
+  mk(new CylGeo(.05, .05, .5, 8), metal, 0, .3, 0, ch);
   for (let i = 0; i < 5; i++) { const l = mk(Box(.05, .05, .4), dark, Math.sin(i * 1.26) * .2, .06, Math.cos(i * 1.26) * .2, ch); l.rotation.y = i * 1.26; }
   mk(Box(.8, .16, .8), toon('#1b1b22'), 0, .62, 0, ch);
   mk(Box(.8, 1.15, .16), toon('#1b1b22'), 0, 1.25, .4, ch);
@@ -1152,12 +1217,12 @@ function gameTex() {
   // coffee table with steak and chips
   mk(Box(1.3, .08, .8), dark, .1, .5, 1.2, G);
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) mk(Box(.06, .46, .06), dark, .1 + sx * .55, .25, 1.2 + sz * .32, G);
-  mk(new THREE.CylinderGeometry(.3, .28, .03, 24), toon('#f2f4f7'), -.1, .555, 1.2, G);
+  mk(new CylGeo(.3, .28, .03, 24), toon('#f2f4f7'), -.1, .555, 1.2, G);
   ball(toon('#7a3d22'), -.1, .6, 1.2, .2, .045, .14, G, false);
   for (let i = -1; i <= 1; i++) mk(Box(.02, .012, .22), toon('#3a1a0c'), -.1 + i * .08, .64, 1.2, G, false).rotation.y = .6;
   ball(toon('#4caf50'), .08, .6, 1.08, .04, .02, .04, G, false);
   mk(Box(.025, .01, .3), metal, -.1, .58, 1.47, G, false);
-  mk(new THREE.CylinderGeometry(.18, .12, .1, 14), toon('#e53935'), .5, .59, 1.15, G);
+  mk(new CylGeo(.18, .12, .1, 14), toon('#e53935'), .5, .59, 1.15, G);
   ball(toon('#ffd84d'), .5, .64, 1.15, .14, .05, .14, G, false);
   h.circ(.1, 1.2, .75);
   // mini fridge
@@ -1177,15 +1242,15 @@ function gameTex() {
     ['HAVE YOU TRIED', 'TURNING IT', 'OFF AND', 'ON AGAIN?'].forEach((l, i) => c.fillText(l, 128, 165 + i * 36));
   });
   mk(new THREE.PlaneGeometry(1.1, 1.38), new THREE.MeshBasicMaterial({ map: posterTex }), 1.9, 2.45, -hd + .37, G, false);
-  mk(new THREE.CircleGeometry(1.5, 32), toon('#2b2f3d'), .2, .065, 1.2, G, false).rotation.x = -Math.PI / 2;
-  mk(new THREE.RingGeometry(1.35, 1.5, 32), rgbMat, .2, .07, 1.2, G, false).rotation.x = -Math.PI / 2;
+  mk(new CircGeo(1.5, 32), toon('#2b2f3d'), .2, .065, 1.2, G, false).rotation.x = -Math.PI / 2;
+  mk(new RingGeo(1.35, 1.5, 32), rgbMat, .2, .07, 1.2, G, false).rotation.x = -Math.PI / 2;
   for (const s of [-1, 1]) { mk(Box(hw * 2 - .8, .06, .06), rgbMat, 0, wh - .2, s * (hd - .42), G, false); mk(Box(.06, .06, hd * 2 - .8), rgbMat, s * (hw - .42), wh - .2, 0, G, false); }
   // BBQ outside
   const bbq = new THREE.Group(); bbq.position.set(21, 0, -9); scene.add(bbq);
-  for (let i = 0; i < 3; i++) mk(new THREE.CylinderGeometry(.03, .03, .8, 6), metal, Math.sin(i * 2.1) * .25, .4, Math.cos(i * 2.1) * .25, bbq);
-  mk(new THREE.SphereGeometry(.45, 18, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), toon('#1b1b22', { side: THREE.DoubleSide }), 0, .95, 0, bbq);
-  const lid = mk(new THREE.SphereGeometry(.45, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), toon('#1b1b22'), 0, 1.0, -.35, bbq); lid.rotation.x = -1.1;
-  for (let i = 0; i < 3; i++) mk(new THREE.CylinderGeometry(.05, .05, .35, 8), toon('#c0563a'), -.15 + i * .15, .98, .05, bbq).rotation.x = Math.PI / 2;
+  for (let i = 0; i < 3; i++) mk(new CylGeo(.03, .03, .8, 6), metal, Math.sin(i * 2.1) * .25, .4, Math.cos(i * 2.1) * .25, bbq);
+  mk(new SphGeo(.45, 18, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), toon('#1b1b22', { side: THREE.DoubleSide }), 0, .95, 0, bbq);
+  const lid = mk(new SphGeo(.45, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), toon('#1b1b22'), 0, 1.0, -.35, bbq); lid.rotation.x = -1.1;
+  for (let i = 0; i < 3; i++) mk(new CylGeo(.05, .05, .35, 8), toon('#c0563a'), -.15 + i * .15, .98, .05, bbq).rotation.x = Math.PI / 2;
   circles.push({ x: 21, z: -9, r: .6 });
   let bbqT = 0, blinkT = 0;
   h.ticks.push((dt, time) => {
@@ -1213,17 +1278,17 @@ function gameTex() {
   for (const s of [-1, 1]) { mk(Box(hw * 2 + .5, .3, .25), red, 0, wh - .1, s * (hd + .05), G); mk(Box(.25, .3, hd * 2 + .5), red, s * (hw + .05), wh - .1, 0, G); }
   // two-tier pagoda roof
   const roofMat = toon('#3b4a6b', { flatShading: true }), zs = (hd + 1.4) / (hw + 1.4);
-  const t1 = new THREE.ConeGeometry((hw + 1.4) * Math.SQRT2, 2.2, 4, 1); t1.rotateY(Math.PI / 4);
+  const t1 = new ConeGeo((hw + 1.4) * Math.SQRT2, 2.2, 4, 1); t1.rotateY(Math.PI / 4);
   mk(t1, roofMat, 0, wh + 1.1, 0, R2).scale.z = zs;
   mk(Box(8, .8, 8 * zs), toon('#c9372c'), 0, wh + 1.4, 0, R2);
-  const t2 = new THREE.ConeGeometry(4.6 * Math.SQRT2, 1.9, 4, 1); t2.rotateY(Math.PI / 4);
+  const t2 = new ConeGeo(4.6 * Math.SQRT2, 1.9, 4, 1); t2.rotateY(Math.PI / 4);
   mk(t2, roofMat, 0, wh + 2.75, 0, R2).scale.z = zs;
   const gold = toon('#ffcc4d', { emissive: '#ffb000', emissiveIntensity: .3 });
   ball(gold, 0, wh + 3.75, 0, .22, .22, .22, R2);
   const up = new THREE.Vector3(0, 1, 0);
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
     for (const [ex, ez, ey, sc] of [[hw + 1.35, (hw + 1.35) * zs, wh + .12, 1], [4.55, 4.55 * zs, wh + 1.85, .7]]) {
-      const tip = mk(new THREE.ConeGeometry(.16 * sc, .7 * sc, 6), gold, sx * ex, ey, sz * ez, R2);
+      const tip = mk(new ConeGeo(.16 * sc, .7 * sc, 6), gold, sx * ex, ey, sz * ez, R2);
       tip.quaternion.setFromUnitVectors(up, new THREE.Vector3(sx * .7, 1, sz * .7).normalize());
     }
   }
@@ -1236,7 +1301,7 @@ function gameTex() {
   const tbl = new THREE.Group(); tbl.position.set(.3, 0, .4); G.add(tbl);
   mk(Box(2.8, .12, 1.6), wood, 0, .45, 0, tbl);
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) mk(Box(.12, .4, .12), wood, sx * 1.2, .2, sz * .65, tbl);
-  const plateGeo = new THREE.CylinderGeometry(.34, .28, .04, 20), curryMat = toon('#c8751a');
+  const plateGeo = new CylGeo(.34, .28, .04, 20), curryMat = toon('#c8751a');
   const steamSpots = [];
   [[-.85, .35], [.85, .35], [0, -.4]].forEach(([x, z]) => {
     mk(plateGeo, white, x, .53, z, tbl);
@@ -1246,22 +1311,22 @@ function gameTex() {
     mk(Box(.03, .02, .32), toon('#d9d9e3'), x + .3, .56, z + .05, tbl, false);
     steamSpots.push(h.world(.3 + x, .75, .4 + z));
   });
-  mk(new THREE.CylinderGeometry(.3, .26, .3, 18), black, 0, .66, .4, tbl);
-  mk(new THREE.CircleGeometry(.27, 18), curryMat, 0, .815, .4, tbl, false).rotation.x = -Math.PI / 2;
-  mk(new THREE.CylinderGeometry(.02, .02, .55, 6), toon('#d9d9e3'), .12, .95, .4, tbl, false).rotation.z = -.5;
+  mk(new CylGeo(.3, .26, .3, 18), black, 0, .66, .4, tbl);
+  mk(new CircGeo(.27, 18), curryMat, 0, .815, .4, tbl, false).rotation.x = -Math.PI / 2;
+  mk(new CylGeo(.02, .02, .55, 6), toon('#d9d9e3'), .12, .95, .4, tbl, false).rotation.z = -.5;
   steamSpots.push(h.world(.3, 1.0, .8));
   ball(black, -1.1, .62, -.45, .17, .14, .17, tbl);
-  mk(new THREE.ConeGeometry(.04, .2, 8), black, -.93, .66, -.45, tbl).rotation.z = -1.1;
-  for (const [x, z] of [[-.65, -.55], [1.1, -.45], [.55, -.6]]) mk(new THREE.CylinderGeometry(.07, .06, .1, 12), toon('#e8d9b5'), x, .56, z, tbl);
+  mk(new ConeGeo(.04, .2, 8), black, -.93, .66, -.45, tbl).rotation.z = -1.1;
+  for (const [x, z] of [[-.65, -.55], [1.1, -.45], [.55, -.6]]) mk(new CylGeo(.07, .06, .1, 12), toon('#e8d9b5'), x, .56, z, tbl);
   for (const [x, z] of [[-.85, .78], [.85, .78]]) for (const o of [-.03, .03]) { const cs2 = mk(Box(.015, .015, .42), toon('#8e1b1b'), x + o, .53, z, tbl, false); cs2.rotation.y = .2; }
   [[-.85, 1.2], [.85, 1.2], [0, -1.2], [-1.9, 0], [1.9, 0]].forEach(([x, z], i) => mk(Box(.75, .12, .75), toon(i % 2 ? '#2c3e70' : '#c9372c'), x, .07, z, tbl));
   h.box(-1.1, 1.7, -.4, 1.2);
   // paper lanterns
   const lanternGlow = glow(toon('#ff5a4a', { emissive: '#ff3b2e', emissiveIntensity: .4 }), .4, 1.6);
   for (const [x, z] of [[-3, -2], [3.5, -1.5], [-2, 2.8]]) {
-    mk(new THREE.CylinderGeometry(.01, .01, .5, 4), black, x, wh - .25, z, G, false);
+    mk(new CylGeo(.01, .01, .5, 4), black, x, wh - .25, z, G, false);
     ball(lanternGlow, x, wh - .8, z, .28, .36, .28, G, false);
-    for (const dy of [-.36, .36]) mk(new THREE.CylinderGeometry(.14, .14, .06, 12), black, x, wh - .8 + dy, z, G, false);
+    for (const dy of [-.36, .36]) mk(new CylGeo(.14, .14, .06, 12), black, x, wh - .8 + dy, z, G, false);
   }
   // futon
   mk(Box(1.6, .14, 2.4), toon('#fffaf0'), -4.6, .1, -3.3, G);
@@ -1275,7 +1340,7 @@ function gameTex() {
     c.fillStyle = '#c9372c'; c.fillRect(78, 182, 24, 24);
   });
   mk(new THREE.PlaneGeometry(.9, 1.8), new THREE.MeshBasicMaterial({ map: scrollTex }), -1.5, 2.3, -hd + .37, G, false);
-  for (const y of [3.22, 1.38]) mk(new THREE.CylinderGeometry(.04, .04, 1.05, 8), wood, -1.5, y, -hd + .4, G, false).rotation.z = Math.PI / 2;
+  for (const y of [3.22, 1.38]) mk(new CylGeo(.04, .04, 1.05, 8), wood, -1.5, y, -hd + .4, G, false).rotation.z = Math.PI / 2;
   // katana stand
   const ks = new THREE.Group(); ks.position.set(3.2, 0, -4.25); G.add(ks);
   mk(Box(1.4, .1, .35), black, 0, .05, 0, ks);
@@ -1289,16 +1354,16 @@ function gameTex() {
   // bonsai
   mk(Box(.9, .4, .6), wood, 4.8, .2, 3.6, G);
   mk(Box(.6, .18, .4), toon('#2c3e70'), 4.8, .49, 3.6, G);
-  const trunk = mk(new THREE.CylinderGeometry(.04, .08, .5, 6), wood, 4.75, .8, 3.6, G); trunk.rotation.z = .4;
+  const trunk = mk(new CylGeo(.04, .08, .5, 6), wood, 4.75, .8, 3.6, G); trunk.rotation.z = .4;
   for (const [x, y, z, s] of [[4.6, 1.05, 3.6, .28], [4.95, 1.15, 3.55, .22], [4.75, 1.25, 3.7, .2]]) ball(toon('#4fa35a'), x, y, z, s, s * .5, s, G);
   h.circ(4.8, 3.6, .5);
   // maneki-neko (lucky cat) with waving paw
   mk(Box(.8, .5, .6), wood, -4.8, .25, 3.6, G);
   const mn = new THREE.Group(); mn.position.set(-4.8, .5, 3.6); mn.rotation.y = .6; G.add(mn);
   ball(white, 0, .25, 0, .22, .25, .2, mn); ball(white, 0, .6, .02, .22, .2, .2, mn);
-  for (const sx of [-1, 1]) { const e = mk(new THREE.ConeGeometry(.07, .14, 8), white, sx * .12, .79, 0, mn); e.rotation.z = -sx * .3; }
+  for (const sx of [-1, 1]) { const e = mk(new ConeGeo(.07, .14, 8), white, sx * .12, .79, 0, mn); e.rotation.z = -sx * .3; }
   face(mn, .62, .2, .08, .035);
-  mk(new THREE.TorusGeometry(.14, .025, 6, 16), red, 0, .44, 0, mn).rotation.x = Math.PI / 2;
+  mk(new TorGeo(.14, .025, 6, 16), red, 0, .44, 0, mn).rotation.x = Math.PI / 2;
   ball(gold, 0, .4, .17, .045, .045, .045, mn);
   ball(gold, -.08, .2, .19, .09, .07, .03, mn);
   const paw = new THREE.Group(); paw.position.set(.2, .5, .06); mn.add(paw);
@@ -1308,8 +1373,8 @@ function gameTex() {
   const torii = new THREE.Group(); torii.position.set(-15.5, 0, -9); scene.add(torii);
   const tred = toon('#d9362b');
   for (const s of [-1, 1]) {
-    mk(new THREE.CylinderGeometry(.17, .2, 3.4, 12), tred, 0, 1.7, s * 1.6, torii);
-    mk(new THREE.CylinderGeometry(.24, .24, .3, 12), black, 0, .15, s * 1.6, torii);
+    mk(new CylGeo(.17, .2, 3.4, 12), tred, 0, 1.7, s * 1.6, torii);
+    mk(new CylGeo(.24, .24, .3, 12), black, 0, .15, s * 1.6, torii);
     circles.push({ x: -15.5, z: -9 + s * 1.6, r: .3 });
   }
   mk(Box(.25, .22, 3.9), tred, 0, 2.85, 0, torii);
@@ -1318,12 +1383,12 @@ function gameTex() {
   for (const s of [-1, 1]) { const e = mk(Box(.48, .16, .6), black, 0, 3.66, s * 2.5, torii); e.rotation.x = -s * .25; }
   mk(Box(.12, .5, .4), black, 0, 3.12, 0, torii);
   const sl = new THREE.Group(); sl.position.set(-18.5, 0, -13.2); scene.add(sl);
-  const stone = toon('#b8b4c2', { flatShading: true });
-  mk(new THREE.CylinderGeometry(.45, .55, .25, 6), stone, 0, .12, 0, sl);
-  mk(new THREE.CylinderGeometry(.15, .18, 1, 8), stone, 0, .75, 0, sl);
-  mk(new THREE.CylinderGeometry(.4, .35, .15, 6), stone, 0, 1.3, 0, sl);
+  const stone = toon('#b8b4c2');
+  mk(new CylGeo(.45, .55, .25, 6), stone, 0, .12, 0, sl);
+  mk(new CylGeo(.15, .18, 1, 8), stone, 0, .75, 0, sl);
+  mk(new CylGeo(.4, .35, .15, 6), stone, 0, 1.3, 0, sl);
   mk(Box(.45, .45, .45), glow(toon('#fff1c4', { emissive: '#ffb347', emissiveIntensity: .2 }), .2, 2), 0, 1.6, 0, sl);
-  mk(new THREE.ConeGeometry(.6, .45, 6), stone, 0, 2.05, 0, sl);
+  mk(new ConeGeo(.6, .45, 6), stone, 0, 2.05, 0, sl);
   ball(stone, 0, 2.35, 0, .1, .1, .1, sl);
   circles.push({ x: -18.5, z: -13.2, r: .5 });
   makeTree(-17, -17, 'blossom'); makeTree(-16.5, -1.5, 'blossom');
@@ -1350,7 +1415,7 @@ function gameTex() {
   const redM = ['#e53935', '#c62828', '#ff5252', '#d32f2f', '#ff1744', '#b71c1c'].map(c => toon(c));
   const metal = toon('#c9ced8'), white = toon('#ffffff'), green = toon('#4fa35a');
   // roof with a glowing heart on top
-  const rg = new THREE.ConeGeometry(8.4, 3.6, 4, 1); rg.rotateY(Math.PI / 4);
+  const rg = new ConeGeo(8.4, 3.6, 4, 1); rg.rotateY(Math.PI / 4);
   mk(rg, toon('#b71c1c', { flatShading: true }), 0, wh + 1.8, 0, R2).scale.z = (hd + .9) / (hw + .94);
   mk(Box(.8, 2.2, .8), toon('#8e1b1b'), -2.4, wh + 2.0, -1.4, R2);
   finishRoof(h);
@@ -1386,28 +1451,28 @@ function gameTex() {
   for (const z of [.5, 1.5]) { const c = mk(heartGeo(), redM[4], 4.05, 1.05, z, G); c.scale.setScalar(.2); c.rotation.y = -Math.PI / 2; }
   h.box(3.35, 4.65, -.35, 2.35);
   // round table with apples, teapot and roses
-  mk(new THREE.CylinderGeometry(.8, .8, .1, 24), redM[1], 2.5, 1, -2.4, G);
-  mk(new THREE.CylinderGeometry(.1, .25, 1, 10), redM[5], 2.5, .5, -2.4, G);
-  mk(new THREE.CylinderGeometry(.3, .2, .14, 16), white, 2.2, 1.12, -2.2, G);
-  for (const [x, z] of [[2.12, -2.15], [2.3, -2.25], [2.2, -2.32], [2.25, -2.1]]) { ball(redM[0], x, 1.24, z, .1, .1, .1, G); mk(new THREE.CylinderGeometry(.01, .01, .06, 4), toon('#5a3a22'), x, 1.35, z, G, false); }
+  mk(new CylGeo(.8, .8, .1, 24), redM[1], 2.5, 1, -2.4, G);
+  mk(new CylGeo(.1, .25, 1, 10), redM[5], 2.5, .5, -2.4, G);
+  mk(new CylGeo(.3, .2, .14, 16), white, 2.2, 1.12, -2.2, G);
+  for (const [x, z] of [[2.12, -2.15], [2.3, -2.25], [2.2, -2.32], [2.25, -2.1]]) { ball(redM[0], x, 1.24, z, .1, .1, .1, G); mk(new CylGeo(.01, .01, .06, 4), toon('#5a3a22'), x, 1.35, z, G, false); }
   ball(redM[4], 2.85, 1.2, -2.6, .17, .14, .17, G);
-  mk(new THREE.ConeGeometry(.04, .2, 8), redM[4], 3.03, 1.24, -2.6, G).rotation.z = -1.1;
+  mk(new ConeGeo(.04, .2, 8), redM[4], 3.03, 1.24, -2.6, G).rotation.z = -1.1;
   ball(redM[4], 2.85, 1.35, -2.6, .05, .04, .05, G);
-  mk(new THREE.CylinderGeometry(.09, .12, .35, 12), redM[2], 2.6, 1.22, -2.85, G);
-  for (let i = 0; i < 4; i++) { const a = i * 1.57; mk(new THREE.CylinderGeometry(.01, .01, .3, 4), green, 2.6 + Math.cos(a) * .04, 1.5, -2.85 + Math.sin(a) * .04, G, false); ball(redM[i % 2 ? 0 : 4], 2.6 + Math.cos(a) * .08, 1.66, -2.85 + Math.sin(a) * .08, .07, .07, .07, G, false); }
+  mk(new CylGeo(.09, .12, .35, 12), redM[2], 2.6, 1.22, -2.85, G);
+  for (let i = 0; i < 4; i++) { const a = i * 1.57; mk(new CylGeo(.01, .01, .3, 4), green, 2.6 + Math.cos(a) * .04, 1.5, -2.85 + Math.sin(a) * .04, G, false); ball(redM[i % 2 ? 0 : 4], 2.6 + Math.cos(a) * .08, 1.66, -2.85 + Math.sin(a) * .08, .07, .07, .07, G, false); }
   h.circ(2.5, -2.4, .85);
   // red floor lamp
-  mk(new THREE.CylinderGeometry(.25, .3, .06, 16), metal, 4.15, .03, -3.25, G);
-  mk(new THREE.CylinderGeometry(.03, .03, 2, 8), metal, 4.15, 1, -3.25, G);
-  mk(new THREE.CylinderGeometry(.25, .42, .5, 16, 1, true), glow(toon('#ff5252', { emissive: '#ff1744', emissiveIntensity: .3, side: THREE.DoubleSide }), .3, 1.4), 4.15, 2.1, -3.25, G);
+  mk(new CylGeo(.25, .3, .06, 16), metal, 4.15, .03, -3.25, G);
+  mk(new CylGeo(.03, .03, 2, 8), metal, 4.15, 1, -3.25, G);
+  mk(new CylGeo(.25, .42, .5, 16, 1, true), glow(toon('#ff5252', { emissive: '#ff1744', emissiveIntensity: .3, side: THREE.DoubleSide }), .3, 1.4), 4.15, 2.1, -3.25, G);
   h.circ(4.15, -3.25, .3);
   // Dexter's bed, bone and bowl
-  mk(new THREE.TorusGeometry(.5, .2, 10, 24), redM[1], -2.5, .2, 2.7, G).rotation.x = Math.PI / 2;
-  mk(new THREE.CylinderGeometry(.5, .5, .1, 20), toon('#ff8a80'), -2.5, .1, 2.7, G);
+  mk(new TorGeo(.5, .2, 10, 24), redM[1], -2.5, .2, 2.7, G).rotation.x = Math.PI / 2;
+  mk(new CylGeo(.5, .5, .1, 20), toon('#ff8a80'), -2.5, .1, 2.7, G);
   const bone = new THREE.Group(); bone.position.set(-2.4, .2, 2.65); bone.rotation.y = .6; G.add(bone);
-  mk(new THREE.CylinderGeometry(.035, .035, .3, 8), white, 0, 0, 0, bone).rotation.z = Math.PI / 2;
+  mk(new CylGeo(.035, .035, .3, 8), white, 0, 0, 0, bone).rotation.z = Math.PI / 2;
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) ball(white, sx * .16, 0, sz * .04, .05, .05, .05, bone);
-  mk(new THREE.CylinderGeometry(.22, .17, .12, 16), redM[0], -1.3, .06, 3.2, G);
+  mk(new CylGeo(.22, .17, .12, 16), redM[0], -1.3, .06, 3.2, G);
   ball(toon('#8a5a3a'), -1.3, .12, 3.2, .17, .03, .17, G, false);
   // portrait of Dexter
   const portrait = canvasTex(256, 256, (c, w) => {
@@ -1426,7 +1491,7 @@ function gameTex() {
   const balloons = [];
   for (const [x, y, z, ci] of [[-.8, 3.3, -1.2, 4], [.9, 3.5, -.6, 0], [.2, 3.1, -2.2, 2]]) {
     const b = mk(heartGeo(), redM[ci], x, y, z, G); b.scale.setScalar(.28);
-    const str = mk(new THREE.CylinderGeometry(.006, .006, 1.6, 4), white, x, y - 1.1, z, G, false);
+    const str = mk(new CylGeo(.006, .006, 1.6, 4), white, x, y - 1.1, z, G, false);
     balloons.push({ b, str, y, ph: Math.random() * 6 });
   }
   // rose bushes in front
@@ -1443,10 +1508,10 @@ function gameTex() {
   for (const s of [-1, 1]) mk(new THREE.ShapeGeometry(tri), toon('#e53935', { side: THREE.DoubleSide }), 0, 1.2, s * .9, dh, false);
   const holeMat = toon('#2b1d3a');
   mk(new THREE.PlaneGeometry(.76, .5), holeMat, 0, .25, .91, dh, false);
-  mk(new THREE.CircleGeometry(.38, 20), holeMat, 0, .5, .91, dh, false);
+  mk(new CircGeo(.38, 20), holeMat, 0, .5, .91, dh, false);
   const dexSign = canvasTex(256, 72, (c, w, hh) => { c.fillStyle = '#fff0f0'; c.beginPath(); c.roundRect(4, 4, w - 8, hh - 8, 20); c.fill(); c.fillStyle = '#c62828'; c.font = '700 44px Fredoka, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('DEXTER', w / 2, hh / 2 + 2); });
   mk(new THREE.PlaneGeometry(.8, .23), new THREE.MeshBasicMaterial({ map: dexSign, transparent: true }), 0, 1.4, .92, dh, false);
-  mk(new THREE.CylinderGeometry(.22, .17, .12, 16), redM[0], 1.2, .06, .7, dh);
+  mk(new CylGeo(.22, .17, .12, 16), redM[0], 1.2, .06, .7, dh);
   circles.push({ x: 14, z: 19, r: 1.3 });
   h.ticks.push((dt, time) => {
     topHeart.rotation.y += dt * 1.5; topHeart.position.y = wh + 4.1 + Math.sin(time * 2) * .12;
@@ -1549,21 +1614,21 @@ function makeWizard(L) {
   const feetA = [];
   for (const sx of [-1, 1]) feetA.push(ball(shoeM, sx * .17, .08, .08, .14, .1, .2, root));
   mk(robeGeo, robeM, 0, 0, 0, bodyG);
-  mk(new THREE.TorusGeometry(.42, .08, 10, 28), fluffM, 0, .14, 0, bodyG).rotation.x = Math.PI / 2;
-  mk(new THREE.TorusGeometry(.515, .045, 8, 28), goldM, 0, .44, 0, bodyG).rotation.x = Math.PI / 2;
+  mk(new TorGeo(.42, .08, 10, 28), fluffM, 0, .14, 0, bodyG).rotation.x = Math.PI / 2;
+  mk(new TorGeo(.515, .045, 8, 28), goldM, 0, .44, 0, bodyG).rotation.x = Math.PI / 2;
   mk(new THREE.OctahedronGeometry(.1), goldM, 0, .44, .55, bodyG, false).scale.z = .5;
   [[-.6, .27], [.7, .24], [2.4, .3], [-2.5, .28], [Math.PI, .62], [1.4, .66], [-1.3, .64]].forEach(([a, y]) => {
     const r = y < .5 ? .535 : .47;
     const st = mk(new THREE.OctahedronGeometry(.045), goldM, Math.sin(a) * r, y, Math.cos(a) * r, bodyG, false); st.scale.z = .5; st.rotation.y = a;
   });
-  mk(new THREE.TorusGeometry(.2, .075, 10, 22), fluffM, 0, .89, 0, bodyG).rotation.x = Math.PI / 2;
+  mk(new TorGeo(.2, .075, 10, 22), fluffM, 0, .89, 0, bodyG).rotation.x = Math.PI / 2;
   for (const sx of [-1, 1]) ball(shoeM, sx * .1, .86, .27, .1, .07, .05, bodyG).rotation.z = sx * .35;
   ball(shoeM, 0, .86, .3, .04, .04, .04, bodyG);
   // big round head + hair
   ball(skinM, 0, 1.32, 0, .5, .48, .48, bodyG);
   ball(hairM, 0, 1.4, -.08, .52, .5, .48, bodyG);
   if (L.style === 'spiky') {
-    for (const [x, rz] of [[-.24, .5], [-.08, .15], [.08, -.15], [.24, -.5]]) { const c = mk(new THREE.ConeGeometry(.09, .26, 8), hairM, x, 1.62, .33, bodyG, false); c.rotation.set(.9, 0, rz); }
+    for (const [x, rz] of [[-.24, .5], [-.08, .15], [.08, -.15], [.24, -.5]]) { const c = mk(new ConeGeo(.09, .26, 8), hairM, x, 1.62, .33, bodyG, false); c.rotation.set(.9, 0, rz); }
   } else {
     for (const [x, sc] of [[-.22, .15], [0, .17], [.22, .15]]) ball(hairM, x, 1.64, .33, sc, .1, .11, bodyG, false);
   }
@@ -1576,11 +1641,11 @@ function makeWizard(L) {
     for (const sx of [-1, 1]) ball(hairM, sx * .45, 1.34, -.05, .1, .16, .12, bodyG);
   }
   face(bodyG, 1.33, .45, .17, .08);
-  mk(new THREE.TorusGeometry(.055, .016, 6, 14, Math.PI), eyeMat, 0, 1.2, .45, bodyG, false).rotation.z = Math.PI;
+  mk(new TorGeo(.055, .016, 6, 14, Math.PI), eyeMat, 0, 1.2, .45, bodyG, false).rotation.z = Math.PI;
   if (L.glasses) {
     const gm = toon('#1b1b22');
     for (const sx of [-1, 1]) {
-      mk(new THREE.TorusGeometry(.11, .022, 6, 20), gm, sx * .17, 1.34, .5, bodyG, false);
+      mk(new TorGeo(.11, .022, 6, 20), gm, sx * .17, 1.34, .5, bodyG, false);
       const arm = mk(Box(.025, .025, .42), gm, sx * .37, 1.36, .28, bodyG, false); arm.rotation.y = sx * -.35;
     }
     mk(Box(.12, .025, .025), gm, 0, 1.36, .52, bodyG, false);
@@ -1589,22 +1654,23 @@ function makeWizard(L) {
   function makeArm(sx) {
     const arm = new THREE.Group(); arm.position.set(sx * .36, .74, .04); bodyG.add(arm);
     ball(robeM, sx * .05, -.1, .02, .13, .19, .13, arm).rotation.z = sx * .45;
-    mk(new THREE.TorusGeometry(.09, .035, 6, 14), fluffM, sx * .11, -.21, .04, arm).rotation.set(Math.PI / 2, 0, sx * .45);
+    mk(new TorGeo(.09, .035, 6, 14), fluffM, sx * .11, -.21, .04, arm).rotation.set(Math.PI / 2, 0, sx * .45);
     ball(skinM, sx * .13, -.28, .06, .1, .1, .1, arm);
     return arm;
   }
   const armL = makeArm(-1), armR = makeArm(1);
   // pointy wizard hat
   const hatG = new THREE.Group(); hatG.position.y = 1.72; hatG.scale.setScalar(1.08); bodyG.add(hatG);
-  mk(new THREE.CylinderGeometry(.66, .66, .06, 26), hatM, 0, 0, 0, hatG);
-  mk(new THREE.CylinderGeometry(.43, .43, .1, 22), bandM, 0, .07, 0, hatG);
-  mk(new THREE.CylinderGeometry(.22, .42, .62, 22), hatM, 0, .34, 0, hatG);
+  mk(new CylGeo(.66, .66, .06, 26), hatM, 0, 0, 0, hatG);
+  mk(new CylGeo(.43, .43, .1, 22), bandM, 0, .07, 0, hatG);
+  mk(new CylGeo(.22, .42, .62, 22), hatM, 0, .34, 0, hatG);
   const hTip = new THREE.Group(); hTip.position.y = .64; hatG.add(hTip);
-  mk(new THREE.ConeGeometry(.22, .6, 18), hatM, 0, .28, 0, hTip);
+  mk(new ConeGeo(.22, .6, 18), hatM, 0, .28, 0, hTip);
+  ball(hatM, 0, 0, 0, .21, .115, .21, hTip, false);   // flattened joint: fills the seam where the bent tip meets the hat
   ball(goldM, 0, .6, 0, .07, .07, .07, hTip, false);
   mk(new THREE.OctahedronGeometry(.1), goldM, 0, .3, .34, hatG, false);
   // wand
-  const wandM = mk(new THREE.CylinderGeometry(.025, .04, .6, 8), toon('#8a5a3a'), .13, -.12, .26, armR);
+  const wandM = mk(new CylGeo(.025, .04, .6, 8), toon('#8a5a3a'), .13, -.12, .26, armR);
   wandM.rotation.x = 1.05;
   const wTip = ball(new THREE.MeshBasicMaterial({ color: L.tip }), 0, .32, 0, .065, .065, .065, wandM, false);
   mk(new THREE.OctahedronGeometry(.07), goldM, 0, .36, 0, wandM, false);
@@ -1664,6 +1730,7 @@ function spawnNPCs() {
     document.getElementById('labels').appendChild(label);
     npcs.push({ name, L, w, g, label, target: npcTarget(L), wait: rr(0, 3), heading: rr(0, 6), walkT: 0, k: 0, waveT: 0, stuck: 0 });
   }
+  spawnIsleFolk();
 }
 function updateNPC(n, dt, time) {
   const p = n.g.position;
@@ -1768,7 +1835,7 @@ function makeBunny(col) {
   ball(m, 0, .85, .32, .33, .33, .33, body);
   const ears = [];
   for (const sx of [-1, 1]) { const e = ball(m, sx * .13, 1.27, .22, .09, .3, .06, body); e.rotation.z = -sx * .18; ears.push(e); }
-  const horn = mk(new THREE.ConeGeometry(.065, .38, 10), toon('#ffe066', { emissive: '#ffc0e0', emissiveIntensity: .35 }), 0, 1.18, .5, body); horn.rotation.x = .5;
+  const horn = mk(new ConeGeo(.065, .38, 10), toon('#ffe066', { emissive: '#ffc0e0', emissiveIntensity: .35 }), 0, 1.18, .5, body); horn.rotation.x = .5;
   face(body, .88, .62, .12, .055);
   ball(toon('#ff8fb8'), 0, .8, .65, .04, .035, .03, body, false);
   ball(toon('#ffffff'), 0, .52, -.5, .16, .16, .16, body);
@@ -1779,7 +1846,7 @@ function makeSpirit(col) {
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
   const m = toon(col, { emissive: col, emissiveIntensity: .45, transparent: true, opacity: .93 });
   ball(m, 0, 0, 0, .42, .45, .42, body);
-  mk(new THREE.ConeGeometry(.16, .4, 12), m, 0, .52, -.03, body).rotation.x = -.25;
+  mk(new ConeGeo(.16, .4, 12), m, 0, .52, -.03, body).rotation.x = -.25;
   face(body, .05, .4, .13, .06);
   for (const sx of [-1, 1]) ball(m, sx * .43, -.12, .06, .1, .1, .1, body);
   const orbit = new THREE.Group(); body.add(orbit);
@@ -1797,7 +1864,7 @@ function makeDragon(col, bellyCol) {
   ball(m, 0, 1.12, .18, .36, .36, .36, body);
   ball(m, 0, 1.02, .5, .2, .16, .18, body);
   face(body, 1.18, .5, .14, .06);
-  for (const sx of [-1, 1]) { const h = mk(new THREE.ConeGeometry(.06, .22, 8), b, sx * .17, 1.45, .1, body); h.rotation.z = -sx * .3; }
+  for (const sx of [-1, 1]) { const h = mk(new ConeGeo(.06, .22, 8), b, sx * .17, 1.45, .1, body); h.rotation.z = -sx * .3; }
   const wingShape = new THREE.Shape(); wingShape.moveTo(0, 0); wingShape.lineTo(.75, .38); wingShape.lineTo(.62, -.05); wingShape.lineTo(.38, -.22); wingShape.lineTo(0, -.15);
   const wingGeo = new THREE.ShapeGeometry(wingShape);
   const wingMat = toon(bellyCol, { side: THREE.DoubleSide });
@@ -1806,8 +1873,8 @@ function makeDragon(col, bellyCol) {
     const pv = new THREE.Group(); pv.position.set(sx * .3, .9, -.2); body.add(pv);
     const w = mk(wingGeo, wingMat, 0, 0, 0, pv); w.scale.x = sx; wings.push({ pv, sx });
   }
-  const tail = mk(new THREE.ConeGeometry(.15, .75, 10), m, 0, .42, -.72, body); tail.rotation.x = -1.2;
-  for (let i = 0; i < 3; i++) { const s = mk(new THREE.ConeGeometry(.07, .18, 6), b, 0, 1.0 - i * .2, -.36 - i * .1, body, false); s.rotation.x = -.6; }
+  const tail = mk(new ConeGeo(.15, .75, 10), m, 0, .42, -.72, body); tail.rotation.x = -1.2;
+  for (let i = 0; i < 3; i++) { const s = mk(new ConeGeo(.07, .18, 6), b, 0, 1.0 - i * .2, -.36 - i * .1, body, false); s.rotation.x = -.6; }
   for (const sx of [-1, 1]) ball(m, sx * .22, .08, .15, .13, .09, .17, body);
   return { g, body, wings, baseY: 0, speed: 1.7 };
 }
@@ -1825,8 +1892,13 @@ function makeCorgi() {
   const fur = toon('#e8a15a'), cream = toon('#fff4e2'), dark = toon('#2b1d3a');
   ball(fur, 0, .48, 0, .34, .3, .58, body);
   ball(cream, 0, .4, .16, .3, .24, .42, body);
-  const butt = ball(cream, 0, .5, -.5, .3, .28, .22, body);
-  ball(fur, 0, .62, -.62, .07, .07, .07, body);
+  const butt = ball(cream, 0, .48, -.46, .27, .24, .14, body);   // fluffy rear, tucked into the body
+  // short tapered tail that sticks up and back from the rump and wags from its base
+  const tail = new THREE.Group(); tail.position.set(0, .64, -.56); body.add(tail);
+  const tg = new ConeGeo(.055, .36, 12); tg.translate(0, .18, 0);
+  mk(tg, fur, 0, 0, 0, tail).rotation.x = -.75;
+  ball(fur, 0, 0, 0, .06, .06, .06, tail, false);
+  ball(cream, 0, .2, -.185, .032, .05, .032, tail, false).rotation.x = -.75;
   const legs = [];
   for (const [x, z] of [[-.18, .32], [.18, .32], [-.18, -.34], [.18, -.34]]) legs.push(ball(cream, x, .16, z, .09, .16, .09, body));
   const head = new THREE.Group(); head.position.set(0, .82, .52); body.add(head);
@@ -1838,12 +1910,12 @@ function makeCorgi() {
   face(head, .04, .24, .11, .05);
   const ears = [];
   for (const sx of [-1, 1]) {
-    const e = mk(new THREE.ConeGeometry(.11, .3, 10), fur, sx * .16, .3, -.02, head); e.rotation.z = -sx * .25; ears.push(e);
-    mk(new THREE.ConeGeometry(.06, .18, 8), toon('#ffc2c2'), sx * .155, .28, .03, head, false).rotation.z = -sx * .25;
+    const e = mk(new ConeGeo(.11, .3, 10), fur, sx * .16, .3, -.02, head); e.rotation.z = -sx * .25; ears.push(e);
+    mk(new ConeGeo(.06, .18, 8), toon('#ffc2c2'), sx * .155, .28, .03, head, false).rotation.z = -sx * .25;
   }
-  mk(new THREE.TorusGeometry(.2, .04, 8, 20), toon('#e53935'), 0, .68, .42, body).rotation.x = Math.PI / 2 - .5;
+  mk(new TorGeo(.2, .04, 8, 20), toon('#e53935'), 0, .68, .42, body).rotation.x = Math.PI / 2 - .5;
   ball(toon('#ffd84d', { emissive: '#ffb800', emissiveIntensity: .3 }), 0, .55, .56, .05, .05, .02, body);
-  return { g, body, legs, ears, butt, head, baseY: 0, speed: 2.4, home: { x: 10, z: 14.5, r: 5.5 } };
+  return { g, body, legs, ears, butt, tail, head, baseY: 0, speed: 2.4, home: { x: 10, z: 14.5, r: 5.5 } };
 }
 // Nunu, Nikki's black cat: prowls around the cottage garden
 function makeCat() {
@@ -1869,11 +1941,11 @@ function makeCat() {
   }
   const ears = [];
   for (const sx of [-1, 1]) {
-    const e = mk(new THREE.ConeGeometry(.1, .2, 4), fur, sx * .15, .22, -.02, head); e.rotation.z = -sx * .3; ears.push(e);
-    mk(new THREE.ConeGeometry(.05, .12, 4), pink, sx * .145, .2, .025, head, false).rotation.z = -sx * .3;
+    const e = mk(new ConeGeo(.1, .2, 4), fur, sx * .15, .22, -.02, head); e.rotation.z = -sx * .3; ears.push(e);
+    mk(new ConeGeo(.05, .12, 4), pink, sx * .145, .2, .025, head, false).rotation.z = -sx * .3;
   }
   // Nikki-purple collar with a golden bell
-  mk(new THREE.TorusGeometry(.16, .035, 8, 20), toon('#9476ff'), 0, .58, .3, body).rotation.x = Math.PI / 2 - .5;
+  mk(new TorGeo(.16, .035, 8, 20), toon('#9476ff'), 0, .58, .3, body).rotation.x = Math.PI / 2 - .5;
   ball(toon('#ffd84d', { emissive: '#ffb800', emissiveIntensity: .3 }), 0, .47, .43, .05, .05, .05, body);
   return { g, body, legs, ears, tail, head, baseY: 0, speed: 2.1, home: { x: -3.5, z: -11, r: 5.5 } };
 }
@@ -1907,7 +1979,8 @@ const creatures = CREATURE_DEFS.map(([type, name, col, col2], i) => {
   c.label = document.createElement('div'); c.label.className = 'label'; c.label.textContent = name; labelsEl.appendChild(c.label);
   return c;
 });
-const creatureCenter = (c, out) => out.set(c.g.position.x, c.body.position.y + (c.type === 'spirit' ? 0 : c.type === 'corgi' ? .5 : c.type === 'cat' ? .45 : .8), c.g.position.z);
+const CENTER_Y = { spirit: 0, corgi: .5, cat: .45, penguin: .6, lizard: .35, shroom: .5 };
+const creatureCenter = (c, out) => out.set(c.g.position.x, c.body.position.y + (CENTER_Y[c.type] ?? .8), c.g.position.z);
 document.getElementById('friends').textContent = `0 / ${creatures.length}`;
 
 let friends = 0;
@@ -1915,17 +1988,23 @@ function makeHappy(c) {
   c.happy = 2.2; c.lev = 0;
   hearts(creatureCenter(c, new THREE.Vector3()).add(new THREE.Vector3(0, .6, 0)), 7);
   sfx(c.type === 'corgi' ? 'woof' : c.type === 'cat' ? 'meow' : 'happy');
-  questEvent('happy'); dailyEvent('happy');
+  questEvent('happy', null, c.g.position); dailyEvent('happy');
   if (!c.friend) {
     c.friend = true; friends++;
     c.label.innerHTML = iconHTML('heart') + ' ' + c.name;
-    document.getElementById('friends').textContent = `${friends} / ${creatures.length}`;
+    renderFriends();
     toast(`${c.name} is now your friend!`, 3300, 'heart');
-    if (friends === creatures.length) setTimeout(celebrate, 900);
+    const mates = creatures.filter(q => q.isle === c.isle);
+    if (mates.every(q => q.friend)) setTimeout(() => celebrate(c.isle), 900);
   }
 }
-function celebrate() {
-  toast('All the critters are your friends! You are a true wizard!', 4500, 'star');
+// the friends counter shows the critters of the island you are on
+function renderFriends() {
+  const id = curIsle ? curIsle.id : null, mates = creatures.filter(q => q.isle === id);
+  document.getElementById('friends').textContent = `${mates.filter(q => q.friend).length} / ${mates.length}`;
+}
+function celebrate(isleId = null) {
+  toast(isleId ? `All the critters on ${ISLE_BY_ID.get(isleId).name} are your friends!` : 'All the critters are your friends! You are a true wizard!', 4500, 'star');
   sfx('fanfare');
   for (let i = 0; i < 9; i++) setTimeout(() => {
     const p = player.position.clone().add(new THREE.Vector3(rr(-10, 10), rr(8, 14), rr(-10, 10)));
@@ -1984,7 +2063,8 @@ function updateCreature(c, dt, time) {
   } else if (c.type === 'corgi') {
     c.body.position.y = moving ? Math.abs(Math.sin(c.phase * 12)) * .06 : lerp(c.body.position.y, 0, damp(10, dt));
     c.legs.forEach((l, i) => l.rotation.x = moving ? Math.sin(c.phase * 14 + (i === 0 || i === 3 ? 0 : Math.PI)) * .7 : 0);
-    c.butt.position.x = Math.sin(time * (moving ? 14 : 5)) * .05;
+    c.butt.position.x = Math.sin(time * (moving ? 14 : 5)) * .02;
+    c.tail.rotation.z = Math.sin(time * (moving ? 16 : 7)) * .55;   // wag!
     c.head.rotation.z = moving ? 0 : Math.sin(time * 1.5 + c.phase) * .15;
     c.ears.forEach((e, i) => e.rotation.x = Math.sin(time * 6 + i) * .08);
   } else if (c.type === 'cat') {
@@ -1994,6 +2074,20 @@ function updateCreature(c, dt, time) {
     c.tail.rotation.x = moving ? .25 : Math.sin(time * .9 + c.phase) * .1;
     c.head.rotation.y = moving ? 0 : Math.sin(time * .7 + c.phase) * .4;
     c.ears.forEach((e, i) => e.rotation.x = Math.max(0, Math.sin(time * 2.3 + i * 2 + c.phase)) * .25 - .05);
+  } else if (c.type === 'penguin') {
+    c.body.position.y = moving ? Math.abs(Math.sin(c.phase * 9)) * .06 : lerp(c.body.position.y, 0, damp(10, dt));
+    c.body.rotation.z = moving ? Math.sin(c.phase * 9) * .18 : lerp(c.body.rotation.z, 0, damp(6, dt));
+    c.flips.forEach((f, i) => f.rotation.z = (i ? -1 : 1) * (.25 + (moving ? Math.abs(Math.sin(c.phase * 9)) * .5 : Math.sin(time * 2 + c.phase) * .08)));
+  } else if (c.type === 'lizard') {
+    c.body.position.y = lerp(c.body.position.y, 0, damp(10, dt));
+    c.legs.forEach((l, i) => l.rotation.y = moving ? Math.sin(c.phase * 16 + (i === 0 || i === 3 ? 0 : Math.PI)) * .6 : 0);
+    c.tail.rotation.y = Math.sin(time * (moving ? 10 : 2) + c.phase) * (moving ? .45 : .2);
+    c.body.rotation.y = moving ? Math.sin(c.phase * 16) * .08 : 0;
+    c.flame.scale.setScalar(.9 + Math.sin(time * 12 + c.phase) * .15);
+  } else if (c.type === 'shroom') {
+    c.body.position.y = moving ? Math.abs(Math.sin(c.phase * 6)) * .35 : lerp(c.body.position.y, 0, damp(10, dt));
+    c.cap.scale.y = moving ? .8 + Math.abs(Math.cos(c.phase * 6)) * .25 : 1 + Math.sin(time * 2 + c.phase) * .04;
+    c.body.rotation.z = moving ? Math.sin(c.phase * 6) * .1 : 0;
   } else {
     c.body.position.y = lerp(c.body.position.y, c.baseY, damp(8, dt));
     c.body.rotation.z = moving ? Math.sin(c.phase * 10) * .12 : lerp(c.body.rotation.z, 0, damp(6, dt));
@@ -2088,7 +2182,7 @@ function updateProjectiles(dt) {
     if (!pr.remote) for (const c of creatures) if (creatureCenter(c, tmpV).distanceTo(pr.mesh.position) < 1.3) { hit = c; break; }
     let wall = pr.mesh.position.y < .1;
     if (!wall) { for (const b of playerBoxes) { const q = pr.mesh.position; if (q.x > b.x0 && q.x < b.x1 && q.z > b.z0 && q.z < b.z1 && q.y < 4.5) { wall = true; break; } } }
-    const zapped = !hit && !pr.remote && zapBugAt(pr.mesh.position);
+    const zapped = !hit && !pr.remote && (zapBugAt(pr.mesh.position) || lightLantern(pr.mesh.position));
     if (hit || zapped || wall || pr.life <= 0) {
       burst(pr.mesh.position, 18, { speed: 4, colors: ['#ffe066', '#ff8fc7', '#c9a0ff', '#8fd0ff'], size: .4, life: 1 });
       if (hit) makeHappy(hit); else if (!zapped) sfx('pop');
@@ -2098,7 +2192,7 @@ function updateProjectiles(dt) {
 }
 
 // 2. flowers
-const flowerStem = new THREE.CylinderGeometry(.03, .03, .5, 5), petalGeo = new THREE.SphereGeometry(.2, 10, 6);
+const flowerStem = new CylGeo(.03, .03, .5, 5), petalGeo = new SphGeo(.2, 10, 6);
 const stemMat2 = toon('#5cbf5c'), centerMat = toon('#ffd84d'), petalMats = PASTELS.concat(['#ffffff']).map(c => toon(c));
 const flowers = [];
 function spawnFlower(x, z, delay) {
@@ -2116,7 +2210,7 @@ function castFlowers() {
   for (let i = 0; i < 18; i++) {
     const a = Math.random() * 6.28, d = Math.sqrt(Math.random()) * 3.3;
     const x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d;
-    if (Math.hypot(x, z) > ISLAND_R - 2 || Math.hypot(x - POND.x, z - POND.z) < POND.r) continue;
+    if (!onLand(x, z) || Math.hypot(x - POND.x, z - POND.z) < POND.r || inLava(x, z)) continue;
     spawnFlower(x, z, i * .05);
   }
   sfx('flower');
@@ -2148,7 +2242,7 @@ function castFloat(c) {
 
 // 4. butterflies
 const butterflies = [];
-const wingGeo = new THREE.CircleGeometry(.22, 14);
+const wingGeo = new CircGeo(.22, 14);
 const bodyMat = toon('#4a3a66');
 function castButterflies(owner = player, from = null) {
   for (let i = 0; i < 8; i++) {
@@ -2215,7 +2309,7 @@ function castRainbow(at = null) {
   const g = new THREE.Group(); scene.add(g);
   const mats = RAINBOW_COLS.map((col, i) => {
     const m = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
-    g.add(new THREE.Mesh(new THREE.TorusGeometry(10 - i * .55, .29, 8, 72, Math.PI), m)); return m;
+    g.add(new THREE.Mesh(new TorGeo(10 - i * .55, .29, 8, 72, Math.PI), m)); return m;
   });
   const f = at ? new THREE.Vector3(Math.sin(at.h), 0, Math.cos(at.h)) : facingDir();
   const ox = at ? at.x : player.position.x, oz = at ? at.z : player.position.z;
@@ -2242,6 +2336,20 @@ function updateRainbow(dt) {
 
 // 6. day & night
 let night = 0, nightTarget = 0;
+let curIsle = null;                       // the far island you are on right now (null = Starvale)
+// placeholders until the Star Portal islands exist: no folk live on other islands yet
+const FOLK_ISLE = {}, ISLE_BY_ID = new Map();
+// slippery ground: only when the current island has a frozen lake ({ x, z, r }); everywhere else normal grip
+function onIce(p) {
+  const L = curIsle && curIsle.ice;
+  return !!L && Math.hypot(p.x - L.x, p.z - L.z) < L.r;
+}
+// placeholders for the Star Portal islands (not built yet): safe no-ops so Starvale keeps running
+function inLava(x, z) { const L = curIsle && curIsle.lava; return !!L && Math.hypot(x - L.x, z - L.z) < L.r; }
+function lightLantern(p) { return false; }
+function spawnIsleFolk() {}
+function isleSpot(I) { return randomTarget(); }
+const skyO = new THREE.Vector3();         // the sky, sun and clouds are centred on the island you are on
 function castNight() {
   nightTarget = nightTarget > .5 ? 0 : 1;
   toast(nightTarget ? 'The stars are coming out… sweet dreams!' : 'Good morning, Starvale!', 3300, nightTarget ? 'moon' : 'sparkle');
@@ -2252,10 +2360,10 @@ const C = s => new THREE.Color(s);
 const DAY = { top: C('#8ecbff'), bottom: C('#ffe3f1'), fog: C('#eef3ff'), hemiSky: C('#ffffff'), hemiGround: C('#dfe8ff'), sun: C('#fff1dc') };
 const NIGHT = { top: C('#141238'), bottom: C('#4a2b6b'), fog: C('#2a2152'), hemiSky: C('#8f8cff'), hemiGround: C('#3a2f6b'), sun: C('#9fb4ff') };
 function applyTime() {
-  const n = night;
-  skyU.top.value.copy(DAY.top).lerp(NIGHT.top, n);
-  skyU.bottom.value.copy(DAY.bottom).lerp(NIGHT.bottom, n);
-  scene.fog.color.copy(DAY.fog).lerp(NIGHT.fog, n);
+  const n = night, Dy = (curIsle && curIsle.day) || DAY, Nt = (curIsle && curIsle.night) || NIGHT;
+  skyU.top.value.copy(Dy.top).lerp(Nt.top, n);
+  skyU.bottom.value.copy(Dy.bottom).lerp(Nt.bottom, n);
+  scene.fog.color.copy(Dy.fog).lerp(Nt.fog, n);
   hemi.color.copy(DAY.hemiSky).lerp(NIGHT.hemiSky, n);
   hemi.groundColor.copy(DAY.hemiGround).lerp(NIGHT.hemiGround, n);
   hemi.intensity = lerp(1.3, .55, n);
@@ -2465,10 +2573,10 @@ const SKY_DEFS = [
 const skyIsles = SKY_DEFS.map((def, i) => {
   const s = { ...def, x: Math.cos(def.a) * def.d, z: Math.sin(def.a) * def.d, baseTop: def.top, ph: i * 2.1 };
   const g = new THREE.Group(); g.position.set(s.x, s.top - .8, s.z); scene.add(g); s.g = g;
-  s.topMesh = new THREE.Mesh(new THREE.CylinderGeometry(s.r, s.r - .4, 1.6, 30), [dirtMat, grassMat, dirtMat]);
+  s.topMesh = new THREE.Mesh(new CylGeo(s.r, s.r - .4, 1.6, 30), [dirtMat, grassMat, dirtMat]);
   s.topMesh.receiveShadow = true; g.add(s.topMesh);
-  mk(new THREE.TorusGeometry(s.r - .15, .35, 6, 40), toon('#dfe9fb'), 0, .75, 0, g, false).rotation.x = Math.PI / 2;
-  const bot = mk(new THREE.ConeGeometry(s.r - .4, s.r * 1.7, 9), toon('#a27052', { flatShading: true }), 0, -.8 - s.r * .85, 0, g, false); bot.rotation.x = Math.PI;
+  mk(new TorGeo(s.r - .15, .35, 6, 40), toon('#dfe9fb'), 0, .75, 0, g, false).rotation.x = Math.PI / 2;
+  const bot = mk(new ConeGeo(s.r - .4, s.r * 1.7, 9), toon('#a27052'), 0, -.8 - s.r * .85, 0, g, false); bot.rotation.x = Math.PI;
   // little glowing crystals hanging underneath
   for (let k = 0; k < 4; k++) {
     const a = k * 1.57 + i, cr = mk(new THREE.OctahedronGeometry(.35), glow(toon(['#c9a0ff', '#8fd8ff', '#ffb3e6'][(i + k) % 3], { emissive: '#c9a0ff', emissiveIntensity: .3 }), .3, 1.6), Math.cos(a) * (s.r - .3), -1.3 - k % 2 * .5, Math.sin(a) * (s.r - .3), g, false);
@@ -2495,13 +2603,13 @@ const chestG = new THREE.Group(); chestG.position.set(0, .8, -1.2); chestIsle.g.
   mk(Box(1.6, .9, 1), wood, 0, .45, 0, chestG);
   for (const sx of [-1, 1]) mk(Box(.14, .92, 1.04), gold, sx * .55, .45, 0, chestG, false);
   const lid = new THREE.Group(); lid.position.set(0, .9, -.5); chestG.add(lid); chestG.userData.lid = lid;
-  const top = mk(new THREE.CylinderGeometry(.5, .5, 1.6, 14, 1, false, 0, Math.PI), wood, 0, 0, .5, lid);
+  const top = mk(new CylGeo(.5, .5, 1.6, 14, 1, false, 0, Math.PI), wood, 0, 0, .5, lid);
   top.rotation.set(0, 0, Math.PI / 2);
-  for (const sx of [-1, 1]) { const b = mk(new THREE.CylinderGeometry(.52, .52, .14, 14, 1, false, 0, Math.PI), gold, sx * .55, 0, .5, lid, false); b.rotation.set(0, 0, Math.PI / 2); }
+  for (const sx of [-1, 1]) { const b = mk(new CylGeo(.52, .52, .14, 14, 1, false, 0, Math.PI), gold, sx * .55, 0, .5, lid, false); b.rotation.set(0, 0, Math.PI / 2); }
   ball(gold, 0, -.05, 1.02, .14, .18, .08, lid, false);
   const shine = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#ffd84d', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
   shine.scale.setScalar(3); shine.position.y = 1.1; chestG.add(shine); chestG.userData.shine = shine;
-  for (let k = 0; k < 6; k++) mk(new THREE.CylinderGeometry(.13, .13, .04, 12), gold, rr(-.5, .5), .92, rr(-.3, .3), chestG, false);
+  for (let k = 0; k < 6; k++) mk(new CylGeo(.13, .13, .04, 12), gold, rr(-.5, .5), .92, rr(-.3, .3), chestG, false);
 }
 const chestWorld = () => chestG.getWorldPosition(new THREE.Vector3());
 
@@ -2518,8 +2626,8 @@ const kitty = (() => {
   ball(fur, 0, 0, 0, .42, .38, .38, head);
   face(head, .02, .34, .14, .06);
   for (const sx of [-1, 1]) {
-    const e = mk(new THREE.ConeGeometry(.15, .3, 4), fur, sx * .24, .36, 0, head); e.rotation.z = -sx * .35;
-    const ein = mk(new THREE.ConeGeometry(.08, .18, 4), pink, sx * .24, .35, .05, head, false); ein.rotation.z = -sx * .35;
+    const e = mk(new ConeGeo(.15, .3, 4), fur, sx * .24, .36, 0, head); e.rotation.z = -sx * .35;
+    const ein = mk(new ConeGeo(.08, .18, 4), pink, sx * .24, .35, .05, head, false); ein.rotation.z = -sx * .35;
   }
   ball(pink, 0, -.06, .38, .05, .04, .03, head, false);
   const tail = new THREE.Group(); tail.position.set(0, .5, -.45); body.add(tail);
@@ -2548,9 +2656,9 @@ const scopeG = new THREE.Group(); viewIsle.g.add(scopeG);
   mk(Box(1.8, .12, .55), wood, 0, .5, 0, seat); mk(Box(1.8, .5, .1), wood, 0, .85, -.25, seat);
   for (const sx of [-1, 1]) mk(Box(.12, .5, .5), wood, sx * .75, .25, 0, seat, false);
   scopeG.position.set(1.4, .8, .4);
-  for (let k = 0; k < 3; k++) { const leg = mk(new THREE.CylinderGeometry(.04, .04, 1.3, 6), wood, Math.cos(k * 2.09) * .22, .6, Math.sin(k * 2.09) * .22, scopeG, false); leg.rotation.set(Math.sin(k * 2.09) * .3, 0, -Math.cos(k * 2.09) * .3); }
-  const tube = mk(new THREE.CylinderGeometry(.11, .16, 1.1, 12), brass, 0, 1.35, 0, scopeG); tube.rotation.x = 1.1;
-  mk(new THREE.CylinderGeometry(.04, .04, 2.6, 6), wood, -.2, 2.1, -2, viewIsle.g, false);
+  for (let k = 0; k < 3; k++) { const leg = mk(new CylGeo(.04, .04, 1.3, 6), wood, Math.cos(k * 2.09) * .22, .6, Math.sin(k * 2.09) * .22, scopeG, false); leg.rotation.set(Math.sin(k * 2.09) * .3, 0, -Math.cos(k * 2.09) * .3); }
+  const tube = mk(new CylGeo(.11, .16, 1.1, 12), brass, 0, 1.35, 0, scopeG); tube.rotation.x = 1.1;
+  mk(new CylGeo(.04, .04, 2.6, 6), wood, -.2, 2.1, -2, viewIsle.g, false);
   const flag = mk(new THREE.PlaneGeometry(.9, .55), toon('#ff8fbf', { side: THREE.DoubleSide }), .25, 3.05, -2, viewIsle.g, false);
   viewIsle.flag = flag;
 }
@@ -2569,6 +2677,7 @@ function supportAt(x, z, y) {
   if (Math.hypot(x, z) <= ISLAND_R - 2) cand(0);
   if (onPier(x, z)) cand(PIER.y);
   for (const s of skyIsles) if (Math.hypot(x - s.x, z - s.z) <= s.r - .5) cand(s.top);
+  for (const I of FAR) if (Math.hypot(x - I.x, z - I.z) <= I.r - 2) cand(0);
   for (const b of bridges) { const h = bridgeY(b, x, z); if (h !== null) cand(h); }
   return best;
 }
@@ -2833,7 +2942,7 @@ function onTap(x, y) {
     petTarget = null; moveTimer = 0;
     return;
   }
-  const gh = ray.intersectObjects([island, houseFloor, ...friendHouses.map(h => h.floor), ...skyTops], false);
+  const gh = ray.intersectObjects([island, houseFloor, ...friendHouses.map(h => h.floor), ...skyTops, ...FAR.map(I => I.top)], false);
   if (gh.length) {
     moveTarget = gh[0].point.clone(); moveTarget.y = 0; petTarget = null; moveTimer = 0;
     burst(moveTarget.clone().setY(.2), 6, { speed: 1.5, colors: ['#ffffff', '#c9a0ff'], size: .25, life: .6, gravity: -1 });
@@ -2881,7 +2990,8 @@ function updatePlayer(dt, time) {
   const len = Math.hypot(mx, mz);
   const maxS = ((keys.ShiftLeft || keys.ShiftRight) ? 9 : 5.5) * ({ speed: 1.9, shrink: .8, giant: 1.25, frog: .85 }[pfx.id] || 1);
   const tvx = len > .01 ? mx / len * maxS : 0, tvz = len > .01 ? mz / len * maxS : 0;
-  pVel.x = lerp(pVel.x, tvx, damp(12, dt)); pVel.z = lerp(pVel.z, tvz, damp(12, dt));
+  const grip = pState.grounded && onIce(player.position) ? 1.6 : 12;   // the frozen lake is slippery!
+  pVel.x = lerp(pVel.x, tvx, damp(grip, dt)); pVel.z = lerp(pVel.z, tvz, damp(grip, dt));
   if (len > .01) pState.heading = Math.atan2(mx, mz);
   const P = player.position, ox = P.x, oz = P.z;
   // move in small steps so fast potions can't tunnel through thin walls
@@ -2924,10 +3034,10 @@ function updatePlayer(dt, time) {
   else if (pState.grounded && pState.vy <= 0 && P.y - ground < .6) { P.y = ground; pState.vy = 0; }   // stick to slopes going down
   else pState.grounded = false;
   if (P.y < -14) {   // fell off the sky: a friendly cloud brings you back
-    const d = Math.hypot(P.x, P.z) || 1;
-    P.set(P.x / d * (ISLAND_R - 6), 4, P.z / d * (ISLAND_R - 6)); pState.vy = 0; pVel.set(0, 0, 0); selfLev = 0;
+    const I = isleAt(P.x, P.z), cx = I ? I.x : 0, cz = I ? I.z : 0, d = Math.hypot(P.x - cx, P.z - cz) || 1, rr0 = (I ? I.r : ISLAND_R) - 6;
+    P.set(cx + (P.x - cx) / d * rr0, 4, cz + (P.z - cz) / d * rr0); pState.vy = 0; pVel.set(0, 0, 0); selfLev = 0;
     burst(P.clone(), 30, { speed: 4, colors: ['#ffffff', '#cfe3ff', '#c9a0ff'], size: .6, life: 1.2, gravity: -.5 });
-    toast('Whoosh! A friendly cloud carried you back to Starvale.', 3500, 'sparkle'); sfx('poof');
+    toast(`Whoosh! A friendly cloud carried you back to ${I ? I.name : 'Starvale'}.`, 3500, 'sparkle'); sfx('poof');
   }
   player.rotation.y = angleLerp(player.rotation.y, pState.heading, damp(12, dt));
   const sp = Math.hypot(pVel.x, pVel.z), k = Math.min(1, sp / 4);
@@ -2993,7 +3103,7 @@ function updateWorld(dt, time) {
   if (bubbleT <= 0) { bubbleT = .12; emit({ pos: tmpV.copy(cauldronPos).add(new THREE.Vector3(rr(-.5, .5), 0, rr(-.5, .5))), vel: new THREE.Vector3(0, rr(.4, 1), 0), life: rr(.6, 1.2), size: rr(.12, .28), color: rpick(cauldronCols) }); }
   for (const c of crystals) if (Math.random() < dt * 1.5) emit({ pos: tmpV.copy(c.g.position).add(new THREE.Vector3(rr(-.8, .8), rr(.5, 2), rr(-.8, .8))), vel: new THREE.Vector3(0, .4, 0), life: 1.4, size: .25, color: c.col, tex: starTex, spin: 2 });
 
-  for (const c of clouds) { c.a += c.sp * dt; c.g.position.set(Math.cos(c.a) * c.r, c.y + Math.sin(time * .3 + c.r) * .6, Math.sin(c.a) * c.r); }
+  for (const c of clouds) { c.a += c.sp * dt; c.g.position.set(skyO.x + Math.cos(c.a) * c.r, c.y + Math.sin(time * .3 + c.r) * .6, skyO.z + Math.sin(c.a) * c.r); }
   for (const m of minis) { m.g.position.y = m.by + Math.sin(time * .6 + m.ph) * 1.2; m.g.rotation.y += dt * .03; }
   for (const l of lilies) l.g.position.y = waveH(l.g.position.x, l.g.position.z, time) + .01;
   for (const f of fireflies) {
@@ -3052,7 +3162,7 @@ const QUESTS = {
       ask: 'Help! Bugs escaped from my server! Zap 5 of them near my man cave with Star Shot.',
       done: 'You squashed every bug! My servers are happy again.' },
     { id: 'usb', title: 'Lost USB Stick', type: 'collect', item: 'usb', need: 1, reward: 4,
-      ask: 'I dropped my USB stick with all my game saves somewhere on the island. Can you find it?',
+      ask: "I lost my USB stick with all my game saves! I think I left it at Nikki's cottage when we were gaming there. Can you find it?",
       done: 'My game saves! You are a lifesaver!' },
     { id: 'signal', title: 'Rainbow Wi-Fi', type: 'spell', item: 'rainbow', need: 2, reward: 5,
       ask: 'My Wi-Fi is so slow! I read that rainbows boost the signal. Can you cast Rainbow twice?',
@@ -3119,11 +3229,15 @@ function updateStarsUI() {
 function unlockSpell(i) { SPELLS[i].locked = false; spellBtns[i].style.display = ''; }
 
 // --- the world objects quests need ---
+// items that always turn up in one particular place instead of a random spot
+const FIXED_SPOT = {
+  usb: () => new THREE.Vector3(HOUSE.x - 1.7, 0, HOUSE.z - 2.6),   // on the floor of Nikki's cottage, by the foot of her bed
+};
 function makeQuestItem(kind, giver) {
   const g = new THREE.Group(), inner = new THREE.Group(); g.add(inner);
   let col = '#fff09a';
   if (kind === 'starflower') {
-    mk(new THREE.CylinderGeometry(.03, .03, .55, 5), toon('#5cbf5c'), 0, .27, 0, inner, false);
+    mk(new CylGeo(.03, .03, .55, 5), toon('#5cbf5c'), 0, .27, 0, inner, false);
     const st = mk(new THREE.ExtrudeGeometry((() => { const s = new THREE.Shape(); for (let i = 0; i < 10; i++) { const r = i % 2 ? .1 : .24, a = Math.PI / 2 + i * Math.PI / 5; i ? s.lineTo(Math.cos(a) * r, Math.sin(a) * r) : s.moveTo(Math.cos(a) * r, Math.sin(a) * r); } return s; })(), { depth: .05, bevelEnabled: false }),
       toon('#ffd84d', { emissive: '#ffb000', emissiveIntensity: .6 }), 0, .62, 0, inner, false);
     st.geometry.center(); col = '#ffe066';
@@ -3132,7 +3246,7 @@ function makeQuestItem(kind, giver) {
     c.scale.set(.7, 1.5, .7); col = '#8fe8ff';
   } else if (kind === 'bone') {
     const bm = toon('#fffaf0');
-    mk(new THREE.CylinderGeometry(.05, .05, .5, 8), bm, 0, .35, 0, inner, false).rotation.z = Math.PI / 2;
+    mk(new CylGeo(.05, .05, .5, 8), bm, 0, .35, 0, inner, false).rotation.z = Math.PI / 2;
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) ball(bm, sx * .26, .35 + sz * .06, 0, .08, .08, .08, inner, false);
     ball(toon('#9c6b48'), 0, 0, 0, .55, .14, .45, g, false); col = '#ffffff';
   } else if (kind === 'usb') {
@@ -3141,15 +3255,36 @@ function makeQuestItem(kind, giver) {
   } else if (kind === 'ball') {
     ball(toon('#ff4d5e'), 0, .38, 0, .3, .3, .3, inner, false);
     ball(toon('#ffffff'), 0, .38, 0, .305, .07, .305, inner, false); col = '#ff7a8a';
+  } else if (kind === 'snowflake') {
+    const m = toon('#e8f8ff', { emissive: '#8fe8ff', emissiveIntensity: .7 });
+    for (let k = 0; k < 3; k++) { const b = mk(Box(.07, .62, .05), m, 0, .55, 0, inner, false); b.rotation.z = k * Math.PI / 3; }
+    ball(m, 0, .55, 0, .09, .09, .06, inner, false); col = '#bff3ff';
+  } else if (kind === 'mitten') {
+    const m = toon('#ff5a6e'), w = toon('#ffffff');
+    ball(m, 0, .45, 0, .2, .26, .1, inner, false);
+    ball(m, .17, .5, 0, .07, .12, .07, inner, false).rotation.z = -.5;
+    mk(new CylGeo(.17, .17, .1, 12), w, 0, .22, 0, inner, false);
+    for (let k = 0; k < 3; k++) ball(w, -.08 + k * .08, .5 + (k % 2) * .08, .1, .03, .03, .02, inner, false);
+    col = '#ffb3c0';
+  } else if (kind === 'gem') {
+    const c = mk(new THREE.OctahedronGeometry(.3), toon('#ffb347', { emissive: '#ff5a1f', emissiveIntensity: .9, flatShading: true }), 0, .5, 0, inner, false);
+    c.scale.set(.8, 1.3, .8); col = '#ff9a3d';
+  } else if (kind === 'spore') {
+    const m = toon('#c6fff0', { emissive: '#4dffd2', emissiveIntensity: .9, transparent: true, opacity: .9 });
+    ball(m, 0, .55, 0, .2, .2, .2, inner, false);
+    for (let k = 0; k < 5; k++) { const a = k * 1.26; ball(m, Math.cos(a) * .22, .55 + Math.sin(a * 2) * .1, Math.sin(a) * .22, .06, .06, .06, inner, false); }
+    col = '#7dffe0';
   } else if (kind === 'curry') {
-    mk(new THREE.CylinderGeometry(.18, .13, .12, 14), toon('#ffffff'), 0, 0, 0, inner, false);
+    mk(new CylGeo(.18, .13, .12, 14), toon('#ffffff'), 0, 0, 0, inner, false);
     ball(toon('#c8751a'), 0, .05, 0, .15, .04, .15, inner, false);
   }
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: col, transparent: true, opacity: .7, blending: THREE.AdditiveBlending, depthWrite: false }));
   halo.scale.setScalar(1.8); halo.position.y = .5; inner.add(halo);
   if (kind !== 'curry') {
-    let pos = randomTarget();
-    for (let i = 0; i < 20 && distXZ(pos) < 8; i++) pos = randomTarget();
+    const I = giver && FOLK_ISLE[giver] ? ISLE_BY_ID.get(FOLK_ISLE[giver]) : null;
+    const spot = () => I ? isleSpot(I) : randomTarget();
+    let pos = FIXED_SPOT[kind] ? FIXED_SPOT[kind]() : spot();
+    for (let i = 0; !FIXED_SPOT[kind] && i < 20 && distXZ(pos) < 8; i++) pos = spot();
     g.position.copy(pos); scene.add(g);
     questItems.push({ kind, giver, g, inner, ph: Math.random() * 6 });
   }
@@ -3163,7 +3298,7 @@ function makeBug() {
   ball(toon('#1d2b22'), 0, .2, .3, .13, .1, .12, body);
   for (const sx of [-1, 1]) {
     ball(new THREE.MeshBasicMaterial({ color: '#ff3b6b' }), sx * .06, .25, .4, .035, .035, .03, body, false);
-    const an = mk(new THREE.CylinderGeometry(.008, .008, .25, 4), toon('#1d2b22'), sx * .06, .38, .38, body, false); an.rotation.set(.6, 0, -sx * .4);
+    const an = mk(new CylGeo(.008, .008, .25, 4), toon('#1d2b22'), sx * .06, .38, .38, body, false); an.rotation.set(.6, 0, -sx * .4);
   }
   const legs = [];
   for (const sx of [-1, 1]) for (const z of [-.15, 0, .15]) { const l = mk(Box(.22, .025, .025), toon('#1d2b22'), sx * .22, .1, z, body, false); legs.push(l); }
@@ -3222,16 +3357,22 @@ function finishQuest(giver, sayer, line) {
   for (let i = 0; i < 12; i++) emit({ pos: at, vel: new THREE.Vector3(rr(-2, 2), rr(2, 5), rr(-2, 2)), life: 1.4, size: rr(.35, .55), color: '#ffd84d', tex: starTex, gravity: 4, spin: 4 });
   sfx('coin');
   refreshQuestUI();
+  setTimeout(checkIsleUnlocks, 2600);
 }
 function questEvent(type, item, pos) {
   for (const giver in activeQ) {
     const a = activeQ[giver], q = a.q;
     if (a.ready || q.type !== type || (item && q.item !== item)) continue;
+    const p = pos || player.position;
+    if (q.isle && (isleAt(p.x, p.z) || {}).id !== q.isle) {   // quests from the far islands only count over there
+      if (type === 'spell' || type === 'flower') toast(`${giver}: "Do it on ${ISLE_BY_ID.get(q.isle).name}, please!"`, 2600, 'scroll');
+      continue;
+    }
     if (type === 'flower') {
       // anywhere around Dusty's red house counts (front, sides and back garden)
-      const p = pos || player.position, h = FRIENDS.dusty;
-      if (Math.hypot(p.x - h.x, p.z - h.z) > 15) {
-        toast(`${giver}: "Closer to my red house, please!"`, 2600, 'flower');
+      const h = q.near || FRIENDS.dusty;
+      if (Math.hypot(p.x - h.x, p.z - h.z) > (q.nearR || 15)) {
+        toast(`${giver}: "${q.nearMsg || 'Closer to my red house, please!'}"`, 2600, 'flower');
         continue;
       }
     }
@@ -3580,13 +3721,13 @@ const CAULDRON_BASE = ['#8fff9f', '#3dff6e'];
 function makeIngredientMesh(kind, col) {
   const g = new THREE.Group(), inner = new THREE.Group(); g.add(inner);
   if (kind === 'flower') {
-    mk(new THREE.CylinderGeometry(.025, .025, .4, 5), toon('#5cbf5c'), 0, .2, 0, inner, false);
+    mk(new CylGeo(.025, .025, .4, 5), toon('#5cbf5c'), 0, .2, 0, inner, false);
     const petal = toon('#ffb3d9', { emissive: '#ff6bbf', emissiveIntensity: .25 });
     for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; ball(petal, Math.cos(a) * .13, .45, Math.sin(a) * .13, .1, .05, .1, inner, false); }
     ball(toon('#ffd84d', { emissive: '#ffb000', emissiveIntensity: .5 }), 0, .47, 0, .07, .05, .07, inner, false);
   } else if (kind === 'shroom') {
-    mk(new THREE.CylinderGeometry(.07, .1, .3, 8), toon('#fff4e0'), 0, .15, 0, inner, false);
-    const cap = mk(new THREE.SphereGeometry(.24, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), glow(toon('#7fb2ff', { emissive: '#4a7fff', emissiveIntensity: .9 }), .2, 1.4), 0, .28, 0, inner, false);
+    mk(new CylGeo(.07, .1, .3, 8), toon('#fff4e0'), 0, .15, 0, inner, false);
+    const cap = mk(new SphGeo(.24, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), glow(toon('#7fb2ff', { emissive: '#4a7fff', emissiveIntensity: .9 }), .2, 1.4), 0, .28, 0, inner, false);
     cap.scale.y = .8;
     for (const [x, z] of [[.1, .05], [-.08, .1], [0, -.12]]) ball(new THREE.MeshBasicMaterial({ color: '#ffffff' }), x, .43, z, .035, .02, .035, inner, false);
   } else if (kind === 'crystal') {
@@ -3798,9 +3939,9 @@ function makeFrog(hatMat) {
     ball(green, sx * .42, .14, -.12, .2, .12, .32, body);
     ball(green, sx * .3, .12, .38, .11, .08, .14, body);
   }
-  mk(new THREE.TorusGeometry(.12, .02, 6, 14, Math.PI), eyeMat, 0, .47, .5, body, false).rotation.z = Math.PI;
-  const hat = mk(new THREE.ConeGeometry(.2, .45, 14), hatMat, 0, 1.05, .05, body, false); hat.rotation.z = .25;
-  mk(new THREE.CylinderGeometry(.3, .3, .04, 16), hatMat, 0, .84, .05, body, false);
+  mk(new TorGeo(.12, .02, 6, 14, Math.PI), eyeMat, 0, .47, .5, body, false).rotation.z = Math.PI;
+  const hat = mk(new ConeGeo(.2, .45, 14), hatMat, 0, 1.05, .05, body, false); hat.rotation.z = .25;
+  mk(new CylGeo(.3, .3, .04, 16), hatMat, 0, .84, .05, body, false);
   g.visible = false;
   return { g, body };
 }
@@ -4112,7 +4253,7 @@ function onRemoteSpell(msg) {
     const cx = x + Math.sin(h) * 2.6, cz = z + Math.cos(h) * 2.6;
     for (let i = 0; i < 18; i++) {
       const a = Math.random() * 6.28, dd = Math.sqrt(Math.random()) * 3.3, fx = cx + Math.cos(a) * dd, fz = cz + Math.sin(a) * dd;
-      if (Math.hypot(fx, fz) > ISLAND_R - 2 || Math.hypot(fx - POND.x, fz - POND.z) < POND.r) continue;
+      if (!onLand(fx, fz) || Math.hypot(fx - POND.x, fz - POND.z) < POND.r || inLava(fx, fz)) continue;
       spawnFlower(fx, fz, i * .05);
     }
     if (close) sfx('flower');
@@ -4184,8 +4325,8 @@ const XMAS = { x: 4.5, z: -4.5 };
 const xmasTree = new THREE.Group(); xmasTree.position.set(XMAS.x, 0, XMAS.z); scene.add(xmasTree);
 {
   const g = xmasTree;
-  mk(new THREE.CylinderGeometry(.4, .55, 1.4, 10), trunkMat, 0, .7, 0, g);
-  mk(new THREE.CylinderGeometry(1.1, .9, .7, 12), toon('#d94a5a'), 0, .35, 0, g);
+  mk(new CylGeo(.4, .55, 1.4, 10), trunkMat, 0, .7, 0, g);
+  mk(new CylGeo(1.1, .9, .7, 12), toon('#d94a5a'), 0, .35, 0, g);
   const treeMat = toon('#2f9a5c');
   const tiers = [[2.6, 2.4, 2.0], [2.1, 2.2, 3.5], [1.6, 2.0, 4.9], [1.05, 1.7, 6.2]];
   tiers.forEach(([r, h, y], ti) => {
@@ -4233,12 +4374,12 @@ function makeSnowman(x, z, rot) {
   const coal = toon('#2b1d3a');
   ball(coal, -.14, 2.65, .36, .05, .06, .05, g); ball(coal, .14, 2.65, .36, .05, .06, .05, g);
   for (let i = 0; i < 3; i++) ball(coal, 0, 1.55 + i * .2, .55 - Math.abs(i - 1) * .02, .05, .05, .05, g);
-  const nose = mk(new THREE.ConeGeometry(.07, .4, 8), toon('#ff8a3d'), 0, 2.55, .52, g); nose.rotation.x = Math.PI / 2;
-  mk(new THREE.TorusGeometry(.42, .1, 8, 20), toon('#ff4d6d'), 0, 2.2, 0, g).rotation.x = Math.PI / 2;
+  const nose = mk(new ConeGeo(.07, .4, 8), toon('#ff8a3d'), 0, 2.55, .52, g); nose.rotation.x = Math.PI / 2;
+  mk(new TorGeo(.42, .1, 8, 20), toon('#ff4d6d'), 0, 2.2, 0, g).rotation.x = Math.PI / 2;
   const tail = mk(Box(.18, .5, .06), toon('#ff4d6d'), .25, 1.98, .38, g); tail.rotation.z = .2;
-  mk(new THREE.CylinderGeometry(.3, .3, .05, 16), coal, 0, 2.86, 0, g);
-  mk(new THREE.CylinderGeometry(.22, .22, .45, 16), coal, 0, 3.08, 0, g);
-  for (const sx of [-1, 1]) { const arm = mk(new THREE.CylinderGeometry(.03, .04, .9, 5), trunkMat, sx * .75, 1.95, 0, g, false); arm.rotation.z = sx * -1.0; }
+  mk(new CylGeo(.3, .3, .05, 16), coal, 0, 2.86, 0, g);
+  mk(new CylGeo(.22, .22, .45, 16), coal, 0, 3.08, 0, g);
+  for (const sx of [-1, 1]) { const arm = mk(new CylGeo(.03, .04, .9, 5), trunkMat, sx * .75, 1.95, 0, g, false); arm.rotation.z = sx * -1.0; }
   circles.push({ x, z, r: .8 });
 }
 makeSnowman(-4.5, -6, .5); placed.push({ x: -4.5, z: -6, r: 1.4 });
@@ -4279,7 +4420,7 @@ function updateChristmas(dt, time) {
 // --- the pond: waves, ripples and the bobbing boat ---
 const DEEP = new THREE.Color('#5fb0f2'), SHALLOW = new THREE.Color('#aee0ff'), CREST = new THREE.Color('#effaff');
 const ripples = [];
-const rippleGeo = new THREE.RingGeometry(.86, 1, 32);
+const rippleGeo = new RingGeo(.86, 1, 32);
 function ripple(x, z, size = 1) {
   const m = mk(rippleGeo, new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .7, depthWrite: false }), x, .14, z, scene, false);
   m.rotation.x = -Math.PI / 2; m.scale.setScalar(.12);
@@ -4354,8 +4495,8 @@ function makeFishMesh(f) {
   const g = new THREE.Group();
   const mat = toon(f.color, f.glow ? { emissive: f.color, emissiveIntensity: .45 } : {}), fin = toon(f.col2, f.glow ? { emissive: f.col2, emissiveIntensity: .45 } : {});
   ball(mat, 0, 0, 0, .15, .2, .36, g, false);
-  const tail = mk(new THREE.ConeGeometry(.2, .28, 4), fin, 0, 0, -.44, g, false); tail.rotation.x = Math.PI / 2; tail.scale.x = .3;
-  const top = mk(new THREE.ConeGeometry(.1, .2, 4), fin, 0, .2, -.02, g, false); top.scale.z = 2; top.scale.x = .3;
+  const tail = mk(new ConeGeo(.2, .28, 4), fin, 0, 0, -.44, g, false); tail.rotation.x = Math.PI / 2; tail.scale.x = .3;
+  const top = mk(new ConeGeo(.1, .2, 4), fin, 0, .2, -.02, g, false); top.scale.z = 2; top.scale.x = .3;
   for (const sx of [-1, 1]) { ball(whiteMat, sx * .1, .06, .22, .055, .055, .04, g, false); ball(eyeMat, sx * .12, .06, .24, .03, .03, .02, g, false); }
   if (f.glow) {
     const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: f.color, transparent: true, opacity: .7, blending: THREE.AdditiveBlending, depthWrite: false }));
@@ -4381,7 +4522,7 @@ fishLine.frustumCulled = false; fishLine.visible = false; scene.add(fishLine);
 const bobber = new THREE.Group(); bobber.visible = false; scene.add(bobber);
 ball(toon('#ff5c7a'), 0, .07, 0, .12, .1, .12, bobber, false);
 ball(toon('#ffffff'), 0, -.02, 0, .12, .07, .12, bobber, false);
-mk(new THREE.CylinderGeometry(.015, .015, .16, 5), toon('#ffffff'), 0, .22, 0, bobber, false);
+mk(new CylGeo(.015, .015, .16, 5), toon('#ffffff'), 0, .22, 0, bobber, false);
 const biteTex = canvasTex(64, 64, g => {
   g.fillStyle = '#ffffff'; g.beginPath(); g.arc(32, 32, 28, 0, Math.PI * 2); g.fill();
   g.fillStyle = '#ff5c7a'; g.font = 'bold 44px Fredoka, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('!', 32, 35);
