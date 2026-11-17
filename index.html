@@ -92,6 +92,18 @@
   #nickWrap{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 16px;font-size:16px;font-weight:700}
   #nick{font-family:inherit;font-size:16px;font-weight:600;color:var(--ink);background:#fffdf6;border:3px solid var(--edge);border-radius:12px;padding:8px 12px;width:min(230px,60vw);outline:none;user-select:text;-webkit-user-select:text;box-shadow:inset 0 3px 0 var(--paper-2)}
   #nick:focus{border-color:var(--plum)}
+  #acct{margin:0 0 14px;padding:10px 14px;border:3px dashed var(--edge);border-radius:18px;background:#fffdf6;font-size:15px;font-weight:600;color:var(--ink-soft)}
+  #acct .atitle{font-weight:700;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px}
+  #acctForm{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+  #acct input{font-family:inherit;font-size:15px;font-weight:600;color:var(--ink);background:#fff;border:3px solid var(--edge);border-radius:12px;padding:6px 10px;width:min(150px,38vw);outline:none;user-select:text;-webkit-user-select:text;box-shadow:inset 0 3px 0 var(--paper-2)}
+  #acct input:focus{border-color:var(--plum)}
+  #acct .bigbtn{font-size:15px;padding:6px 14px;border-radius:12px}
+  #acctIn{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px}
+  #acctIn[hidden],#acctForm[hidden]{display:none}
+  #acctIn b{color:var(--plum)}
+  #acctMsg{margin-top:6px;font-size:14px;min-height:0}
+  #acctMsg:empty{display:none}
+  #acctMsg.bad{color:#c44b70}
   .label .qm{display:inline-block;background:var(--gold);color:var(--ink);border-radius:50%;width:16px;height:16px;line-height:16px;text-align:center;font-size:12px;font-weight:800}
   .label .ic{width:12px;height:12px;vertical-align:-1px}
   #quests{padding:10px 14px;box-sizing:border-box;min-width:220px;max-width:280px;display:none;font-size:14px;font-weight:500}
@@ -377,6 +389,17 @@
   <div class="card panel">
     <h1><span class="ic big" data-ic="sparkle"></span> Starvale <span class="ic big" data-ic="sparkle"></span></h1>
     <p>Help the wizards with their quests, earn stars and explore new islands.</p>
+    <div id="acct">
+      <div class="atitle" id="acctTitle"><span class="ic" data-ic="star"></span> Keep your stars safe with an account</div>
+      <form id="acctForm" autocomplete="on">
+        <input id="acctName" name="username" maxlength="16" autocomplete="username" spellcheck="false" placeholder="Name">
+        <input id="acctPass" name="password" type="password" maxlength="72" autocomplete="current-password" placeholder="Password">
+        <button class="bigbtn" id="acctLogin" type="submit">Log in</button>
+        <button class="bigbtn ghost" id="acctNew" type="button">New account</button>
+      </form>
+      <div id="acctIn" hidden><span class="ic" data-ic="check"></span><span>Logged in as <b id="acctWho"></b>, your progress is saved online.</span><button class="bigbtn ghost" id="acctOut" type="button">Log out</button></div>
+      <div id="acctMsg"></div>
+    </div>
     <div id="pickTitle">Who are you?</div>
     <div id="chars"></div>
     <div id="maker" hidden></div>
@@ -1951,7 +1974,7 @@ function makerLook(d) {
 const RESERVED = Object.keys(CHARACTERS).map(n => n.toLowerCase());
 const makerName = d => d.name || 'Little Wizard';
 const myWizard = (() => { try { return sanitizeMaker(JSON.parse(localStorage.getItem('starvale-custom') || 'null')); } catch (e) { return sanitizeMaker(null); } })();
-function storeWizard() { try { localStorage.setItem('starvale-custom', JSON.stringify(myWizard)); } catch (e) { /* ignore */ } }
+function storeWizard() { try { localStorage.setItem('starvale-custom', JSON.stringify(myWizard)); } catch (e) { /* ignore */ } acctStore('wizard', myWizard); }
 
 // ================= creatures =================
 function makeBunny(col) {
@@ -2670,14 +2693,21 @@ refreshMaker(false);
 const nickEl = document.getElementById('nick');
 try { nickEl.value = localStorage.getItem('starvale-nick') || ''; } catch (e) { /* no storage */ }
 nickEl.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') startBtn.click(); });
-startBtn.addEventListener('click', () => {
+let startWaiting = false;
+startBtn.addEventListener('click', async () => {
+  initAudio(); if (actx && actx.state === 'suspended') actx.resume();
+  if (!started && acct.busy) {   // still logging you back in: wait, so the right save loads
+    if (startWaiting) return;
+    startWaiting = true; startBtn.disabled = true;
+    await acct.busy;
+    startWaiting = false; startBtn.disabled = false;
+  }
   if (mineBtn.classList.contains('sel')) myNick = cleanNick(myWizard.name);
   else {
     myNick = cleanNick(nickEl.value);
     try { localStorage.setItem('starvale-nick', myNick); } catch (e) { /* ignore */ }
   }
   if (started) mpStart();
-  initAudio(); if (actx && actx.state === 'suspended') actx.resume();
   overlay.classList.add('hidden');
   if (!started) {
     started = true; startBtn.innerHTML = 'Keep playing ' + iconHTML('sparkle');
@@ -2691,6 +2721,7 @@ startBtn.addEventListener('click', () => {
     initDaily();
     mpStart();
     updateIsleRow(); setTimeout(checkIsleUnlocks, 7800);
+    if (acct.claimed) setTimeout(() => toast('Your progress from this device is now saved in your account!', 4500, 'check'), 1400);
     if (playerIsCustom) setTimeout(() => toast(`Welcome to Starvale, ${playerName}! Every wizard on the island has a quest for you.`, 4000, 'wand'), 400);
     else setTimeout(() => toast(`Welcome to Starvale, ${playerName}! Your house is right in front of you.`, 4000, 'home'), 400);
     setTimeout(() => toast('Wizards with a ! have a quest for you!', 4500, 'wand'), 2600);
@@ -3378,18 +3409,26 @@ const SHOP = [
   { id: 'rainbowhat', icon: 'hatRainbow', name: 'Rainbow Hat', desc: 'A hat that keeps changing colour', price: 8, kind: 'hat', val: 'rainbow' },
   { id: 'galaxyrobe', icon: 'robe', name: 'Galaxy Robe', desc: 'A deep blue robe that glows like the night sky', price: 6, kind: 'robe', val: 'galaxy' },
 ];
-const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null, fish: {}, daily: null, streak: 0, lastDay: null, wisps: {}, isles: [], room: null };
+const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null, fish: {}, daily: null, streak: 0, lastDay: null, wisps: {}, isles: [], room: null, at: 0 };
 const activeQ = {};          // giver name -> { q, progress, ready, target }
 const questItems = [];       // collectible things in the world
 const bugs = [];
-const saveKey = () => 'starvale-save-' + (playerIsCustom ? '*custom' : playerName);
+const saveSlot = () => playerIsCustom ? '*custom' : playerName;
+const saveKey = () => 'starvale-save-' + saveSlot();
+// with an account the save comes from Supabase (see accounts & cloud saves), otherwise from this device
 function loadSave() {
-  try { const d = JSON.parse(localStorage.getItem(saveKey()) || 'null'); if (d) Object.assign(save, d); } catch (e) { /* no storage, start fresh */ }
+  const d = acctOn() ? acctPick(saveSlot()) : readLocal(saveKey());
+  if (d && typeof d === 'object' && !Array.isArray(d)) Object.assign(save, d);
+  if (!Array.isArray(save.owned)) save.owned = [];
   if (save.room && (!Array.isArray(save.room.items) || !Array.isArray(save.room.up))) save.room = null;   // your own room in the Town Hall
   for (const id of save.owned) { const sp = SPELLS.findIndex(s => s.id === id); if (sp >= 0) unlockSpell(sp); }
   applyCosmetics(); updateStarsUI();
 }
-function storeSave() { try { localStorage.setItem(saveKey(), JSON.stringify(save)); } catch (e) { /* ignore */ } }
+function storeSave() {
+  save.at = Date.now();
+  if (acctOn()) acctStore(saveSlot(), save);
+  else try { localStorage.setItem(saveKey(), JSON.stringify(save)); } catch (e) { /* ignore */ }
+}
 function updateStarsUI() {
   document.getElementById('stars').textContent = save.stars;
   document.getElementById('shopStars').textContent = save.stars;
@@ -4489,6 +4528,156 @@ function onRemoteWave(msg) {
   const to = msg.data && msg.data.to;
   if (to && to === myPeer) { toast(`${who(r)} waves at you! Press E near them to wave back`, 3500, 'wave'); sfx('hello'); }
 }
+
+// ================= accounts & cloud saves =================
+// A simple account (name + password) keeps your progress in Supabase (table starvale_saves, see
+// supabase-saves.sql), so it is still there after closing the game or on another device.
+// Supabase Auth wants an email, so the name becomes <name>@players.starvale.game ("Confirm email"
+// must be off in Supabase). supabase-js remembers the login in localStorage ('starvale-auth'),
+// so you only type it once. Without an account the game saves on this device only, as before.
+// While logged in every save also keeps a copy on this device (starvale-acct-<user>-<slot>):
+// the newest of the two wins, so nothing gets lost when the internet drops for a moment.
+const ACCT_DOMAIN = '@players.starvale.game';
+const ACCT_STORE = 'starvale-auth';
+const acct = { sb: null, user: null, name: '', saves: {}, fetched: false, noTable: false, busy: null, dirty: new Map(), timer: 0, warned: false, claimed: false };
+const acctEl = id => document.getElementById(id);
+const acctOn = () => !!(acct.user && !acct.noTable);
+const acctNameOk = n => /^[A-Za-z0-9_-]{3,16}$/.test(n);
+const acctLocalKey = slot => `starvale-acct-${acct.user.id}-${slot}`;
+const readLocal = key => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { return null; } };
+function acctMsg(text, bad = false) { const m = acctEl('acctMsg'); m.textContent = text; m.classList.toggle('bad', bad); }
+async function acctClient() {
+  if (acct.sb) return acct.sb;
+  if (!SUPABASE.url || !SUPABASE.key) return null;
+  if (!window.supabase) await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js');
+  // its own client (and storage key) so the island and Town Hall connection stays anonymous
+  acct.sb = window.supabase.createClient(SUPABASE.url, SUPABASE.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: ACCT_STORE } });
+  return acct.sb;
+}
+function acctShow() {
+  const on = !!acct.user;
+  acctEl('acctForm').hidden = on; acctEl('acctIn').hidden = !on;
+  acctEl('acctTitle').style.display = on ? 'none' : '';
+  if (on) acctEl('acctWho').textContent = acct.name;
+}
+async function acctSignedIn(user) {
+  acct.user = user;
+  acct.name = cleanNick((user.user_metadata && user.user_metadata.name) || String(user.email || '').split('@')[0]);
+  let res = {};
+  try { res = await acct.sb.from('starvale_saves').select('slot,data'); } catch (e) { res = { error: { code: 'offline' } }; }
+  const { data, error } = res;
+  if (!error && Array.isArray(data)) {
+    acct.fetched = true;
+    for (const r of data) if (r && typeof r.slot === 'string' && r.data && typeof r.data === 'object') acct.saves[r.slot] = r.data;
+  } else if (error && (error.code === 'PGRST205' || error.code === '42P01')) {
+    acct.noTable = true;
+    acctMsg('Online saving is not set up yet (run supabase-saves.sql), so this device keeps your progress.', true);
+  } else acctMsg("Can't reach the cloud right now, playing with the copy on this device.", true);
+  // the look of your own wizard travels with your account too
+  if (acct.saves.wizard) {
+    Object.assign(myWizard, sanitizeMaker(acct.saves.wizard));
+    try { localStorage.setItem('starvale-custom', JSON.stringify(myWizard)); } catch (e) { /* ignore */ }
+    makerNameEl.value = myWizard.name; refreshMaker();
+  } else if (acctOn() && myWizard.name) acctStore('wizard', myWizard);
+  if (!nickEl.value) nickEl.value = acct.name;
+  acctShow();
+}
+// which save to play with: the newest of the online one and this device's copy
+function acctPick(slot) {
+  const cloud = acct.saves[slot], local = readLocal(acctLocalKey(slot));
+  let d = !cloud ? local : !local ? cloud : (num(local.at) > num(cloud.at) ? local : cloud);
+  if (!d && acct.fetched) {
+    // first time with this character on this account: bring along what you had before you had an account
+    try {
+      if (!localStorage.getItem('starvale-claimed-' + slot)) {
+        d = readLocal('starvale-save-' + slot);
+        if (d) { localStorage.setItem('starvale-claimed-' + slot, acct.user.id); acct.claimed = true; }
+      }
+    } catch (e) { /* no storage */ }
+  }
+  if (d && d !== cloud) acctStore(slot, d);   // newer than the cloud: send it up
+  return d;
+}
+function acctStore(slot, data) {
+  if (!acctOn()) return;
+  try { localStorage.setItem(acctLocalKey(slot), JSON.stringify(data)); } catch (e) { /* ignore */ }
+  acct.dirty.set(slot, data);
+  clearTimeout(acct.timer); acct.timer = setTimeout(acctFlush, 1500);
+}
+async function acctFlush() {
+  clearTimeout(acct.timer);
+  if (!acctOn() || !acct.dirty.size) return;
+  const rows = [...acct.dirty.entries()].map(([slot, data]) => ({ user_id: acct.user.id, slot, data: JSON.parse(JSON.stringify(data)), updated_at: new Date().toISOString() }));
+  acct.dirty.clear();
+  let ok = false;
+  try {
+    const { error } = await acct.sb.from('starvale_saves').upsert(rows, { onConflict: 'user_id,slot' });
+    ok = !error;
+    if (error) console.warn('Starvale: could not save online', error.message);
+  } catch (e) { /* offline */ }
+  if (ok) { for (const r of rows) acct.saves[r.slot] = r.data; return; }
+  for (const r of rows) if (!acct.dirty.has(r.slot)) acct.dirty.set(r.slot, r.data);   // try again later
+  clearTimeout(acct.timer); acct.timer = setTimeout(acctFlush, 15000);
+  if (!acct.warned && started) { acct.warned = true; toast("Can't reach the cloud right now. Your progress is kept on this device until it's back.", 4500, 'star'); }
+}
+addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') acctFlush(); });
+addEventListener('pagehide', () => { acctFlush(); });
+function acctError(e, isNew) {
+  const code = (e && e.code) || '', text = String((e && e.message) || '').toLowerCase();
+  if (code === 'confirm' || code === 'email_not_confirmed' || text.includes('confirm')) return 'Supabase still wants an email check: turn off "Confirm email" in the Supabase dashboard.';
+  if (code === 'user_already_exists' || text.includes('already registered')) return 'That name is already taken, pick another one!';
+  if (code === 'invalid_credentials' || text.includes('invalid login')) return "That name and password don't match.";
+  if (code === 'weak_password') return 'Pick a stronger password.';
+  if (code.startsWith('over_') || text.includes('rate limit')) return 'Too many tries, wait a minute and try again.';
+  return isNew ? "Couldn't make the account right now. You can still play, this device keeps your progress." : "Couldn't log in right now. You can still play, this device keeps your progress.";
+}
+async function acctAuth(isNew) {
+  const nameEl = acctEl('acctName'), passEl = acctEl('acctPass');
+  const name = nameEl.value.trim(), pass = passEl.value;
+  if (!acctNameOk(name)) { acctMsg('Your name needs 3 to 16 letters or numbers, no spaces.', true); nameEl.focus(); return; }
+  if (pass.length < 6) { acctMsg('Your password needs at least 6 characters.', true); passEl.focus(); return; }
+  const btns = [acctEl('acctLogin'), acctEl('acctNew')];
+  btns.forEach(b => { b.disabled = true; });
+  acctMsg(isNew ? 'Making your account...' : 'Logging in...');
+  try {
+    const sb = await acctClient();
+    if (!sb) throw new Error('offline');
+    const email = name.toLowerCase() + ACCT_DOMAIN;
+    const res = isNew ? await sb.auth.signUp({ email, password: pass, options: { data: { name } } })
+                      : await sb.auth.signInWithPassword({ email, password: pass });
+    if (res.error) throw res.error;
+    if (!res.data || !res.data.session) throw Object.assign(new Error('confirm'), { code: 'confirm' });
+    passEl.value = '';
+    if (started) { location.reload(); return; }   // already playing as a guest: start again with your account
+    acctMsg('');
+    await acctSignedIn(res.data.session.user);
+    if (isNew) acctMsg(`Welcome, ${acct.name}! Your stars and everything you collect are saved online now.`);
+  } catch (e) { acctMsg(acctError(e, isNew), true); }
+  btns.forEach(b => { b.disabled = false; });
+}
+acctEl('acctForm').addEventListener('submit', e => { e.preventDefault(); acctAuth(false); });
+acctEl('acctNew').addEventListener('click', () => acctAuth(true));
+for (const id of ['acctName', 'acctPass']) acctEl(id).addEventListener('keydown', e => e.stopPropagation());
+acctEl('acctOut').addEventListener('click', async () => {
+  acctEl('acctOut').disabled = true;
+  await acctFlush();
+  try { await acct.sb.auth.signOut({ scope: 'local' }); } catch (e) { /* ignore */ }
+  location.reload();
+});
+// remembered login: pick it up straight away, so Play only has to wait when there is one
+try {
+  if (localStorage.getItem(ACCT_STORE)) {
+    acctMsg('Logging you back in...');
+    acct.busy = (async () => {
+      try {
+        const sb = await acctClient();
+        const { data } = await sb.auth.getSession();
+        acctMsg('');
+        if (data && data.session) await acctSignedIn(data.session.user);
+      } catch (e) { acctMsg(''); }
+    })().finally(() => { acct.busy = null; });
+  }
+} catch (e) { /* no storage */ }
 
 // ================= town hall =================
 // One Town Hall on Starvale that every player decorates and builds on together:
