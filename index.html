@@ -187,6 +187,11 @@
   .pbtn .q{position:absolute;top:-7px;left:-7px;font-size:11px;font-weight:800;color:var(--paper);background:var(--line);border-radius:6px;padding:0 5px;font-family:inherit}
   #brew{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(43,28,60,.45);z-index:11;padding:16px}
   #brew.hidden{display:none}
+  #garden{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(43,28,60,.45);z-index:11;padding:16px}
+  #garden.hidden{display:none}
+  #garden h2{margin:0;font-size:34px;display:flex;align-items:center;justify-content:center;gap:8px}
+  #garden h2 .ic{width:34px;height:34px}
+  #seedTiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;margin:12px 0}
   #brew h2{margin:0;font-size:34px;display:flex;align-items:center;justify-content:center;gap:8px}
   #brew h2 .ic{width:34px;height:34px}
   .brewlabel{font-weight:700;font-size:16px;margin:14px 0 6px;text-align:left}
@@ -388,6 +393,15 @@
   </div>
 </div>
 
+<div id="garden" class="hidden">
+  <div class="card panel">
+    <h2><span class="ic" data-ic="sprout"></span> Plant a seed</h2>
+    <p class="shopsub" id="gardenSub"></p>
+    <div id="seedTiles"></div>
+    <button class="bigbtn ghost" id="gardenClose">Close</button>
+  </div>
+</div>
+
 <div id="fishbook" class="hidden">
   <div class="card panel">
     <h2><span class="ic" data-ic="book"></span> Collection Book</h2>
@@ -497,6 +511,10 @@ const ICON = {
   ingCrystal: svg('<path d="M12 2.5l5.2 6.8L12 21.5 6.8 9.3z" fill="#e2c8ff" stroke="#9b6bff" stroke-width="1.4"/><path d="M6.8 9.3h10.4M12 2.5v19" stroke="#9b6bff" stroke-width="1"/><path d="M9.3 8.2l1.4-2.4" stroke="#fff" stroke-width="1.3"/>'),
   ingBubble: svg('<circle cx="11" cy="12.5" r="7.5" fill="#d8f6ff" fill-opacity=".75" stroke="#5cc1e8" stroke-width="1.4"/><path d="M7 10.5a4.6 4.6 0 0 1 3.6-3.4" stroke="#fff" stroke-width="1.8"/><circle cx="19.2" cy="5.5" r="2.4" fill="#d8f6ff" fill-opacity=".75" stroke="#5cc1e8" stroke-width="1.1"/>'),
 };
+ICON.ingMint = svg('<path d="M12 21v-8" stroke="#4f9a35" stroke-width="1.6"/><path d="M12 13.5C8 13.8 5 11.4 4.6 7.2 8.8 7 11.6 9.2 12 13.5z" fill="#9fe07a" stroke="#4f9a35" stroke-width="1.3"/><path d="M12 12.5c.4-4.6 3.4-7.4 7.6-7.6-.2 4.4-3.2 7.4-7.6 7.6z" fill="#b8f08f" stroke="#4f9a35" stroke-width="1.3"/><path d="M6.8 9.2l3.6 3M17.4 7.2l-3.6 3.6" stroke="#4f9a35" stroke-width=".9"/>');
+ICON.sprout = svg('<path d="M12 20.5v-7" stroke="#4f9a35" stroke-width="1.8"/><path d="M12 14C8.4 14.2 5.6 12 5.2 8.2 9 8 11.6 10 12 14z" fill="#9fe07a" stroke="#4f9a35" stroke-width="1.3"/><path d="M12 12.6c.4-4 3-6.6 6.8-6.8-.2 3.8-2.8 6.4-6.8 6.8z" fill="#b8f08f" stroke="#4f9a35" stroke-width="1.3"/><ellipse cx="12" cy="20.5" rx="6" ry="1.6" fill="#c99a6a" stroke="#8a5a3a" stroke-width="1.1"/>');
+ICON.water = svg('<path d="M12 3.2c2.6 4 5.8 7.2 5.8 10.6a5.8 5.8 0 0 1-11.6 0C6.2 10.4 9.4 7.2 12 3.2z" fill="#9fd8ff" stroke="#4a9fd8" stroke-width="1.4"/><path d="M9.2 14.2a3 3 0 0 0 2.4 2.8" stroke="#fff" stroke-width="1.6"/>');
+ICON.pumpkin = svg('<ellipse cx="8.6" cy="14" rx="4.6" ry="5.6" fill="#ffb36b" stroke="#e07a2a" stroke-width="1.2"/><ellipse cx="15.4" cy="14" rx="4.6" ry="5.6" fill="#ffb36b" stroke="#e07a2a" stroke-width="1.2"/><ellipse cx="12" cy="14" rx="4.4" ry="6" fill="#ffc98a" stroke="#e07a2a" stroke-width="1.2"/><path d="M12 8.2c0-2 .6-3.4 2-4.4" stroke="#6a8a2a" stroke-width="1.8"/>');
 const potionSVG = (col) => svg(`<rect x="9.6" y="1.8" width="4.8" height="2.6" rx=".9" fill="#c9906a" stroke="#9c6b48" stroke-width="1"/><path d="M10.2 4.4v4.4a6.4 6.4 0 1 0 3.6 0V4.4z" fill="#ffffff" fill-opacity=".8" stroke="#8a73b8" stroke-width="1.4"/><path d="M6.02 14.5A6 6 0 1 0 17.98 14.5Z" fill="${col}" stroke="${col}" stroke-width=".8"/><ellipse cx="9.4" cy="12.6" rx="1" ry="1.8" fill="#fff" opacity=".8"/><circle cx="14" cy="17" r=".9" fill="#fff" opacity=".7"/>`);
 ICON.potion = potionSVG('#c9a0ff');
 ICON.flame = svg('<path d="M12 2.8c.6 3.2 4.8 5.4 4.8 10.4a4.8 4.8 0 0 1-9.6 0c0-2.4 1.2-3.8 2.2-4.8.2 1.6 1 2.6 1.8 2.8-.4-3.2-.2-5.8.8-8.4z" fill="#ff8a3d" stroke="#e0561a" stroke-width="1.3"/><path d="M12 13c1 1.2 2 2.2 2 3.6a2 2 0 0 1-4 0c0-1.2.9-2.2 2-3.6z" fill="#ffd84d"/>');
@@ -3286,6 +3304,7 @@ addEventListener('keydown', e => {
     return;
   }
   if (brewOpen()) { if (!e.repeat && (e.code === 'KeyE' || e.code === 'Escape')) closeBrew(); return; }
+  if (gardenOpen()) { if (!e.repeat && (e.code === 'KeyE' || e.code === 'Escape')) closeSeeds(); return; }
   if (townOpen()) { if (!e.repeat && e.code === 'Escape') closeTown(); return; }
   if (deco && started && overlay.classList.contains('hidden')) {   // carrying a decoration
     const dk = { KeyR: decoTurn, KeyC: decoColour, KeyE: decoPlace, Enter: decoPlace, KeyX: decoAway, Delete: decoAway, Escape: decoCancel }[e.code];
@@ -3360,6 +3379,8 @@ function onTap(x, y) {
   }
   // the Town Hall board, the doors to the rooms and the room book
   if (townTap(ray)) return;
+  // the garden plots
+  if (gardenTap(ray)) return;
   // benches, sofas and chairs: sit down (walk there first when it is further away)
   const sg = seatGroups().filter(q => shownInScene(q.g));
   const sh = ray.intersectObjects(sg.flatMap(q => q.hit), true);
@@ -3409,6 +3430,7 @@ function tryPet() {
   if (skyInteract()) return;
   if (nearPortal()) { openTravel(); return; }
   if (townAct(townStation())) return;
+  if (gardenAct()) return;
   const c = nearestCreature(2.8), n = nearestNPC(2.8), rp = nearestRemote(2.8), seat = nearestSeat(1.6);
   if (seat && [c, n, rp].every(q => !q || distXZ(seat.pos) < distXZ(q.g.position))) { sitDown(seat); return; }
   if (rp && (!c || distXZ(rp.g.position) < distXZ(c.g.position)) && (!n || distXZ(rp.g.position) < distXZ(n.g.position))) { waveAt(rp); return; }
@@ -3423,7 +3445,7 @@ function petCreature(c) {
 function jump() {
   if (pState.act) { endAct(true); return; }
   if (floating()) { if (player.position.y < 12) { pState.vy = Math.max(pState.vy, 5.5); pState.grounded = false; sfx('jump'); } return; }
-  if (pState.grounded) { pState.vy = pfx.id === 'frog' ? 10 : 8; pState.grounded = false; sfx(pfx.id === 'frog' ? 'ribbit' : 'jump'); }
+  if (pState.grounded) { pState.vy = pfx.id === 'frog' ? 10 : pfx.id === 'bouncy' ? 15 : 8; if (pfx.id === 'bouncy') burst(player.position.clone().setY(player.position.y + .2), 12, { speed: 3, colors: ['#9ff0d8', '#ffffff'], size: .35, life: .6, gravity: 2 }); pState.grounded = false; sfx(pfx.id === 'frog' ? 'ribbit' : 'jump'); }
 }
 
 // ================= update =================
@@ -3588,7 +3610,7 @@ function updateUI() {
   const rpNear = started ? nearestRemote(2.8) : null;
   const station = started ? nearStation() : null;
   const skyH = started && !station ? (nearPortal() ? `${iconHTML('portal')} Press <b>E</b> or tap the portal to travel to other islands` : skyHint()) : null;
-  const townH = started && !station ? townHint() : null;
+  const townH = started && !station ? (townHint() || gardenHint()) : null;
   const sitting = started && pState.act && (pState.act.id === 'sit' || pState.act.id === 'sleep');
   const seatNear = started && !pState.act ? nearestSeat(1.6) : null;
   if (fishing.state || deco || emoteOpen()) hintEl.style.display = 'none';
@@ -3973,6 +3995,8 @@ const DAILY_TASKS = [
   { id: 'happy4', text: 'Make 4 critters happy', ev: 'happy', need: 4, reward: 3 },
   { id: 'ing6', text: 'Pick up 6 ingredients', ev: 'ing', need: 6, reward: 3 },
   { id: 'brew2', text: 'Brew 2 potions', ev: 'brew', need: 2, reward: 4 },
+  { id: 'water3', text: 'Water 3 plants in the garden', ev: 'water', need: 3, reward: 3 },
+  { id: 'harvest1', text: 'Pick something you grew in the garden', ev: 'harvest', need: 1, reward: 4 },
   { id: 'spells15', text: 'Cast 15 spells', ev: 'cast', need: 15, reward: 3 },
   { id: 'flowers3', text: 'Cast Flower Field 3 times', ev: 'cast', item: 'flower', need: 3, reward: 3 },
   { id: 'rainbow2', text: 'Make 2 rainbows', ev: 'cast', item: 'rainbow', need: 2, reward: 3 },
@@ -4304,6 +4328,7 @@ const INGREDIENTS = {
   shroom: { name: 'Moon Mushroom', icon: 'ingShroom', color: '#7fb2ff', max: 5, tip: 'They only glow at night. Try the Day & Night spell!' },
   crystal: { name: 'Crystal Shard', icon: 'ingCrystal', color: '#d4b0ff', max: 4, tip: 'Look next to the big glowing crystals.' },
   bubble: { name: 'Pond Bubble', icon: 'ingBubble', color: '#b8f0ff', max: 3, tip: 'They float up from the pond.' },
+  mint: { name: 'Wild Mint', icon: 'ingMint', color: '#9fe07a', max: 4, tip: 'Little green leaves in the grass. You can grow them in the garden too!' },
 };
 const ING_KEYS = Object.keys(INGREDIENTS);
 const RECIPES = [
@@ -4313,6 +4338,9 @@ const RECIPES = [
   { id: 'float', name: 'Floaty Potion', mix: ['bubble', 'bubble'], color: '#8fd0ff', desc: 'Float and fly (hold Space)', hint: 'Light as two bubbles...', dur: 20 },
   { id: 'colour', name: 'Colour Potion', mix: ['bubble', 'flower'], color: '#c9a0ff', desc: 'Your robe gets a surprise colour', hint: 'A flower in a bubble?', dur: 30 },
   { id: 'frog', name: 'Frog Potion', mix: ['bubble', 'shroom'], color: '#7ad37a', desc: 'Ribbit! You turn into a frog', hint: 'Pond things and night things...', dur: 15 },
+  { id: 'glow', name: 'Glow Potion', mix: ['mint', 'shroom'], color: '#fff38a', desc: 'Glow like a little lantern', hint: 'A leaf of mint and something that glows at night...', dur: 45 },
+  { id: 'bouncy', name: 'Bouncy Potion', mix: ['bubble', 'mint'], color: '#9ff0d8', desc: 'Jump super high', hint: 'Mint in a bubble?', dur: 25 },
+  { id: 'bloom', name: 'Blossom Potion', mix: ['flower', 'mint'], color: '#ffc2e6', desc: 'Flowers pop up where you walk', hint: 'A star blossom and a fresh green leaf...', dur: 30 },
   { id: 'herb', name: 'Herb Potion', mix: ['crystal', 'flower', 'flower'], color: '#9fe07a', desc: "For Ryan's curry (not for drinking!)", hint: 'Two star blossoms and a crystal shard.', drink: false },
 ];
 const mixKey = arr => [...arr].sort().join('+');
@@ -4340,6 +4368,14 @@ function makeIngredientMesh(kind, col) {
   } else if (kind === 'crystal') {
     const c = mk(new THREE.OctahedronGeometry(.18), toon('#ffffff', { emissive: col, emissiveIntensity: .8, flatShading: true }), 0, .4, 0, inner, false);
     c.scale.set(.7, 1.5, .7);
+  } else if (kind === 'mint') {
+    const leaf = toon('#8fd86a', { emissive: '#5cbf3c', emissiveIntensity: .2 }), dark = toon('#6cc24a');
+    mk(new CylGeo(.03, .035, .32, 6), dark, 0, .16, 0, inner, false);
+    for (let i = 0; i < 4; i++) {
+      const a = i / 4 * Math.PI * 2 + .4, y = .2 + (i % 2) * .12, l = ball(i % 2 ? leaf : dark, Math.cos(a) * .13, y, Math.sin(a) * .13, .15, .04, .09, inner, false);
+      l.rotation.y = -a; l.rotation.z = .35;
+    }
+    ball(leaf, 0, .42, 0, .1, .06, .1, inner, false);
   } else if (kind === 'bubble') {
     ball(toon('#d8f6ff', { transparent: true, opacity: .5, emissive: '#7fdcff', emissiveIntensity: .35 }), 0, 0, 0, .32, .32, .32, inner, false);
     ball(new THREE.MeshBasicMaterial({ color: '#ffffff' }), -.12, .12, .22, .06, .06, .03, inner, false);
@@ -4529,7 +4565,7 @@ function drinkPotion(id) {
   pState.castT = .4;
   sfx('gulp');
   burst(player.position.clone().add(new THREE.Vector3(0, 1.4 * player.scale.x, 0)), 30, { speed: 4, colors: [r.color, '#ffffff'], size: .45, life: 1.1, gravity: 0 });
-  toast({ shrink: 'You shrink down to teeny tiny size!', giant: 'Whoa! You are a GIANT now!', speed: 'Zoom zoom! Hold Shift to go even faster.', float: 'You feel light as a bubble! Hold Space to fly.', colour: 'Ta-da! Your robe has a brand new colour!', frog: 'Ribbit! You turned into a frog!' }[id], 3500, 'potion');
+  toast({ shrink: 'You shrink down to teeny tiny size!', giant: 'Whoa! You are a GIANT now!', speed: 'Zoom zoom! Hold Shift to go even faster.', float: 'You feel light as a bubble! Hold Space to fly.', colour: 'Ta-da! Your robe has a brand new colour!', frog: 'Ribbit! You turned into a frog!', glow: 'You glow like a little lantern! Lovely in the dark.', bouncy: 'Boing! Press Space to jump super high.', bloom: 'Flowers pop up wherever you walk!' }[id], 3500, 'potion');
   renderBelt();
   if (net) Promise.resolve().then(() => net.emit('spell', { id: 'potion', p: id, c: r2(pfx.hue), x: r2(player.position.x), z: r2(player.position.z) })).catch(() => {});
 }
@@ -4555,6 +4591,18 @@ function makeFrog(hatMat) {
 }
 // look of a potion effect on a wizard (used for you and for other players)
 function startPotionLook(w, holder, state, mine) {
+  if (state.id === 'glow') {
+    let gl = holder.userData.glow;
+    if (!gl) {
+      gl = new THREE.Group();
+      const light = new THREE.PointLight('#ffe89a', 0, 11, 1.6); light.position.y = 1.4; gl.add(light);
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#fff3a0', transparent: true, opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false }));
+      halo.scale.setScalar(3.4); halo.position.y = 1.2; gl.add(halo);
+      gl.userData = { light, halo }; holder.add(gl); holder.userData.glow = gl;
+    }
+    gl.visible = true;
+    burst(holder.position.clone().add(new THREE.Vector3(0, 1.2, 0)), 24, { speed: 3, colors: ['#fff38a', '#ffffff'], size: .45, life: 1, gravity: 0 });
+  }
   if (state.id === 'colour') { w.robeMat.color.setHSL(state.hue, .75, .62); w.robeMat.emissive.set('#000000'); w.robeMat.emissiveIntensity = 0; }
   if (state.id === 'frog') {
     let f = mine ? frog : holder.userData.frog;
@@ -4569,6 +4617,7 @@ function endPotion(announce) {
   const r = RECIPE_BY_ID.get(pfx.id);
   const was = pfx.id; pfx.id = null; pfx.t = 0;
   if (was === 'colour') applyCosmetics();
+  if (was === 'glow' && player.userData.glow) player.userData.glow.visible = false;
   if (was === 'frog' && frog) { frog.g.visible = false; W.root.visible = true; burst(player.position.clone().add(new THREE.Vector3(0, .8, 0)), 20, { speed: 3, colors: ['#ffffff', '#c9a0ff'], size: .5, life: .9, gravity: 0 }); }
   if (announce) { toast(`The ${r.name} wore off.`, 2500, 'potion'); sfx('poof'); }
 }
@@ -4576,8 +4625,40 @@ function frogHop(f, k, walkT, grounded) {
   f.body.position.y = grounded ? Math.abs(Math.sin(walkT * .6)) * .45 * k : .15;
   f.body.scale.set(1, 1 + (grounded ? Math.sin(walkT * 1.2) * .08 * k : .12), 1);
 }
+// effects that follow a wizard while a potion works (for you and for other players)
+const bloomFlowers = [];
+const bloomPetalMats = PASTELS.map(c => toon(c)), bloomMid = toon('#ffd84d');
+function potionTrail(holder, id, dt, time, moving) {
+  if (id === 'glow') {
+    const gl = holder.userData.glow;
+    if (gl) { gl.userData.light.intensity = (2.2 + night * 3) * (1 + Math.sin(time * 3) * .08); gl.userData.halo.material.opacity = .25 + night * .4; }
+    if (Math.random() < dt * 5) emit({ pos: holder.position.clone().add(new THREE.Vector3(rr(-.6, .6), rr(.4, 2), rr(-.6, .6))), vel: new THREE.Vector3(0, .5, 0), life: 1.2, size: .22, color: rpick(['#fff38a', '#ffffff']), tex: starTex, spin: 2 });
+  }
+  if (id === 'bloom' && moving && holder.position.y - supportAt(holder.position.x, holder.position.z, holder.position.y) < .1) {
+    const last = holder.userData.bloomAt;
+    if (!last || Math.hypot(last.x - holder.position.x, last.z - holder.position.z) > .9) {
+      holder.userData.bloomAt = holder.position.clone();
+      const g = new THREE.Group(), m = rpick(bloomPetalMats);
+      for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; ball(m, Math.cos(a) * .11, .12, Math.sin(a) * .11, .09, .04, .09, g, false); }
+      ball(bloomMid, 0, .14, 0, .06, .04, .06, g, false);
+      g.position.set(holder.position.x + rr(-.35, .35), holder.position.y, holder.position.z + rr(-.35, .35)); g.rotation.y = rr(0, 6);
+      g.scale.setScalar(.01); scene.add(g);
+      bloomFlowers.push({ g, t: 0, s: rr(.9, 1.4) });
+      if (bloomFlowers.length > 70) scene.remove(bloomFlowers.shift().g);
+    }
+  }
+}
+function updateBloomFlowers(dt) {
+  for (let i = bloomFlowers.length - 1; i >= 0; i--) {
+    const f = bloomFlowers[i]; f.t += dt;
+    const k = f.t < .3 ? f.t / .3 : f.t > 9 ? Math.max(0, 1 - (f.t - 9) / .8) : 1;
+    f.g.scale.setScalar(Math.max(.01, k * f.s * (1 + (f.t < .5 ? Math.sin(f.t / .5 * Math.PI) * .25 : 0))));
+    if (f.t > 9.8) { scene.remove(f.g); bloomFlowers.splice(i, 1); }
+  }
+}
 let ribbitT = 3;
 function updatePotions(dt, time) {
+  updateBloomFlowers(dt);
   // ingredients bob around and get picked up when you walk over them
   const isNight = night > .45;
   for (let i = ingredients.length - 1; i >= 0; i--) {
@@ -4616,6 +4697,7 @@ function updatePotions(dt, time) {
     if (pfx.id === 'speed' && sp > 3 && Math.random() < dt * 30) emit({ pos: player.position.clone().add(new THREE.Vector3(rr(-.3, .3), rr(.2, 1), rr(-.3, .3))), vel: new THREE.Vector3(-pVel.x * .1, .3, -pVel.z * .1), life: .5, size: rr(.2, .35), color: rpick(['#ffd84d', '#fff3b0', '#ffffff']), tex: starTex });
     if (pfx.id === 'float' && Math.random() < dt * 8) emit({ pos: player.position.clone().add(new THREE.Vector3(rr(-.4, .4), .1, rr(-.4, .4))), vel: new THREE.Vector3(0, -.6, 0), life: .9, size: rr(.15, .3), color: rpick(['#b8f0ff', '#ffffff']) });
     if (pfx.id === 'colour' && Math.random() < dt * 4) emit({ pos: player.position.clone().add(new THREE.Vector3(rr(-.5, .5), rr(.3, 1.4), rr(-.5, .5))), vel: new THREE.Vector3(0, .6, 0), life: 1, size: .25, color: W.robeMat.color.getStyle(), tex: starTex, spin: 3 });
+    potionTrail(player, pfx.id, dt, time, sp > 1);
     if (pfx.id === 'frog' && frog) {
       frogHop(frog, Math.min(1, sp / 4), pState.walkT, pState.grounded);
       ribbitT -= dt; if (ribbitT <= 0) { ribbitT = rr(2.5, 5); sfx('ribbit'); }
@@ -4782,6 +4864,7 @@ function endRemotePotion(r) {
   if (!r.fx) return;
   const was = r.fx.id; r.fx = null;
   if (was === 'colour') remoteCosmetics(r);
+  if (was === 'glow' && r.g.userData.glow) r.g.userData.glow.visible = false;
   if (was === 'frog' && r.g.userData.frog) { r.g.userData.frog.g.visible = false; r.w.root.visible = true; }
 }
 function removeRemote(peerId, announce) {
@@ -4826,6 +4909,7 @@ function updateRemotes(dt, time) {
     const rs = (r.fx && { shrink: .4, giant: 2.3 }[r.fx.id]) || 1;
     r.g.scale.setScalar(lerp(r.g.scale.x, rs, damp(5, dt)));
     if (r.fx && r.fx.id === 'frog' && r.g.userData.frog) frogHop(r.g.userData.frog, r.k, r.walkT, grounded);
+    if (r.fx && mpNear(p.x, p.z, 40)) potionTrail(r.g, r.fx.id, dt, time, r.s > 1);
     // gently push apart so you can't walk through each other
     if (started) {
       const dx = player.position.x - p.x, dz = player.position.z - p.z, d = Math.hypot(dx, dz);
@@ -5611,6 +5695,7 @@ function applyTownEntries(entries, announce) {
   for (const e of entries.slice(0, 1500)) {
     if (!Array.isArray(e) || typeof e[0] !== 'string') continue;
     const [k, v] = e;
+    if (k.startsWith('g:')) { gardenMerge(k.slice(2), v, announce); continue; }   // garden plots (see "garden")
     if (k.startsWith('i:')) any = mergeTownItem(k.slice(2), v) || any;
     else if (k.startsWith('d:')) any = mergeTownDon(k.slice(2), v) || any;
   }
@@ -5642,7 +5727,7 @@ function townHello() {
   const now = performance.now();
   if (now < townHelloAt) return;
   townHelloAt = now + 2500;
-  setTimeout(() => { if (net) Promise.resolve().then(() => net.emit('town', { e: townEntries() })).catch(() => {}); }, 300 + Math.random() * 1200);
+  setTimeout(() => { if (net) Promise.resolve().then(() => net.emit('town', { e: [...townEntries(), ...gardenEntries()] })).catch(() => {}); }, 300 + Math.random() * 1200);
 }
 async function townDbConnect(sb) {
   try {
@@ -5651,14 +5736,17 @@ async function townDbConnect(sb) {
     townDb = sb;
     const have = new Map(data.map(r => [r.k, JSON.stringify(r.v)]));
     applyTownEntries(data.map(r => [r.k, r.v]), false);
-    for (const [k, v] of townEntries()) if (have.get(k) !== JSON.stringify(v)) townDbQueue.set(k, v);   // made while offline
+    for (const [k, v] of [...townEntries(), ...gardenEntries()]) if (have.get(k) !== JSON.stringify(v)) townDbQueue.set(k, v);   // made while offline
   } catch (e) { townDb = null; }
 }
 function townDbFlush() {
   if (!townDb || !townDbQueue.size) return;
   const rows = [...townDbQueue.entries()].slice(0, 200).map(([k, v]) => ({ k, v }));
   for (const r of rows) townDbQueue.delete(r.k);
-  townDb.from('starvale_town').upsert(rows, { onConflict: 'k' }).then(({ error }) => { if (error) console.warn('Starvale: could not save the Town Hall', error.message); }, () => {});
+  // garden rows go on their own, so a table that does not allow them yet (old supabase-town.sql) still saves the hall
+  for (const part of [rows.filter(r => !r.k.startsWith('g:')), rows.filter(r => r.k.startsWith('g:'))]) {
+    if (part.length) townDb.from('starvale_town').upsert(part, { onConflict: 'k' }).then(({ error }) => { if (error) console.warn('Starvale: could not save the Town Hall', error.message); }, () => {});
+  }
 }
 
 // ---------- showing it ----------
@@ -7644,6 +7732,300 @@ function actFx(P, id, t, dt) {
   else if (id === 'sleep' && Math.random() < dt * 1.3) emit({ pos: at(2.2, .1), vel: new THREE.Vector3(rr(.2, .5), .55, rr(-.2, .2)), life: 2.2, size: rr(.3, .45), color: rpick(['#c9a0ff', '#8fa0ff', '#ffffff']), tex: zTex, add: false });
 }
 
+// ================= garden =================
+// A community garden next to Nikki's cottage. Plant a seed in a free plot and it really grows, on the clock,
+// so it also grows while you are away. Anyone can water a plant (once per stage) to make it grow faster;
+// the one who planted it picks it (after half a day anyone may, so plots never stay blocked).
+// The plots are shared like the Town Hall: entries 'g:p<n>' go to the players online (the 'town' message),
+// into the Supabase table `starvale_town`, and a copy stays in localStorage ('starvale-garden').
+// Nothing here uses rand(), so the rest of the world stays put.
+const GARDEN = { x: 12.5, z: -12, hw: 3.4, hd: 4.6 };
+const SEEDS = [
+  { id: 'mint', name: 'Wild Mint', grow: 180, give: ['ing', 'mint', 3], col: '#9fe07a', icon: 'ingMint' },
+  { id: 'blossom', name: 'Star Blossom', grow: 240, give: ['ing', 'flower', 3], col: '#ffb3d9', icon: 'ingFlower' },
+  { id: 'shroom', name: 'Moon Mushroom', grow: 420, give: ['ing', 'shroom', 2], col: '#7fb2ff', icon: 'ingShroom' },
+  { id: 'crystal', name: 'Crystal Bud', grow: 540, give: ['ing', 'crystal', 2], col: '#d4b0ff', icon: 'ingCrystal' },
+  { id: 'pumpkin', name: 'Star Pumpkin', grow: 720, give: ['stars', 3], col: '#ffb36b', icon: 'pumpkin' },
+];
+const SEED_BY_ID = new Map(SEEDS.map(s => [s.id, s]));
+const GARDEN_MAX = 3;          // plants growing per player at once
+const GARDEN_STALE = 12 * 3600e3;
+const PLOTS = [];
+for (const lx of [-2, 0, 2]) for (const lz of [-3.3, -1.1, 1.1, 3.3]) PLOTS.push({ x: GARDEN.x + lx, z: GARDEN.z + lz });
+const gardenPlots = new Map();   // plot index -> { s, by, n, t, b, w, wn, u } (growing) or { e: 1, by, u } (empty)
+const seedGives = sd => sd.give[0] === 'stars' ? `${sd.give[1]} stars` : `${sd.give[2]} × ${INGREDIENTS[sd.give[1]].name}`;
+const seedTime = sd => sd.grow >= 120 ? `${Math.round(sd.grow / 60)} min` : `${sd.grow}s`;
+
+// --- the shared data ---
+function cleanPlot(v) {
+  if (!v || typeof v !== 'object') return null;
+  const u = num(v.u);
+  if (u <= 0 || u > Date.now() + 864e5 || !okPid(v.by)) return null;
+  if (v.e) return { e: 1, by: v.by, u };
+  if (!SEED_BY_ID.has(v.s)) return null;
+  const t = num(v.t);
+  if (t <= 0 || t > u) return null;
+  return { s: v.s, by: v.by, n: cleanNick(v.n), t, b: clamp(Math.round(num(v.b)), 0, 3600), w: clamp(Math.round(num(v.w, -1)), -1, 2), wn: cleanNick(v.wn), u };
+}
+function gardenMerge(k, raw, announce) {
+  const m = typeof k === 'string' && /^p(\d{1,2})$/.exec(k), i = m ? +m[1] : -1;
+  if (i < 0 || i >= PLOTS.length) return false;
+  const v = cleanPlot(raw);
+  if (!v) return false;
+  const cur = gardenPlots.get(i);
+  if (cur && (v.u < cur.u || (v.u === cur.u && JSON.stringify(v) <= JSON.stringify(cur)))) return false;
+  gardenPlots.set(i, v); showPlot(i); storeGardenSoon();
+  if (announce && started && cur && !cur.e) {
+    const sd = SEED_BY_ID.get(cur.s);
+    if (cur.by === myPid && !v.e && v.t === cur.t && v.w > cur.w && v.wn) toast(`${v.wn} watered your ${sd.name}!`, 3200, 'water');
+    if (cur.by === myPid && v.e && v.by !== myPid) toast(`Someone picked your ${sd.name} that was waiting for ages.`, 3200, 'sprout');
+  }
+  return true;
+}
+const gardenEntries = () => [...gardenPlots.entries()].map(([i, v]) => ['g:p' + i, v]);
+let gardenStoreT = 0;
+function storeGardenSoon() { gardenStoreT = .6; }
+function storeGarden() { try { localStorage.setItem('starvale-garden', JSON.stringify(gardenEntries())); } catch (e) { /* ignore */ } }
+function gardenSet(i, v) {
+  gardenPlots.set(i, v); showPlot(i); storeGardenSoon();
+  const e = [['g:p' + i, v]];
+  if (net) Promise.resolve().then(() => net.emit('town', { e })).catch(() => {});
+  townDbQueue.set(e[0][0], v);
+}
+const plotGrow = (v, now = Date.now()) => clamp(((now - v.t) / 1000 + v.b) / SEED_BY_ID.get(v.s).grow, 0, 1);
+const plotStage = v => { const p = plotGrow(v); return p >= 1 ? 3 : Math.floor(p * 3); };
+const livePlot = i => { const v = gardenPlots.get(i); return v && !v.e ? v : null; };
+const myPlants = () => [...gardenPlots.values()].filter(v => !v.e && v.by === myPid).length;
+
+// --- building it ---
+const gardenG = new THREE.Group(); gardenG.position.set(GARDEN.x, 0, GARDEN.z); scene.add(gardenG);
+{
+  // make room: trees, mushrooms and grass that stood here move out
+  const inZone = (x, z, m = 0) => Math.abs(x - GARDEN.x) < GARDEN.hw + 1.4 + m && Math.abs(z - GARDEN.z) < GARDEN.hd + 1.4 + m;
+  for (const o of islandDeco) if (inZone(o.position.x, o.position.z, 1)) scene.remove(o);
+  for (let i = islandCircles[1] - 1; i >= islandCircles[0]; i--) { const c = circles[i]; if (inZone(c.x, c.z, .5)) circles.splice(i, 1); }
+  const m4 = new THREE.Matrix4(), p3 = new THREE.Vector3(), none = new THREE.Matrix4().makeScale(0, 0, 0);
+  for (const o of scene.children) {
+    if (!o.isInstancedMesh) continue;
+    let ch = false;
+    for (let i = 0; i < o.count; i++) {
+      o.getMatrixAt(i, m4); p3.setFromMatrixPosition(m4);
+      if (Math.abs(p3.x - GARDEN.x) < GARDEN.hw && Math.abs(p3.z - GARDEN.z) < GARDEN.hd) { o.setMatrixAt(i, none); ch = true; }
+    }
+    if (ch) o.instanceMatrix.needsUpdate = true;
+  }
+  placed.push({ x: GARDEN.x, z: GARDEN.z, r: 6 });
+  // a soft wooden fence with a gap (the gate) on the side of the cottage
+  const postM = toon('#c08a5c'), railM = toon('#d9a877'), { hw, hd } = GARDEN;
+  const post = (x, z) => {
+    mk(new CylGeo(.11, .13, .9, 10), postM, x, .45, z, gardenG);
+    ball(postM, x, .92, z, .14, .1, .14, gardenG, false);
+    circles.push({ x: GARDEN.x + x, z: GARDEN.z + z, r: .2 });
+  };
+  const side = (ax, az, bx, bz, gap) => {
+    const len = Math.hypot(bx - ax, bz - az), n = Math.round(len / .95);
+    for (let k = 0; k <= n; k++) { const t = k / n, x = lerp(ax, bx, t), z = lerp(az, bz, t); if (!(gap && Math.abs(z) < .9)) post(x, z); }
+    for (const y of [.38, .7]) for (const [z0, z1] of gap ? [[az, -.9], [.9, bz]] : [[0, 0]]) {
+      const sx = gap ? ax : (ax + bx) / 2, sz = gap ? (z0 + z1) / 2 : (az + bz) / 2, l = gap ? Math.abs(z1 - z0) : len;
+      const r = mk(Box(.09, .1, l), railM, sx, y, sz, gardenG);
+      if (!gap && az === bz) r.rotation.y = Math.PI / 2;
+    }
+  };
+  side(-hw, -hd, -hw, hd, true); side(hw, -hd, hw, hd, false); side(-hw, -hd, hw, -hd, false); side(-hw, hd, hw, hd, false);
+  // a sign by the gate
+  const sign = new THREE.Group(); sign.position.set(-hw - .5, 0, -1.5); sign.rotation.y = -Math.PI / 2; gardenG.add(sign);
+  mk(new CylGeo(.06, .06, 1.1, 8), postM, 0, .55, -.04, sign);
+  mk(Box(1.5, .5, .08), toon('#fff4d6'), 0, 1.2, 0, sign);
+  const tex = canvasTex(384, 128, g => {
+    g.fillStyle = '#fff4d6'; g.fillRect(0, 0, 384, 128);
+    g.fillStyle = '#4f9a35'; g.font = '600 46px Delius, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('Garden ♥', 192, 68);
+  });
+  mk(new THREE.PlaneGeometry(1.42, .44), new THREE.MeshBasicMaterial({ map: tex }), 0, 1.2, .045, sign, false);
+  // a watering can by the gate
+  const can = new THREE.Group(); can.position.set(-hw + .6, 0, 1.6); can.rotation.y = .6; gardenG.add(can);
+  const canM = toon('#8fd0ff');
+  mk(new CylGeo(.22, .25, .42, 16), canM, 0, .22, 0, can);
+  mk(new CylGeo(.03, .05, .45, 8), canM, .3, .38, 0, can).rotation.z = -.9;
+  mk(new TorGeo(.14, .03, 8, 16, Math.PI), canM, -.05, .45, 0, can);
+}
+const soilDry = toon('#b98257'), soilWet = toon('#8a5a3a');
+const gLeaf = toon('#7ad37a'), gLeaf2 = toon('#5cbf5c'), gStem = toon('#6cc24a');
+const plotV = PLOTS.map((P, i) => {
+  const g = new THREE.Group(); g.position.set(P.x - GARDEN.x, 0, P.z - GARDEN.z); gardenG.add(g);
+  const soil = ball(soilDry, 0, .02, 0, .7, .14, .85, g, false);
+  for (const [x, z] of [[-.35, -.4], [.3, .1], [-.1, .45]]) ball(soilDry, x, .1, z, .12, .05, .12, g, false);
+  const plant = new THREE.Group(); g.add(plant);
+  const drop = ball(toon('#7fc8ff', { emissive: '#4cb3ff', emissiveIntensity: .35 }), 0, 1.6, 0, .11, .15, .11, g, false);
+  drop.visible = false;
+  return { g, soil, plant, drop, key: '', i };
+});
+function buildPlant(pv, v, stage) {
+  const P = pv.plant;
+  while (P.children.length) P.remove(P.children[0]);
+  if (!v) return;
+  const sd = SEED_BY_ID.get(v.s), bud = toon(sd.col);
+  const leaves = (n, h, r, s) => { for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2 + .3, l = ball(k % 2 ? gLeaf : gLeaf2, Math.cos(a) * r, h - (k % 2) * .08, Math.sin(a) * r, .17 * s, .05 * s, .1 * s, P, false); l.rotation.y = -a; l.rotation.z = .4; } };
+  if (stage === 0) { leaves(2, .2, .08, .8); return; }
+  if (stage < 3) {
+    const h = stage === 1 ? .4 : .7;
+    mk(new CylGeo(.035, .045, h, 6), gStem, 0, h / 2, 0, P, false);
+    leaves(stage === 1 ? 3 : 5, h * .6, .14, stage === 1 ? 1 : 1.3);
+    if (stage === 2) ball(bud, 0, h + .05, 0, .13, .16, .13, P, false);
+    return;
+  }
+  // ready to pick
+  if (v.s === 'mint') { for (let k = 0; k < 8; k++) { const a = k * .8, l = ball(k % 2 ? gLeaf : toon('#9fe07a'), Math.cos(a) * .25, .25 + (k % 3) * .14, Math.sin(a) * .25, .24, .08, .14, P, false); l.rotation.y = -a; l.rotation.z = .5; } }
+  else if (v.s === 'blossom') {
+    mk(new CylGeo(.04, .05, .85, 6), gStem, 0, .42, 0, P, false); leaves(4, .4, .15, 1.3);
+    const pm = toon('#ffb3d9', { emissive: '#ff6bbf', emissiveIntensity: .25 });
+    for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; ball(pm, Math.cos(a) * .2, .95, Math.sin(a) * .2, .16, .07, .16, P, false); }
+    ball(toon('#ffd84d', { emissive: '#ffb000', emissiveIntensity: .4 }), 0, .98, 0, .12, .08, .12, P, false);
+  } else if (v.s === 'shroom') {
+    const cm = glow(toon('#7fb2ff', { emissive: '#4a7fff', emissiveIntensity: .5 }), .25, 1.4);
+    for (const [x, z, s] of [[0, 0, 1], [.3, .2, .65], [-.25, .25, .55]]) {
+      mk(new CylGeo(.08 * s, .11 * s, .4 * s, 8), toon('#fff4e0'), x, .2 * s, z, P, false);
+      mk(new SphGeo(.28 * s, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), cm, x, .36 * s, z, P, false).scale.y = .8;
+    }
+  } else if (v.s === 'crystal') {
+    const cm = glow(toon('#e2c8ff', { emissive: '#a66bff', emissiveIntensity: .5, flatShading: true }), .3, 1.6);
+    for (let k = 0; k < 3; k++) { const c = mk(new THREE.OctahedronGeometry(.2), cm, (k - 1) * .2, .3 + (k === 1 ? .15 : 0), (k % 2) * .1, P, false); c.scale.set(.7, k === 1 ? 2.2 : 1.5, .7); c.rotation.z = (k - 1) * .35; }
+  } else if (v.s === 'pumpkin') {
+    const pm = toon('#ffb36b');
+    for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; ball(pm, Math.cos(a) * .17, .32, Math.sin(a) * .17, .3, .28, .3, P, false); }
+    ball(toon('#ffc98a'), 0, .34, 0, .34, .3, .34, P, false);
+    mk(new CylGeo(.04, .06, .2, 6), toon('#7a9a3a'), 0, .66, 0, P, false);
+    const l = ball(gLeaf, .2, .62, .05, .2, .04, .12, P, false); l.rotation.z = -.3;
+  }
+}
+function showPlot(i) {
+  const pv = plotV[i], v = livePlot(i);
+  const stage = v ? plotStage(v) : -1, wet = v && stage < 3 && v.w >= stage;
+  const key = v ? `${v.s}:${v.t}:${stage}` : '';
+  if (key !== pv.key) { pv.key = key; buildPlant(pv, v, stage); if (v && stage === 3 && pv.ready === false) burst(new THREE.Vector3(PLOTS[i].x, .8, PLOTS[i].z), 16, { speed: 3, colors: [SEED_BY_ID.get(v.s).col, '#ffffff', '#fff09a'], size: .35, life: 1, gravity: 0 }); }
+  pv.ready = !!v && stage === 3;
+  pv.soil.material = wet ? soilWet : soilDry;
+  pv.drop.visible = !!v && !wet && stage < 3;
+}
+
+// --- playing with it ---
+function nearestPlot(maxD = 1.25, P = player.position) {
+  if (pState.where !== 'main' || Math.abs(P.x - GARDEN.x) > GARDEN.hw + 1 || Math.abs(P.z - GARDEN.z) > GARDEN.hd + 1) return -1;
+  let best = -1, bd = maxD;
+  PLOTS.forEach((q, i) => { const d = Math.hypot(q.x - P.x, q.z - P.z); if (d < bd) { bd = d; best = i; } });
+  return best;
+}
+const canPick = v => v.by === myPid || Date.now() - (v.t + (SEED_BY_ID.get(v.s).grow - v.b) * 1000) > GARDEN_STALE;
+function gardenHint() {
+  if (!started) return null;
+  const i = nearestPlot();
+  if (i < 0) return null;
+  const v = livePlot(i);
+  if (!v) return myPlants() >= GARDEN_MAX ? `${iconHTML('sprout')} You have ${GARDEN_MAX} plants growing. Pick one first!` : `${iconHTML('sprout')} Press <b>E</b> or tap the soil to plant a seed`;
+  const sd = SEED_BY_ID.get(v.s), stage = plotStage(v), from = v.by === myPid ? 'your' : `<b>${escHTML(v.n || 'a friend')}</b>'s`;
+  if (stage === 3) return canPick(v) ? `${iconHTML('sprout')} Press <b>E</b> to pick ${v.by === myPid ? 'your' : 'this'} <b>${sd.name}</b>!` : `${iconHTML('sprout')} ${from} <b>${sd.name}</b> is ready to pick`;
+  const left = Math.max(1, Math.ceil((1 - plotGrow(v)) * sd.grow / 60));
+  if (v.w < stage) return `${iconHTML('water')} Press <b>E</b> to water ${from} <b>${sd.name}</b> (ready in ${left} min)`;
+  return `${iconHTML('sprout')} ${from} <b>${sd.name}</b> is growing · ready in about ${left} min`;
+}
+function gardenAct(i = nearestPlot()) {
+  if (i < 0) return false;
+  const v = livePlot(i), P = PLOTS[i], at = new THREE.Vector3(P.x, .6, P.z);
+  pState.heading = Math.atan2(P.x - player.position.x, P.z - player.position.z);
+  if (!v) { if (myPlants() >= GARDEN_MAX) { toast(`You can grow ${GARDEN_MAX} plants at once. Pick one first!`, 2800, 'sprout'); return true; } openSeeds(i); return true; }
+  const sd = SEED_BY_ID.get(v.s), stage = plotStage(v), now = Date.now();
+  if (stage === 3) {
+    if (!canPick(v)) { toast(`This ${sd.name} belongs to ${v.n || 'a friend'}. Let them pick it!`, 2800, 'sprout'); return true; }
+    gardenSet(i, { e: 1, by: myPid, u: Math.max(now, v.u + 1) });
+    if (sd.give[0] === 'stars') { save.stars += sd.give[1]; updateStarsUI(); }
+    else { const k = sd.give[1]; save.ing[k] = (save.ing[k] || 0) + sd.give[2]; renderIngRow(); if (k === 'flower') bookAdd('fl', 'blossom', 'Star Blossom'); }
+    storeSave();
+    pState.castT = .4;
+    burst(at, 30, { speed: 4, colors: [sd.col, '#ffffff', '#fff09a'], size: .45, life: 1.2, gravity: 2 });
+    sfx('coin'); dailyEvent('harvest');
+    toast(`You picked a ${sd.name}! +${seedGives(sd)}`, 3200, sd.icon);
+    return true;
+  }
+  if (v.w < stage) {
+    gardenSet(i, { ...v, b: Math.min(3600, v.b + Math.round(sd.grow * .2)), w: stage, wn: myNick || playerName, u: Math.max(now, v.u + 1) });
+    pState.castT = .4;
+    for (let k = 0; k < 22; k++) emit({ pos: at.clone().add(new THREE.Vector3(rr(-.4, .4), rr(.6, 1.2), rr(-.4, .4))), vel: new THREE.Vector3(rr(-.3, .3), rr(-2, -1), rr(-.3, .3)), life: .7, size: rr(.12, .22), color: rpick(['#7fc8ff', '#b8f0ff', '#ffffff']), gravity: 6 });
+    sfx('splash'); dailyEvent('water');
+    toast(v.by === myPid ? `You watered your ${sd.name}. It grows faster now!` : `You watered ${v.n || 'a friend'}'s ${sd.name}. How kind!`, 2600, 'water');
+    return true;
+  }
+  toast(`This ${sd.name} has had enough water for now.`, 2200, 'sprout');
+  return true;
+}
+function plant(i, id) {
+  const sd = SEED_BY_ID.get(id);
+  if (!sd || livePlot(i) || myPlants() >= GARDEN_MAX) return;
+  const cur = gardenPlots.get(i), now = Math.max(Date.now(), cur ? cur.u + 1 : 0);
+  gardenSet(i, { s: id, by: myPid, n: myNick || playerName, t: now, b: 0, w: -1, wn: '', u: now });
+  closeSeeds();
+  pState.castT = .4;
+  burst(new THREE.Vector3(PLOTS[i].x, .3, PLOTS[i].z), 14, { speed: 2, colors: ['#b98257', sd.col, '#ffffff'], size: .3, life: .8, gravity: 3 });
+  sfx('plop'); dailyEvent('plant');
+  toast(`You planted a ${sd.name}. Water it to make it grow faster!`, 3200, 'sprout');
+}
+// tapping a plot: use it when close, walk there when not
+function gardenTap(ray) {
+  if (pState.where !== 'main') return false;
+  const h = ray.intersectObjects(plotV.map(p => p.g), true);
+  if (!h.length || h[0].distance > 40) return false;
+  let o = h[0].object; while (o && !plotV.some(p => p.g === o)) o = o.parent;
+  const i = plotV.findIndex(p => p.g === o);
+  if (i < 0) return false;
+  if (Math.hypot(PLOTS[i].x - player.position.x, PLOTS[i].z - player.position.z) < 1.6) gardenAct(i);
+  else { moveTarget = new THREE.Vector3(PLOTS[i].x - .9, 0, PLOTS[i].z); petTarget = null; moveTimer = 0; }
+  return true;
+}
+
+// --- the seed panel ---
+const gardenEl = document.getElementById('garden');
+const gardenOpen = () => !gardenEl.classList.contains('hidden');
+let seedPlot = -1;
+function openSeeds(i) {
+  seedPlot = i;
+  for (const k in keys) keys[k] = false;
+  document.getElementById('gardenSub').textContent = `Pick a seed for this plot. You have ${myPlants()} of ${GARDEN_MAX} plants growing.`;
+  const tiles = document.getElementById('seedTiles'); tiles.innerHTML = '';
+  for (const sd of SEEDS) {
+    const b = document.createElement('button'); b.className = 'ingtile';
+    b.innerHTML = `<span class="ico">${ICON[sd.icon]}</span><b>${sd.name}</b><span>${seedTime(sd)}</span><span>+ ${seedGives(sd)}</span>`;
+    b.onclick = () => plant(seedPlot, sd.id);
+    tiles.appendChild(b);
+  }
+  gardenEl.classList.remove('hidden'); sfx('pop');
+}
+function closeSeeds() { gardenEl.classList.add('hidden'); seedPlot = -1; }
+document.getElementById('gardenClose').addEventListener('click', closeSeeds);
+
+// --- every frame ---
+try { for (const [k, v] of JSON.parse(localStorage.getItem('starvale-garden') || '[]')) if (typeof k === 'string' && k.startsWith('g:')) gardenMerge(k.slice(2), v, false); } catch (e) { /* start empty */ }
+let gardenT = 0;
+const readyTold = new Set();
+function updateGarden(dt, time) {
+  if (gardenStoreT > 0 && (gardenStoreT -= dt) <= 0) storeGarden();
+  if ((gardenT -= dt) <= 0) {
+    gardenT = .5;
+    for (let i = 0; i < PLOTS.length; i++) {
+      showPlot(i);
+      const v = livePlot(i);
+      if (started && v && v.by === myPid && plotV[i].ready && !readyTold.has(v.t)) {
+        readyTold.add(v.t);
+        toast(`Your ${SEED_BY_ID.get(v.s).name} in the garden is ready to pick!`, 3600, 'sprout');
+      }
+    }
+  }
+  if (pState.where !== 'main' || Math.hypot(GARDEN.x - player.position.x, GARDEN.z - player.position.z) > 45) return;
+  for (const pv of plotV) {
+    pv.plant.rotation.z = Math.sin(time * 1.3 + pv.i) * .04;
+    if (pv.drop.visible) { pv.drop.position.y = 1.4 + Math.sin(time * 3 + pv.i) * .1; pv.drop.rotation.y += dt; }
+    if (pv.ready && Math.random() < dt * 1.5) emit({ pos: new THREE.Vector3(PLOTS[pv.i].x + rr(-.4, .4), rr(.5, 1.2), PLOTS[pv.i].z + rr(-.4, .4)), vel: new THREE.Vector3(0, .5, 0), life: 1, size: .25, color: rpick(['#fff09a', '#ffffff']), tex: starTex, spin: 2 });
+  }
+}
+
 // ================= loop =================
 const clock = new THREE.Clock();
 let time = 0;
@@ -7670,6 +8052,7 @@ function frame() {
   updateSky(dt, time);
   updateFar(dt, time);
   updateTown(dt, time);
+  updateGarden(dt, time);
   updateChristmas(dt, time);
   updateWeather(dt, time);
   updateMeteors(dt);

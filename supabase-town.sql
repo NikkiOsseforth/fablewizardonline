@@ -4,12 +4,17 @@
 --
 -- Rows:  k = 'i:<itemId>'          v = { k, x, z, a, c, by, n, t }  or  { del: 1, by, t }
 --        k = 'd:<playerId>:<proj>' v = number of stars that player gave to that project
+--        k = 'g:p<n>'              v = { s, by, n, t, b, w, wn, u }  or  { e: 1, by, u }   (a plot in the community garden)
 
 create table if not exists public.starvale_town (
-  k text primary key check (char_length(k) <= 64 and k ~ '^(i|d):[a-z0-9:-]+$'),
+  k text primary key check (char_length(k) <= 64 and k ~ '^(i|d|g):[a-z0-9:-]+$'),
   v jsonb not null check (pg_column_size(v) <= 1024),
   updated_at timestamptz not null default now()
 );
+
+-- a table made with an older version of this file: let it hold the garden plots ('g:') too
+alter table public.starvale_town drop constraint if exists starvale_town_k_check;
+alter table public.starvale_town add constraint starvale_town_k_check check (char_length(k) <= 64 and k ~ '^(i|d|g):[a-z0-9:-]+$');
 
 alter table public.starvale_town enable row level security;
 

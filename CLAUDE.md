@@ -36,6 +36,7 @@ Lees niet het hele bestand (ruim 5000 regels). Het script is opgedeeld in sectie
 | `far islands & the Star Portal` | `ISLES` (Frostvale, Emberpeak, Glowshroom Wood), `FOLK` (bewoners) en hun `QUESTS`, `makePenguin`/`makeLizard`/`makeShroom`, lantaarns, `PORTALS`, `travelTo`, `checkIsleUnlocks`, `updateFar` |
 | `weather` | regen, sneeuw, mist (`wxAt`, `wxHere`, `updateWeather`); het weer volgt de klok, zodat iedereen hetzelfde ziet. De toestand staat in `wx` (bij de spreuken) en kleurt de lucht in `applyTime` |
 | `emotes & sitting` | `EMOTES`, `startEmote`, `actPose`/`actFx`, zitplekken (`nearestSeat`, `sitDown`); een emote of zitten staat in `pState.act` en gaat mee in de aanwezigheid (`a`) |
+| `garden` | de gedeelde moestuin (`GARDEN`, `SEEDS`, `PLOTS`), gedeelde plekjes (`gardenPlots`, `gardenMerge`, `gardenSet`), planten/water/plukken (`gardenAct`), zaadjespaneel |
 | `loop` | `frame()`: roept alle `update…`-functies aan |
 
 De HTML en CSS van de interface staan bovenaan het bestand, vóór het script.
@@ -56,7 +57,7 @@ De HTML en CSS van de interface staan bovenaan het bestand, vóór het script.
 - **Taal:** alle tekst in het spel is Engels. `IDEAS.md` en dit bestand zijn Nederlands. Commentaar in de code is Engels.
 - **Opslag:** voortgang staat per karakter in het object `save` (`loadSave`, `storeSave`). Zonder account staat dat in `localStorage` (`saveKey`); met een account in de Supabase-tabel `starvale_saves` (zie `supabase-saves.sql`), met een kopie op het apparaat. De nieuwste (`save.at`) wint. Een accountnaam wordt het nep-e-mailadres `<naam>@players.starvale.game`, dus in Supabase moet "Confirm email" uit staan. Voeg je een veld toe aan de opslag, geef het dan een standaardwaarde in `loadSave`, zodat oude opslag blijft werken.
 - **Multiplayer:** iedereen die het spel open heeft, deelt één eiland via Supabase. Wat alleen bij jezelf gebeurt, zien anderen niet; stuur het mee in de aanwezigheid of als bericht als het zichtbaar moet zijn. Vertrouw nooit op wat binnenkomt: maak waarden schoon zoals `num` en `cleanNick` dat doen.
-- **Gemeentehuis:** de versiering en de gegeven sterren zijn gedeeld: elke speler bewaart een kopie (`starvale-town`), wisselt die uit met wie online is en schrijft naar de Supabase-tabel `starvale_town` (zie `supabase-town.sql`). Een meubel mag alleen door de eigenaar veranderd worden (het id begint met diens `myPid`). De eigen kamer staat in de opslag (`save.room`) en ligt ver weg op een wolk (`ROOM`, in `FAR`); spelers in hun kamer worden voor anderen verborgen.
+- **Gemeentehuis:** de versiering en de gegeven sterren zijn gedeeld: elke speler bewaart een kopie (`starvale-town`), wisselt die uit met wie online is en schrijft naar de Supabase-tabel `starvale_town` (zie `supabase-town.sql`). Een meubel mag alleen door de eigenaar veranderd worden (het id begint met diens `myPid`). De moestuin gebruikt hetzelfde kanaal en dezelfde tabel met sleutels `g:p<n>` (eigen kopie in `starvale-garden`). De eigen kamer staat in de opslag (`save.room`) en ligt ver weg op een wolk (`ROOM`, in `FAR`); spelers in hun kamer worden voor anderen verborgen.
 - **Ideeën:** vink in `IDEAS.md` af wat gebouwd is. Dat bestand staat in `.gitignore` en wordt dus niet gecommit.
 - **Commits:** rechtstreeks op `main`, met een bericht dat begint met `Starvale: `.
 
