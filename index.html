@@ -1769,16 +1769,16 @@ function npcTarget(L) {
   }
   return new THREE.Vector3(hx, 0, hz);
 }
+function addNPC(name, L) {
+  const w = makeWizard(L);
+  const g = new THREE.Group(); g.add(w.root); scene.add(g);
+  g.position.copy(npcTarget(L));
+  const label = document.createElement('div'); label.className = 'label'; label.textContent = name;
+  document.getElementById('labels').appendChild(label);
+  npcs.push({ name, L, w, g, label, target: npcTarget(L), wait: rr(0, 3), heading: rr(0, 6), walkT: 0, k: 0, waveT: 0, stuck: 0 });
+}
 function spawnNPCs() {
-  for (const name of Object.keys(CHARACTERS)) {
-    if (name === playerName) continue;
-    const L = CHARACTERS[name], w = makeWizard(L);
-    const g = new THREE.Group(); g.add(w.root); scene.add(g);
-    g.position.copy(npcTarget(L));
-    const label = document.createElement('div'); label.className = 'label'; label.textContent = name;
-    document.getElementById('labels').appendChild(label);
-    npcs.push({ name, L, w, g, label, target: npcTarget(L), wait: rr(0, 3), heading: rr(0, 6), walkT: 0, k: 0, waveT: 0, stuck: 0 });
-  }
+  for (const name of Object.keys(CHARACTERS)) if (name !== playerName) addNPC(name, CHARACTERS[name]);
   spawnIsleFolk();
 }
 function updateNPC(n, dt, time) {
@@ -2019,7 +2019,7 @@ function randomTarget(c) {
 const labelsEl = document.getElementById('labels');
 const creatures = CREATURE_DEFS.map(([type, name, col, col2], i) => {
   const c = type === 'bunny' ? makeBunny(col) : type === 'spirit' ? makeSpirit(col) : type === 'corgi' ? makeCorgi() : type === 'cat' ? makeCat() : makeDragon(col, col2);
-  Object.assign(c, { type, name, color: col, wait: Math.random() * 3, phase: Math.random() * 10, happy: 0, lev: 0, friend: false, heading: 0 });
+  Object.assign(c, { type, name, color: col, wait: Math.random() * 3, phase: Math.random() * 10, happy: 0, lev: 0, friend: false, heading: 0, isle: null });
   c.target = randomTarget(c);
   c.g.position.copy(randomTarget(c));
   c.g.traverse(o => { if (o.isMesh) o.castShadow = true; });
@@ -2207,8 +2207,8 @@ function castStar() {
     const a = f.angleTo(new THREE.Vector3(to.x, 0, to.z));
     if (a < bestA) { bestA = a; dir = to.normalize(); }
   }
-  for (const b of bugs) {
-    const to = b.g.position.clone().setY(.3).sub(start);
+  for (const q of [...bugs.map(b => b.g.position.clone().setY(.3)), ...lanternAims()]) {
+    const to = q.sub(start);
     if (to.length() > 26) continue;
     const a = f.angleTo(new THREE.Vector3(to.x, 0, to.z));
     if (a < bestA) { bestA = a; dir = to.normalize(); }
@@ -2386,22 +2386,19 @@ function updateRainbow(dt) {
 // 6. day & night
 let night = 0, nightTarget = 0;
 let curIsle = null;                       // the far island you are on right now (null = Starvale)
-// placeholders until the Star Portal islands exist: no folk live on other islands yet
+// filled in the "far islands" section: which island each resident lives on, and the islands by id
 const FOLK_ISLE = {}, ISLE_BY_ID = new Map();
 // slippery ground: only when the current island has a frozen lake ({ x, z, r }); everywhere else normal grip
 function onIce(p) {
   const L = curIsle && curIsle.ice;
   return !!L && Math.hypot(p.x - L.x, p.z - L.z) < L.r;
 }
-// placeholders for the Star Portal islands (not built yet): safe no-ops so Starvale keeps running
+// the lava pool on Emberpeak: no flowers grow in it (lightLantern, spawnIsleFolk and isleSpot live in "far islands")
 function inLava(x, z) { const L = curIsle && curIsle.lava; return !!L && Math.hypot(x - L.x, z - L.z) < L.r; }
-function lightLantern(p) { return false; }
-function spawnIsleFolk() {}
-function isleSpot(I) { return randomTarget(); }
 const skyO = new THREE.Vector3();         // the sky, sun and clouds are centred on the island you are on
 function castNight() {
   nightTarget = nightTarget > .5 ? 0 : 1;
-  toast(nightTarget ? 'The stars are coming out… sweet dreams!' : 'Good morning, Starvale!', 3300, nightTarget ? 'moon' : 'sparkle');
+  toast(nightTarget ? 'The stars are coming out… sweet dreams!' : `Good morning, ${curIsle ? curIsle.name : 'Starvale'}!`, 3300, nightTarget ? 'moon' : 'sparkle');
   sfx(nightTarget ? 'night' : 'day');
   burst(wandWorld().add(new THREE.Vector3(0, 1, 0)), 30, { speed: 6, colors: nightTarget ? ['#c9a0ff', '#8fa0ff', '#ffffff'] : ['#ffe066', '#ffb38a', '#ffffff'], size: .5, life: 1.5, gravity: -.5 });
 }
@@ -2478,6 +2475,8 @@ function sfx(name) {
     case 'bite': seq([1175, 1568, 1175, 1568], .06, 'square', .04, .12); break;
     case 'splash': for (let i = 0; i < 6; i++) tone(rr(300, 700), t + i * .04, .12, 'triangle', .05, rr(120, 250)); break;
     case 'catch': seq([659, 784, 1047, 1319, 1568], .07, 'triangle', .1, .3); break;
+    case 'warp': tone(220, t, 1.1, 'sine', .09, 1760); tone(330, t + .1, 1, 'triangle', .05, 2640); seq([1047, 1319, 1568, 2093], .12, 'sine', .06, .5); break;
+    case 'lantern': seq([784, 1175, 1568], .06, 'sine', .09, .4); tone(392, t, .5, 'triangle', .05, 784); break;
   }
 }
 // soft music-box melody
@@ -2600,6 +2599,7 @@ startBtn.addEventListener('click', () => {
     initPotions();
     initDaily();
     mpStart();
+    updateIsleRow(); setTimeout(checkIsleUnlocks, 7800);
     if (playerIsCustom) setTimeout(() => toast(`Welcome to Starvale, ${playerName}! Every wizard on the island has a quest for you.`, 4000, 'wand'), 400);
     else setTimeout(() => toast(`Welcome to Starvale, ${playerName}! Your house is right in front of you.`, 4000, 'home'), 400);
     setTimeout(() => toast('Press 1 to 6 to cast spells. Wizards with a ! have a quest for you!', 4500, 'wand'), 2600);
@@ -2903,6 +2903,7 @@ const keys = {};
 addEventListener('keydown', e => {
   if (shopOpen()) { if (e.code === 'KeyB' || e.code === 'Escape') toggleShop(); return; }
   if (fishBookOpen()) { if (e.code === 'KeyF' || e.code === 'Escape') toggleFishBook(); return; }
+  if (travelOpen()) { if (!e.repeat && (e.code === 'KeyE' || e.code === 'Escape')) closeTravel(); return; }
   if (fishing.state && started && overlay.classList.contains('hidden') && (e.code === 'KeyE' || e.code === 'Space')) {
     e.preventDefault();
     if (!e.repeat) fishAction();
@@ -2967,6 +2968,12 @@ function onTap(x, y) {
     if (skyNear() === kind) { skyInteract(); return; }
     if (isleUnder(player.position)) { moveTarget = wp().setY(0); petTarget = null; moveTimer = 0; return; }
   }
+  // the Star Portals
+  for (const pt of PORTALS) {
+    if (!ray.intersectObject(pt.g, true).length) continue;
+    if (nearPortal() === pt) { openTravel(); return; }
+    if (distXZ(pt.front) < 60) { moveTarget = pt.front.clone(); petTarget = null; moveTimer = 0; return; }
+  }
   const nh = ray.intersectObjects(npcs.map(n => n.g), true);
   if (nh.length) {
     const n = npcs.find(q => { let o = nh[0].object; while (o) { if (o === q.g) return true; o = o.parent; } return false; });
@@ -3003,6 +3010,7 @@ function tryPet() {
   if (st) { openBrew(st); return; }
   if (nearFishSpot()) { startFishing(); return; }
   if (skyInteract()) return;
+  if (nearPortal()) { openTravel(); return; }
   const c = nearestCreature(2.8), n = nearestNPC(2.8), rp = nearestRemote(2.8);
   if (rp && (!c || distXZ(rp.g.position) < distXZ(c.g.position)) && (!n || distXZ(rp.g.position) < distXZ(n.g.position))) { waveAt(rp); return; }
   if (n && (!c || distXZ(n.g.position) < distXZ(c.g.position))) talkTo(n);
@@ -3175,7 +3183,7 @@ function updateUI() {
   const npcNear = started ? nearestNPC(2.8) : null;
   const rpNear = started ? nearestRemote(2.8) : null;
   const station = started ? nearStation() : null;
-  const skyH = started && !station ? skyHint() : null;
+  const skyH = started && !station ? (nearPortal() ? `${iconHTML('portal')} Press <b>E</b> or tap the portal to travel to other islands` : skyHint()) : null;
   if (fishing.state) hintEl.style.display = 'none';
   else if (started && nearFishSpot()) { hintEl.style.display = 'block'; hintEl.innerHTML = `${iconHTML('fish')} Press <b>E</b> or tap the water to go fishing`; }
   else if (skyH) { hintEl.style.display = 'block'; hintEl.innerHTML = skyH; }
@@ -3260,7 +3268,7 @@ const SHOP = [
   { id: 'rainbowhat', icon: 'hatRainbow', name: 'Rainbow Hat', desc: 'A hat that keeps changing colour', price: 8, kind: 'hat', val: 'rainbow' },
   { id: 'galaxyrobe', icon: 'robe', name: 'Galaxy Robe', desc: 'A deep blue robe that glows like the night sky', price: 6, kind: 'robe', val: 'galaxy' },
 ];
-const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null, fish: {}, daily: null, streak: 0, lastDay: null, wisps: {} };
+const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null, fish: {}, daily: null, streak: 0, lastDay: null, wisps: {}, isles: [] };
 const activeQ = {};          // giver name -> { q, progress, ready, target }
 const questItems = [];       // collectible things in the world
 const bugs = [];
@@ -3388,6 +3396,7 @@ function startQuest(giver, q) {
   }
   if (q.type === 'collect') for (let i = 0; i < q.need; i++) makeQuestItem(q.item, giver);
   if (q.type === 'bugs') for (let i = 0; i < q.need; i++) makeBug();
+  if (q.type === 'lantern') resetLanterns();
   toast(`${giver}: "${ask}"`, 6500, 'scroll');
   sfx('quest');
   refreshQuestUI();
@@ -4729,6 +4738,693 @@ function renderFishBook() {
 document.getElementById('fishBookBtn').addEventListener('click', e => { toggleFishBook(); e.currentTarget.blur(); });
 document.getElementById('fishBookClose').addEventListener('click', () => toggleFishBook());
 
+// ================= far islands & the Star Portal =================
+// Three more islands, far away across the sky (so far that the fog hides each from the others).
+// The Star Portal on Starvale takes you there; each island opens once every quest on the one
+// before it is done. Everything here uses its own seeded random, so the rest of the world stays put.
+let fseed = 26260;
+const fr = () => (fseed = (fseed * 16807) % 2147483647, (fseed - 1) / 2147483646);
+const FR = (a, b) => a + fr() * (b - a);
+const fpick = arr => arr[Math.floor(fr() * arr.length)];
+
+const ISLES = [
+  { id: 'main', name: 'Starvale', sub: 'Your home island in the clouds', icon: isleSVG('#eef4ff', '#a27052', '#c9a0ff') },
+  { id: 'frost', name: 'Frostvale', sub: 'A snowy isle with a frozen lake and penguins', x: 700, z: 0, r: 34,
+    ground: '#ffffff', side: '#9fb6d9', edge: '#f4f9ff', tuft: '#dcecff', icon: isleSVG('#ffffff', '#9fb6d9', '#8fd0ff'),
+    day: { top: C('#9fd4ff'), bottom: C('#eaf6ff'), fog: C('#eef6ff') }, night: { top: C('#101a40'), bottom: C('#3a4a80'), fog: C('#1e2a55') } },
+  { id: 'ember', name: 'Emberpeak', sub: 'A warm volcano isle with fire lizards', x: 1400, z: 0, r: 34,
+    ground: '#ffe2d2', side: '#b07a6a', edge: '#ffd9c6', tuft: '#f0b49c', icon: isleSVG('#ffd6c2', '#b07a6a', '#ff8a3d'),
+    day: { top: C('#ffbf99'), bottom: C('#ffe8d6'), fog: C('#fff0e4') }, night: { top: C('#2a1030'), bottom: C('#7a3040'), fog: C('#3a1a30') } },
+  { id: 'shroom', name: 'Glowshroom Wood', sub: 'A glowing mushroom forest full of lanterns', x: 2100, z: 0, r: 34,
+    ground: '#e2f7e8', side: '#8a7ab8', edge: '#d6f2df', tuft: '#9fe0b4', icon: isleSVG('#c6f0d4', '#8a7ab8', '#7dffe0'),
+    day: { top: C('#b8a8ff'), bottom: C('#e0fff2'), fog: C('#eaf4ff') }, night: { top: C('#0e1636'), bottom: C('#244a5a'), fog: C('#142a44') } },
+];
+for (const I of ISLES.slice(1)) { FAR.push(I); ISLE_BY_ID.set(I.id, I); I.blocks = []; }
+const ISLE = id => ISLES.find(I => I.id === id);
+
+// local island coordinates -> world
+const W3 = (I, lx, lz, y = 0) => new THREE.Vector3(I.x + lx, y, I.z + lz);
+// keep decorations apart; collider = also something you bump into
+function block(I, lx, lz, r, collider = 0) {
+  I.blocks.push({ x: I.x + lx, z: I.z + lz, r });
+  if (collider) circles.push({ x: I.x + lx, z: I.z + lz, r: collider });
+}
+function isleFree(I, x, z, r) {   // world coordinates
+  const d = Math.hypot(x - I.x, z - I.z);
+  if (d > I.r - 4 - r) return false;
+  return I.blocks.every(b => Math.hypot(x - b.x, z - b.z) >= b.r + r);
+}
+function freeSpot(I, r) {
+  for (let i = 0; i < 200; i++) {
+    const a = fr() * Math.PI * 2, d = Math.sqrt(fr()) * (I.r - 4);
+    const x = I.x + Math.cos(a) * d, z = I.z + Math.sin(a) * d;
+    if (isleFree(I, x, z, r)) { I.blocks.push({ x, z, r }); return { x, z, lx: x - I.x, lz: z - I.z }; }
+  }
+  return null;
+}
+// a random open spot on an island for quest items (not seeded: items differ per quest)
+function isleSpot(I) {
+  for (let i = 0; i < 60; i++) {
+    const a = Math.random() * Math.PI * 2, d = Math.sqrt(Math.random()) * (I.r - 7);
+    const x = I.x + Math.cos(a) * d, z = I.z + Math.sin(a) * d;
+    if (I.blocks.every(b => Math.hypot(x - b.x, z - b.z) >= b.r + .5)) return new THREE.Vector3(x, 0, z);
+  }
+  return W3(I, 0, 8);
+}
+// facing the island centre from a local spot (door / portal direction)
+const towardCentre = (lx, lz) => Math.atan2(-lx, -lz);
+
+// ---------- the island itself: ground, soft rim, rocky underside, tufts ----------
+function buildIsleBase(I) {
+  const g = new THREE.Group(); g.position.set(I.x, 0, I.z); scene.add(g); I.g = g;
+  const sideM = toon(I.side);
+  I.top = new THREE.Mesh(new CylGeo(I.r - .7, I.r - 1.2, 3, 72), [sideM, toon(I.ground, { map: groundTex }), sideM]);
+  I.top.position.y = -1.5; I.top.receiveShadow = true; g.add(I.top);
+  mk(new TorGeo(I.r - .7, .7, 14, 90), toon(I.edge), 0, -.7, 0, g, false).rotation.x = Math.PI / 2;
+  const under = mk(new ConeGeo(I.r - 1.2, 28, 14), sideM, 0, -3 - 14, 0, g, false); under.rotation.x = Math.PI;
+  const cm = glow(toon(I.id === 'frost' ? '#bfe9ff' : I.id === 'ember' ? '#ffb347' : '#7dffe0', { emissive: I.id === 'ember' ? '#ff5a1f' : '#4cd3ff', emissiveIntensity: .3 }), .3, 1.4);
+  for (let i = 0; i < 7; i++) {
+    const a = fr() * Math.PI * 2, d = FR(6, 22);
+    mk(new THREE.OctahedronGeometry(1), cm, Math.cos(a) * d, -4 - fr() * 12, Math.sin(a) * d, g, false).scale.set(.6, 2, .6);
+  }
+}
+function scatterTufts(I, n, col, flowerCols) {
+  const dummy = new THREE.Object3D();
+  const tufts = new THREE.InstancedMesh(softConeGeo(.11, .38, 7), toon(col), n);
+  const fl = flowerCols ? new THREE.InstancedMesh(new SphGeo(.13, 8, 6), toon('#ffffff'), Math.floor(n / 3)) : null;
+  const colr = new THREE.Color();
+  let k = 0, f = 0;
+  for (let i = 0; i < n * 4 && (k < n || (fl && f < fl.count)); i++) {
+    const a = fr() * Math.PI * 2, d = Math.sqrt(fr()) * (I.r - 2.5);
+    const x = I.x + Math.cos(a) * d, z = I.z + Math.sin(a) * d;
+    if (!I.blocks.every(b => Math.hypot(x - b.x, z - b.z) >= b.r)) continue;
+    if (fl && f < fl.count && i % 4 === 3) {
+      dummy.position.set(x, .14, z); dummy.rotation.set(0, 0, 0); dummy.scale.set(1, .55, 1); dummy.updateMatrix();
+      fl.setMatrixAt(f, dummy.matrix); fl.setColorAt(f++, colr.set(fpick(flowerCols)));
+    } else if (k < n) {
+      dummy.position.set(x, .18, z); dummy.rotation.set(FR(-.2, .2), FR(0, 6), FR(-.2, .2)); dummy.scale.setScalar(FR(.7, 1.4)); dummy.updateMatrix();
+      tufts.setMatrixAt(k++, dummy.matrix);
+    }
+  }
+  tufts.count = k; scene.add(tufts);
+  if (fl) { fl.count = f; scene.add(fl); }
+}
+
+// ---------- the Star Portal: a soft stone arch with a swirling star-gate ----------
+const swirlTex = canvasTex(256, 256, (g, s) => {
+  const gr = g.createRadialGradient(128, 128, 4, 128, 128, 128);
+  gr.addColorStop(0, '#ffffff'); gr.addColorStop(.35, '#ffd1f0'); gr.addColorStop(.7, '#b48cff'); gr.addColorStop(1, '#8fd0ff');
+  g.fillStyle = gr; g.fillRect(0, 0, s, s);
+  g.lineCap = 'round';
+  for (let arm = 0; arm < 4; arm++) {
+    g.strokeStyle = arm % 2 ? 'rgba(255,255,255,.75)' : 'rgba(255,240,154,.65)'; g.lineWidth = 9 - arm;
+    g.beginPath();
+    for (let t = 0; t < 1; t += .02) { const a = arm * Math.PI / 2 + t * 5.5, r = 10 + t * 112; g.lineTo(128 + Math.cos(a) * r, 128 + Math.sin(a) * r); }
+    g.stroke();
+  }
+});
+const portalStone = toon('#ddd0f7'), portalStone2 = toon('#c9b8ef');
+const portalStar = glow(toon('#ffd84d', { emissive: '#ffb800', emissiveIntensity: .4 }), .4, 1.4);
+const PORTALS = [];
+function makePortal(isle, x, z, rot) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; scene.add(g);
+  ball(toon('#e4dcef'), 0, .04, 0, 2.9, .14, 1.9, g, false);                 // round stone step
+  for (const sx of [-1, 1]) {
+    mk(new CylGeo(.36, .46, 2.3, 18), portalStone, sx * 1.9, 1.15, 0, g);
+    ball(portalStone2, sx * 1.9, .12, 0, .62, .26, .62, g);                 // soft feet
+    circles.push({ x: x + Math.cos(rot) * sx * 1.9, z: z - Math.sin(rot) * sx * 1.9, r: .55 });
+  }
+  const arch = mk(new TorGeo(1.9, .36, 14, 48, Math.PI), portalStone, 0, 2.3, 0, g);   // the round top
+  arch.castShadow = true;
+  for (let k = 0; k < 7; k++) {   // little gems along the arch
+    const a = (k + .5) / 7 * Math.PI;
+    mk(new THREE.OctahedronGeometry(.13), glow(toon(PASTELS[k % PASTELS.length], { emissive: PASTELS[k % PASTELS.length], emissiveIntensity: .3 }), .3, 1.5), Math.cos(a) * 1.9, 2.3 + Math.sin(a) * 1.9, .3, g, false);
+  }
+  const star = mk(new THREE.OctahedronGeometry(.36), portalStar, 0, 4.75, 0, g, false); star.scale.z = .5;
+  const discM = new THREE.MeshBasicMaterial({ map: swirlTex, transparent: true, opacity: .88, side: THREE.DoubleSide, depthWrite: false });
+  const disc = new THREE.Mesh(new CircGeo(1.6, 48), discM); disc.position.y = 2.05; disc.scale.y = 1.28; g.add(disc);
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#d8c4ff', transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false }));
+  halo.scale.setScalar(6); halo.position.y = 2.1; g.add(halo);
+  const fx = Math.sin(rot), fz = Math.cos(rot);
+  const p = { isle, g, disc, star, halo, x, z, rot, front: new THREE.Vector3(x + fx * 2.6, 0, z + fz * 2.6), arrive: new THREE.Vector3(x + fx * 4.2, 0, z + fz * 4.2) };
+  PORTALS.push(p);
+  return p;
+}
+makePortal('main', PORTAL.x, PORTAL.z, Math.atan2(-PORTAL.x, -PORTAL.z));
+
+// ---------- residents of the far islands ----------
+const FOLK = {
+  Holly: { isle: 'frost', robe: '#bfe6ff', hat: '#7fb8ff', band: '#ffffff', fluff: '#ffffff', shoes: '#7fb8ff', hair: '#f8ecd0', style: 'long', tip: '#e8f8ff', glow: '#8fe8ff',
+    lines: ["Brrr! Isn't the snow lovely?", 'The penguins love sliding on the frozen lake!', 'My igloo is much cozier than it looks, promise!'] },
+  Bjorn: { isle: 'frost', robe: '#ef8a80', hat: '#4f7fc8', band: '#ffffff', fluff: '#fff4e2', shoes: '#8a5a3a', hair: '#c98a4b', style: 'short', tip: '#fff4e2', glow: '#ffd27a',
+    lines: ['Want some hot cocoa? I always have a pot ready.', 'Careful on the ice, it is very slippery!', 'I knitted mittens for every penguin. They keep losing them.'] },
+  Saffron: { isle: 'ember', robe: '#ffb347', hat: '#e8673e', band: '#ffd84d', fluff: '#ffe6b8', shoes: '#e8673e', hair: '#2b1d16', style: 'medium', skin: '#e0a77e', tip: '#fff09a', glow: '#ff9a3d',
+    lines: ["Don't touch the lava, it is very spicy!", 'The fire lizards are sweet, they just run a little warm.', 'I cook my soup on the volcano. Free heat!'] },
+  Flint: { isle: 'ember', robe: '#9a7ba0', hat: '#6a4c70', band: '#ff7a4d', fluff: '#ffd1b8', shoes: '#6a4c70', hair: '#a7a7b5', style: 'spiky', glasses: true, tip: '#ffd1b8', glow: '#ff7a4d',
+    lines: ['I study volcano rocks. This one looks like a heart!', 'The volcano rumbles when it is happy. I think.', 'Fire gems glow brightest at night.'] },
+  Luna: { isle: 'shroom', robe: '#8f7bff', hat: '#4a3a9f', band: '#7dffe0', fluff: '#d8fff6', shoes: '#4a3a9f', hair: '#a17cff', style: 'long', skin: '#f6caa4', tip: '#d8fff6', glow: '#7dffe0',
+    lines: ['Shh… the mushrooms are listening.', 'Every lantern you light makes the wood a little happier.', 'At night the whole wood glows. Try the Day & Night spell!'] },
+  Moss: { isle: 'shroom', robe: '#6fcf97', hat: '#3e8f66', band: '#ff9ec7', fluff: '#e9fff1', shoes: '#8a5a3a', hair: '#5a3a22', style: 'short', skin: '#b8784f', tip: '#ffd1f0', glow: '#9ff0c8',
+    lines: ['Hello, friend! Mind the spores, they tickle.', 'I grow my mushrooms with lots of love and a bit of rain.', 'The little shroomlings love to dance.'] },
+};
+for (const [name, L] of Object.entries(FOLK)) { FOLK_ISLE[name] = L.isle; RESERVED.push(name.toLowerCase()); }
+function spawnIsleFolk() { for (const [name, L] of Object.entries(FOLK)) addNPC(name, L); }
+// a resident's house: L.home is the garden in front of the door
+function folkHome(name, I, lx, lz) {
+  const rot = towardCentre(lx, lz), L = FOLK[name];
+  L.house = { x: I.x + lx, z: I.z + lz };
+  L.home = [I.x + lx + Math.sin(rot) * 6.5, I.z + lz + Math.cos(rot) * 6.5, 3.5];
+  return rot;
+}
+
+// ---------- critters of the far islands ----------
+function makePenguin(col) {
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const m = toon(col), belly = toon('#ffffff'), orange = toon('#ffb347');
+  ball(m, 0, .55, 0, .42, .5, .4, body);
+  ball(belly, 0, .5, .14, .32, .4, .3, body);
+  ball(m, 0, 1.05, .02, .32, .3, .3, body);
+  ball(belly, 0, 1.0, .15, .22, .18, .18, body);
+  face(body, 1.06, .3, .1, .05);
+  ball(orange, 0, .97, .34, .08, .05, .09, body, false);
+  for (const sx of [-1, 1]) ball(orange, sx * .15, .05, .12, .12, .05, .18, body);
+  mk(new TorGeo(.27, .07, 8, 20), toon('#ff8fb8'), 0, .84, .02, body).rotation.x = Math.PI / 2;   // a knitted scarf
+  const flips = [];
+  for (const sx of [-1, 1]) { const pv = new THREE.Group(); pv.position.set(sx * .4, .78, 0); body.add(pv); ball(m, sx * .05, -.22, 0, .08, .26, .16, pv); flips.push(pv); }
+  return { g, body, flips, baseY: 0, speed: 1.4 };
+}
+function makeLizard(col) {
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const m = toon(col), b = toon('#fff09a');
+  ball(m, 0, .32, 0, .3, .24, .5, body);
+  ball(b, 0, .26, .05, .24, .16, .4, body);
+  for (let i = 0; i < 4; i++) ball(toon('#ffd08a'), 0, .53 - i * .02, .25 - i * .2, .07, .06, .07, body, false);   // soft back bumps
+  const head = new THREE.Group(); head.position.set(0, .45, .5); body.add(head);
+  ball(m, 0, 0, 0, .26, .22, .26, head);
+  ball(b, 0, -.08, .08, .19, .1, .18, head, false);
+  face(head, .06, .23, .1, .05);
+  const legs = [];
+  for (const [sx, z] of [[-1, .25], [1, .25], [-1, -.25], [1, -.25]]) {
+    const pv = new THREE.Group(); pv.position.set(sx * .26, .18, z); body.add(pv);
+    ball(m, sx * .06, -.08, .04, .08, .11, .1, pv); legs.push(pv);
+  }
+  const tail = new THREE.Group(); tail.position.set(0, .3, -.45); body.add(tail);
+  for (let i = 0; i < 5; i++) ball(m, 0, i * .05, -i * .14, .15 - i * .022, .13 - i * .02, .15 - i * .022, tail, false);
+  const flame = new THREE.Group(); flame.position.set(0, .32, -.68); tail.add(flame);
+  ball(toon('#ffd84d', { emissive: '#ff8a3d', emissiveIntensity: 1 }), 0, 0, 0, .1, .14, .1, flame, false);
+  const fs = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#ff9a3d', transparent: true, opacity: .8, blending: THREE.AdditiveBlending, depthWrite: false }));
+  fs.scale.setScalar(.9); flame.add(fs);
+  return { g, body, legs, tail, flame, baseY: 0, speed: 2.1 };
+}
+function makeShroom(col) {
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const stem = toon('#fff4e0'), capM = glow(toon(col, { emissive: col, emissiveIntensity: .2 }), .15, 1.1);
+  ball(stem, 0, .35, 0, .3, .36, .3, body);
+  face(body, .42, .28, .1, .05);
+  for (const sx of [-1, 1]) ball(stem, sx * .14, .05, .04, .1, .06, .13, body);
+  const cap = new THREE.Group(); cap.position.y = .6; body.add(cap);
+  mk(capGeo, capM, 0, 0, 0, cap).scale.set(1.35, 1, 1.35);
+  for (let i = 0; i < 5; i++) { const a = i * 1.26 + .4, el = i % 2 ? .45 : .9; ball(dotMat, Math.cos(a) * .55 * Math.cos(el), .4 * Math.sin(el), Math.sin(a) * .55 * Math.cos(el), .07, .035, .07, cap, false); }
+  return { g, body, cap, baseY: 0, speed: 1.3 };
+}
+function addCreature(type, name, col, I, lx, lz, r) {
+  const c = type === 'penguin' ? makePenguin(col) : type === 'lizard' ? makeLizard(col) : makeShroom(col);
+  Object.assign(c, { type, name, color: col, wait: Math.random() * 3, phase: Math.random() * 10, happy: 0, lev: 0, friend: false, heading: 0, isle: I.id, home: { x: I.x + lx, z: I.z + lz, r } });
+  c.target = randomTarget(c); c.g.position.copy(randomTarget(c));
+  c.g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  c.g.userData.creature = c; scene.add(c.g);
+  c.label = document.createElement('div'); c.label.className = 'label'; c.label.textContent = name; labelsEl.appendChild(c.label);
+  creatures.push(c);
+}
+
+// ---------- shared little builders ----------
+function snowyPine(x, z, s) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = FR(0, 6); g.scale.setScalar(s); scene.add(g);
+  mk(new CylGeo(.24, .34, 1.7, 8), trunkMat, 0, .85, 0, g);
+  [[1.4, 1.7, 2.0], [1.1, 1.5, 2.9], [.75, 1.3, 3.7]].forEach(([r, h, y]) => {
+    const c = mk(coneGeo, pineMat, 0, y, 0, g); c.scale.set(r, h, r);
+    const cap = mk(coneGeo, snowMat, 0, y + h * .22, 0, g, false); cap.scale.set(r * .7, h * .62, r * .7);
+  });
+  circles.push({ x, z, r: .45 * s });
+}
+function puffyTree(x, z, s, mats) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = FR(0, 6); g.scale.setScalar(s); scene.add(g);
+  mk(new CylGeo(.24, .34, 1.7, 8), trunkMat, 0, .85, 0, g);
+  ball(fpick(mats), 0, 2.4, 0, 1.35, 1.2, 1.35, g);
+  ball(fpick(mats), .6, 3.0, .2, .95, .9, .95, g);
+  ball(fpick(mats), -.55, 2.8, -.35, .9, .85, .9, g);
+  circles.push({ x, z, r: .45 * s });
+}
+function crystalCluster(x, z, col, emis) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = FR(0, 6); scene.add(g);
+  const mat = glow(toon(col, { emissive: emis, emissiveIntensity: .3, flatShading: true }), .3, 1.6);
+  for (let k = 0; k < 3; k++) {
+    const c = mk(new THREE.OctahedronGeometry(.5), mat, (k - 1) * .35, .6 + (k === 1 ? .3 : 0), (k % 2) * .2, g);
+    c.scale.set(.6, k === 1 ? 2.2 : 1.5, .6); c.rotation.z = (k - 1) * .35;
+  }
+  circles.push({ x, z, r: .8 });
+}
+// a rounded front door (local +z is outside)
+function door(parent, z, w = 1.1, h = 1.9, col = '#8a5bd6') {
+  const d = new THREE.Group(); d.position.set(0, 0, z); parent.add(d);
+  const m = toon(col);
+  mk(Box(w, h - w * .4, .16), m, 0, (h - w * .4) / 2, 0, d);
+  ball(m, 0, h - w * .45, 0, w / 2, w * .4, .08, d, false);
+  ball(toon('#ffd84d'), w * .3, h * .45, .1, .06, .06, .05, d, false);
+  return d;
+}
+const windowGlow = glow(toon('#fff3c4', { emissive: '#ffcb5c', emissiveIntensity: .25 }), .25, 1.8);
+
+// ================= Frostvale =================
+{
+  const I = ISLE('frost');
+  buildIsleBase(I);
+  // the frozen lake (slippery!)
+  const lk = { lx: -7, lz: -5, r: 7.5 };
+  I.ice = { x: I.x + lk.lx, z: I.z + lk.lz, r: lk.r };
+  const lake = mk(new CircGeo(lk.r, 64), toon('#c9eeff', { emissive: '#9fdcff', emissiveIntensity: .15 }), I.ice.x, .03, I.ice.z, scene, false);
+  lake.rotation.x = -Math.PI / 2;
+  mk(new TorGeo(lk.r, .32, 10, 64), snowMat, I.ice.x, .04, I.ice.z, scene, false).rotation.x = Math.PI / 2;
+  for (let k = 0; k < 6; k++) {   // shiny streaks on the ice
+    const s = mk(new CircGeo(1, 24), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .55 }), I.ice.x + FR(-4.5, 4.5), .045, I.ice.z + FR(-4.5, 4.5), scene, false);
+    s.rotation.set(-Math.PI / 2, 0, FR(0, 3)); s.scale.set(FR(.6, 1.4), .12, 1);
+  }
+  block(I, lk.lx, lk.lz, lk.r + 1.2);
+  // the portal home, and room to arrive
+  const pr = makePortal('frost', I.x, I.z + 26, Math.PI); block(I, 0, 26, 4.5); block(I, 0, 21, 3);
+  // Holly's igloo
+  {
+    const lx = 14, lz = -9, rot = folkHome('Holly', I, lx, lz);
+    const g = new THREE.Group(); g.position.set(I.x + lx, 0, I.z + lz); g.rotation.y = rot; scene.add(g);
+    const ice = toon('#f2f9ff'), ice2 = toon('#dcefff');
+    mk(new SphGeo(3.2, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2), ice, 0, 0, 0, g);
+    for (let r = 0; r < 4; r++) mk(new TorGeo(3.2 * Math.cos(r * .38 + .25), .07, 8, 60), ice2, 0, 3.2 * Math.sin(r * .38 + .25), 0, g, false).rotation.x = Math.PI / 2;
+    ball(ice, 0, .9, 3.0, 1.25, 1.25, 1.2, g);   // round entrance tunnel
+    ball(toon('#4a5a8a'), 0, .75, 3.95, .7, .8, .3, g, false);
+    ball(snowMat, 0, 3.15, 0, 1.2, .35, 1.2, g, false);
+    const sign = new THREE.Group(); sign.position.set(2.4, 0, 3.6); g.add(sign);
+    mk(new CylGeo(.06, .06, 1.1, 6), trunkMat, 0, .55, 0, sign); ball(toon('#bfe6ff'), 0, 1.15, 0, .4, .25, .08, sign);
+    block(I, lx, lz, 5); circles.push({ x: I.x + lx, z: I.z + lz, r: 3.3 }, { x: I.x + lx + Math.sin(rot) * 3, z: I.z + lz + Math.cos(rot) * 3, r: 1.2 });
+  }
+  // Bjorn's log cabin with a snowy roof
+  {
+    const lx = -15, lz = 11, rot = folkHome('Bjorn', I, lx, lz);
+    const g = new THREE.Group(); g.position.set(I.x + lx, 0, I.z + lz); g.rotation.y = rot; scene.add(g);
+    const log = toon('#c99668'), log2 = toon('#b07a4e');
+    mk(Box(5, 2.8, 4.2), log, 0, 1.4, 0, g);
+    for (let y = .35; y < 2.8; y += .5) for (const sx of [-1, 1]) mk(new CylGeo(.16, .16, 4.4, 10), log2, sx * 2.5, y, 0, g, false).rotation.x = Math.PI / 2;
+    const roof = mk(softRoofGeo(4.4, 2.4), toon('#ffffff'), 0, 4.0, 0, g); roof.rotation.y = Math.PI / 4; roof.scale.set(1.15, 1, 1);
+    mk(Box(.7, 1.6, .7), toon('#b9a0a0'), 1.3, 4.1, -.6, g);
+    door(g, 2.12, 1.1, 1.9, '#4f7fc8');
+    for (const sx of [-1, 1]) mk(Box(.8, .7, .1), windowGlow, sx * 1.6, 1.6, 2.13, g, false);
+    I.chimney = new THREE.Vector3(I.x + lx + Math.cos(rot) * 1.3 + Math.sin(rot) * -.6, 5.1, I.z + lz - Math.sin(rot) * 1.3 + Math.cos(rot) * -.6);
+    block(I, lx, lz, 5); circles.push({ x: I.x + lx, z: I.z + lz, r: 3.3 });
+  }
+  // a snowman with a carrot nose and a scarf
+  {
+    const x = I.x + 6, z = I.z + 12, g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = towardCentre(6, 12); scene.add(g);
+    ball(snowMat, 0, .75, 0, .8, .75, .8, g); ball(snowMat, 0, 1.75, 0, .58, .55, .58, g); ball(snowMat, 0, 2.55, 0, .42, .4, .42, g);
+    face(g, 2.62, .38, .14, .06);
+    mk(new ConeGeo(.08, .4, 10), toon('#ffa24d'), 0, 2.52, .52, g, false).rotation.x = Math.PI / 2;
+    mk(new TorGeo(.45, .1, 8, 24), toon('#ff8fb8'), 0, 2.15, 0, g).rotation.x = Math.PI / 2;
+    block(I, 6, 12, 2, .9);
+  }
+  for (let i = 0; i < 4; i++) { const p = freeSpot(I, 1.5); if (p) crystalCluster(p.x, p.z, fpick(['#c9eeff', '#e2d4ff']), '#8fd0ff'); }
+  for (let i = 0; i < 24; i++) { const p = freeSpot(I, 2); if (p) snowyPine(p.x, p.z, FR(.8, 1.3)); }
+  for (let i = 0; i < 10; i++) { const p = freeSpot(I, 1); if (p) ball(snowMat, p.x, 0, p.z, FR(.7, 1.4), FR(.35, .6), FR(.7, 1.3), scene, false); }
+  scatterTufts(I, 420, I.tuft, null);
+  [['Pebble', '#4f5b8a'], ['Waddles', '#7a6bb0'], ['Frosty', '#5d8fb8']].forEach(([n, c]) => addCreature('penguin', n, c, I, lk.lx + 2, lk.lz + 2, 10));
+}
+
+// ================= Emberpeak =================
+const lavaMat = toon('#ff9a4d', { emissive: '#ff5a1f', emissiveIntensity: .9 });
+{
+  const I = ISLE('ember');
+  buildIsleBase(I);
+  // the volcano: a soft round mountain with a little crater of glowing lava
+  const vx = 3, vz = -15;
+  {
+    const P = [[0, 0]];
+    bez(P, [0, 0], [5, 0], [9.4, 0], 2); bez(P, [9.4, 0], [10.6, 0], [9.6, 1], 5);
+    bez(P, [9.6, 1], [5.6, 5], [3, 9.3], 10); bez(P, [3, 9.3], [2.5, 10.4], [1.9, 9.9], 6); bez(P, [1.9, 9.9], [1.4, 9.4], [0, 9.3], 4);
+    const geo = new THREE.LatheGeometry(P.map(([x, y]) => new THREE.Vector2(x, y)), 48); geo.computeVertexNormals();
+    mk(geo, toon('#d9a898'), I.x + vx, 0, I.z + vz).castShadow = true;
+    // pastel stripes around the slope
+    for (const [y, r] of [[2.2, 8.5], [4.6, 6.4]]) mk(new TorGeo(r, .22, 10, 64), toon('#e8bfae'), I.x + vx, y, I.z + vz, scene, false).rotation.x = Math.PI / 2;
+    ball(lavaMat, I.x + vx, 9.45, I.z + vz, 1.9, .25, 1.9, scene, false);
+    const vg = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#ff9a4d', transparent: true, opacity: .8, blending: THREE.AdditiveBlending, depthWrite: false }));
+    vg.position.set(I.x + vx, 10.4, I.z + vz); vg.scale.setScalar(7); scene.add(vg);
+    // two soft lava rivulets
+    for (const a of [.6, 2.4]) for (let k = 0; k < 9; k++) {   // follow the slope curve, just above its surface
+      const u = .95 - k * .1, x = (1 - u) ** 2 * 9.6 + 2 * u * (1 - u) * 5.6 + u * u * 3, y = (1 - u) ** 2 + 2 * u * (1 - u) * 5 + u * u * 9.3;
+      ball(lavaMat, I.x + vx + Math.sin(a) * (x - .1), y, I.z + vz + Math.cos(a) * (x - .1), .5 - k * .02, .32, .5 - k * .02, scene, false);
+    }
+    I.crater = new THREE.Vector3(I.x + vx, 10, I.z + vz);
+    block(I, vx, vz, 11.5, 9.8);
+  }
+  // the lava pool (nobody walks in it; no flowers grow in it)
+  {
+    const lx = -13, lz = 1, r = 3.6;
+    I.lava = { x: I.x + lx, z: I.z + lz, r };
+    mk(new CircGeo(r, 48), lavaMat, I.lava.x, .05, I.lava.z, scene, false).rotation.x = -Math.PI / 2;
+    for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2; ball(toon(k % 2 ? '#b89a9e' : '#c9a8a8'), I.lava.x + Math.cos(a) * (r + .3), .12, I.lava.z + Math.sin(a) * (r + .3), FR(.5, .75), FR(.3, .45), FR(.5, .75), scene, false); }
+    const lg = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#ffb36b', transparent: true, opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false }));
+    lg.position.set(I.lava.x, 1, I.lava.z); lg.scale.setScalar(9); scene.add(lg);
+    block(I, lx, lz, r + 2, r + .4);
+  }
+  const pr = makePortal('ember', I.x, I.z + 26, Math.PI); block(I, 0, 26, 4.5); block(I, 0, 21, 3);
+  // round stone huts with a terracotta dome for Saffron and Flint
+  for (const [name, lx, lz, roofCol, doorCol] of [['Saffron', 15, 5, '#ff9f7a', '#e8673e'], ['Flint', -12, 16, '#c9a0ff', '#6a4c70']]) {
+    const rot = folkHome(name, I, lx, lz);
+    const g = new THREE.Group(); g.position.set(I.x + lx, 0, I.z + lz); g.rotation.y = rot; scene.add(g);
+    mk(new CylGeo(2.7, 3, 2.6, 36), toon('#f2d8c8'), 0, 1.3, 0, g);
+    for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2 + .3; ball(toon('#e3c2b0'), Math.sin(a) * 2.85, FR(.5, 2.1), Math.cos(a) * 2.85, .45, .3, .2, g, false).rotation.y = a; }
+    mk(new SphGeo(3.1, 36, 18, 0, Math.PI * 2, 0, Math.PI / 2), toon(roofCol), 0, 2.5, 0, g).scale.y = .8;
+    ball(toon('#fff09a'), 0, 5, 0, .35, .3, .35, g, false);
+    door(g, 2.97, 1.1, 1.9, doorCol).rotation.x = -.06;
+    for (const sx of [-1, 1]) ball(windowGlow, sx * 1.75, 1.7, 2.2, .38, .38, .12, g, false).rotation.y = sx * .7;
+    block(I, lx, lz, 5); circles.push({ x: I.x + lx, z: I.z + lz, r: 3.2 });
+  }
+  for (let i = 0; i < 4; i++) { const p = freeSpot(I, 1.5); if (p) crystalCluster(p.x, p.z, fpick(['#ffd08a', '#ffb3a0']), '#ff5a1f'); }
+  const emberLeaves = ['#ffb38a', '#ff9f8a', '#ffd08a', '#ffc2a8'].map(c => toon(c));
+  for (let i = 0; i < 14; i++) { const p = freeSpot(I, 2.2); if (p) puffyTree(p.x, p.z, FR(.8, 1.2), emberLeaves); }
+  for (let i = 0; i < 16; i++) {
+    const p = freeSpot(I, 1.3); if (!p) continue;
+    const s = FR(.5, 1.3); ball(toon(fpick(['#c9a8a8', '#b89a9e', '#d9b8b0'])), p.x, s * .3, p.z, s, s * .7, s * .9, scene).rotation.y = FR(0, 3);
+    if (s > 1) circles.push({ x: p.x, z: p.z, r: s * .8 });
+  }
+  scatterTufts(I, 360, I.tuft, ['#ff8a3d', '#ffd84d', '#ff9ec7']);
+  [['Sizzle', '#ff9f7a'], ['Blaze', '#ffbf6b'], ['Coal', '#a99cd0']].forEach(([n, c]) => addCreature('lizard', n, c, I, 4, 8, 10));
+}
+
+// ================= Glowshroom Wood =================
+const lanterns = [];
+{
+  const I = ISLE('shroom');
+  buildIsleBase(I);
+  const pr = makePortal('shroom', I.x, I.z + 26, Math.PI); block(I, 0, 26, 4.5); block(I, 0, 21, 3);
+  // mushroom houses for Luna and Moss
+  for (const [name, lx, lz, capCol, emis] of [['Luna', 13, -9, '#b48cff', '#9b6bff'], ['Moss', -14, 8, '#ff9ec7', '#ff6bbf']]) {
+    const rot = folkHome(name, I, lx, lz);
+    const g = new THREE.Group(); g.position.set(I.x + lx, 0, I.z + lz); g.rotation.y = rot; scene.add(g);
+    mk(new CylGeo(2.2, 2.7, 3.6, 36), toon('#fff4e0'), 0, 1.8, 0, g);
+    const capM = glow(toon(capCol, { emissive: emis, emissiveIntensity: .2 }), .15, 1.2);
+    const cap = mk(new SphGeo(4.2, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2), capM, 0, 3.3, 0, g); cap.scale.y = .72;
+    ball(toon('#fff4e0'), 0, 3.35, 0, 4.1, .35, 4.1, g, false);   // soft underside rim
+    for (let k = 0; k < 8; k++) { const a = k * .8, el = k % 2 ? .45 : .95; ball(dotMat, Math.cos(a) * 4.2 * Math.cos(el), 3.3 + 4.2 * Math.sin(el) * .72, Math.sin(a) * 4.2 * Math.cos(el), .45, .2, .45, g, false); }
+    door(g, 2.62, 1.1, 1.9, '#6a4c9f');
+    for (const sx of [-1, 1]) ball(windowGlow, sx * 1.3, 2.3, 2.15, .36, .36, .12, g, false).rotation.y = sx * .5;
+    block(I, lx, lz, 5.5); circles.push({ x: I.x + lx, z: I.z + lz, r: 2.9 });
+  }
+  // lanterns in a ring: light them with Star Shot
+  for (let k = 0; k < 7; k++) {
+    let lx = 0, lz = 0, ok = false;   // nudge around the ring until there is room (the houses stand on it)
+    for (let t = 0; t < 12 && !ok; t++) {
+      const a = k / 7 * Math.PI * 2 + .5 + (t % 2 ? 1 : -1) * Math.ceil(t / 2) * .12, d = 15 + (t % 3 - 1) * 2;
+      lx = Math.cos(a) * d; lz = Math.sin(a) * d; ok = isleFree(I, I.x + lx, I.z + lz, 1);
+    }
+    if (!ok) continue;
+    const g = new THREE.Group(); g.position.set(I.x + lx, 0, I.z + lz); scene.add(g);
+    mk(new CylGeo(.08, .12, 2.6, 8), toon('#6a5584'), 0, 1.3, 0, g);
+    const hook = mk(new TorGeo(.35, .05, 8, 20, Math.PI), toon('#6a5584'), .35, 2.6, 0, g, false);
+    const mat = toon('#d8d0e8', { emissive: '#7dffe0', emissiveIntensity: 0 });
+    ball(mat, .7, 2.2, 0, .25, .3, .25, g, false);
+    mk(new ConeGeo(.3, .25, 12), toon('#8a6bb8'), .7, 2.55, 0, g, false);
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#9ff0e0', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+    halo.scale.setScalar(3); halo.position.set(.7, 2.2, 0); g.add(halo);
+    lanterns.push({ isle: I.id, pos: new THREE.Vector3(I.x + lx + .7, 2.2, I.z + lz), mat, halo, lit: 0 });
+    block(I, lx, lz, 1.5, .3);
+  }
+  // giant glowing mushrooms
+  const giantCols = [['#7fdcff', '#4cc3ff'], ['#c9a0ff', '#9b6bff'], ['#ffb3e6', '#ff6bbf'], ['#9ff0c8', '#4dffd2']];
+  for (let i = 0; i < 13; i++) {
+    const p = freeSpot(I, 3); if (!p) continue;
+    const s = FR(3, 5.5), [c0, c1] = fpick(giantCols);
+    const g = new THREE.Group(); g.position.set(p.x, 0, p.z); g.scale.setScalar(s); g.rotation.y = FR(0, 6); scene.add(g);
+    mk(new CylGeo(.12, .17, 1, 12), stemMat, 0, .5, 0, g);
+    const cap = mk(capGeo, glow(toon(c0, { emissive: c1, emissiveIntensity: .2 }), .2, 1.5), 0, .95, 0, g); cap.scale.y = .75;
+    ball(toon('#fff4e0'), 0, .96, 0, .4, .04, .4, g, false);
+    for (let k = 0; k < 5; k++) { const a = k * 1.26 + .3, el = k % 2 ? .5 : .9; ball(dotMat, Math.cos(a) * .42 * Math.cos(el), .95 + .32 * Math.sin(el) * .75, Math.sin(a) * .42 * Math.cos(el), .06, .03, .06, g, false); }
+    circles.push({ x: p.x, z: p.z, r: .2 * s });
+  }
+  for (let i = 0; i < 30; i++) { const p = freeSpot(I, .6); if (p) makeShroomSmall(p.x, p.z, FR(.6, 1.3), fpick(giantCols)); }
+  for (let i = 0; i < 8; i++) { const p = freeSpot(I, 1.4); if (p) ball(toon(fpick(['#8fd8a8', '#7fcf9f'])), p.x, 0, p.z, FR(.9, 1.6), FR(.4, .7), FR(.9, 1.5), scene, false); }
+  scatterTufts(I, 420, I.tuft, ['#7dffe0', '#c9a0ff', '#ffb3e6']);
+  // floating glow spores
+  I.spores = [];
+  for (let i = 0; i < 46; i++) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: fpick(['#7dffe0', '#c9a0ff', '#ffd1f0', '#fff09a']), transparent: true, opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const a = fr() * Math.PI * 2, d = Math.sqrt(fr()) * (I.r - 4);
+    s.scale.setScalar(FR(.3, .6)); scene.add(s);
+    I.spores.push({ s, x: I.x + Math.cos(a) * d, y: FR(.6, 4), z: I.z + Math.sin(a) * d, ph: fr() * 10 });
+  }
+  [['Puffball', '#ff9ec7'], ['Toadie', '#8fd0ff'], ['Sprout', '#c9a0ff']].forEach(([n, c]) => addCreature('shroom', n, c, I, 0, 4, 11));
+}
+function makeShroomSmall(x, z, size, [c0, c1]) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(size); g.rotation.y = FR(0, 6); scene.add(g);
+  mk(new CylGeo(.12, .17, .5, 10), stemMat, 0, .25, 0, g, false);
+  const cap = mk(capGeo, glow(toon(c0, { emissive: c1, emissiveIntensity: .15 }), .15, 1.4), 0, .45, 0, g, false); cap.scale.y = .75;
+}
+renderFriends();
+
+// ---------- lanterns: Star Shot lights them, they go out again after a while ----------
+function lanternAims() {
+  const id = curIsle ? curIsle.id : null;
+  return lanterns.filter(l => l.isle === id && l.lit <= 0).map(l => l.pos.clone());
+}
+function lightLantern(p) {
+  for (const l of lanterns) {
+    if (l.lit > 0 || l.pos.distanceTo(p) > 1.3) continue;
+    l.lit = 150;
+    burst(l.pos.clone(), 26, { speed: 3.5, colors: ['#7dffe0', '#ffffff', '#c9a0ff'], size: .4, life: 1.1, gravity: -.5 });
+    sfx('lantern'); questEvent('lantern', null, l.pos);
+    return true;
+  }
+  return false;
+}
+function resetLanterns() { for (const l of lanterns) l.lit = 0; }
+
+// ---------- quests on the far islands ----------
+Object.assign(QUESTS, {
+  Holly: [
+    { id: 'flakes', title: 'Snowflake Collection', type: 'collect', item: 'snowflake', need: 4, reward: 5,
+      ask: 'Four magic snowflakes landed somewhere on Frostvale. Can you find them for my collection?',
+      done: 'They are all different! Thank you so much!' },
+    { id: 'snowgarden', title: 'Snow Garden', type: 'flower', need: 2, reward: 5, near: FOLK.Holly.house, nearR: 13, nearMsg: 'Closer to my igloo, please!',
+      ask: 'Even in the snow I would love some flowers. Cast Flower Field twice near my igloo!',
+      done: 'Flowers in the snow! It is like magic. Well, it IS magic.' },
+  ],
+  Bjorn: [
+    { id: 'mittens', title: 'Lost Mittens', type: 'collect', item: 'mitten', need: 2, reward: 5,
+      ask: 'The penguins lost two of their mittens again! Can you find them somewhere on the island?',
+      done: 'Warm flippers for everyone! Have some cocoa.' },
+    { id: 'penguins', title: 'Penguin Pals', type: 'happy', need: 3, reward: 5,
+      ask: 'The penguins look a bit chilly. Make 3 of them happy with a pat or a Star Shot!',
+      done: 'Look at them waddle! Happy penguins, happy Bjorn.' },
+  ],
+  Saffron: [
+    { id: 'gems', title: 'Fire Gems', type: 'collect', item: 'gem', need: 3, reward: 6,
+      ask: 'I need 3 fire gems for my soup pot. They glow orange, you cannot miss them!',
+      done: 'Toasty! This soup will be the warmest ever.' },
+    { id: 'calm', title: 'Calm the Volcano', type: 'spell', item: 'rainbow', need: 1, reward: 5,
+      ask: 'The volcano is a bit grumpy today. A pretty rainbow always cheers it up. Cast one here, please!',
+      done: 'Hear that? A happy little rumble. Thank you!' },
+  ],
+  Flint: [
+    { id: 'lizards', title: 'Lizard Friends', type: 'happy', need: 3, reward: 5,
+      ask: 'The fire lizards are shy. Make 3 of them happy so I can study them up close!',
+      done: 'Their little tail flames are all sparkly now!' },
+    { id: 'stargaze', title: 'Volcano Stargazing', type: 'spell', item: 'night', need: 1, reward: 5,
+      ask: 'I want to see the stars above the volcano. Could you cast Day & Night for me?',
+      done: 'The sky and the lava together… so beautiful.' },
+  ],
+  Luna: [
+    { id: 'lanterns', title: 'Light the Lanterns', type: 'lantern', need: 5, reward: 6,
+      ask: 'The wind blew out the lanterns in the wood. Shoot them with Star Shot to light them again! Five, please.',
+      done: 'The wood is glowing again. The mushrooms say thank you!' },
+    { id: 'spores', title: 'Glow Spores', type: 'collect', item: 'spore', need: 4, reward: 5,
+      ask: 'Four glow spores floated away from my garden. Can you catch them for me?',
+      done: 'Back where they belong. They tickle, right?' },
+  ],
+  Moss: [
+    { id: 'dance', title: 'Butterfly Ball', type: 'spell', item: 'butterfly', need: 2, reward: 5,
+      ask: 'The shroomlings want to have a dance party! Cast Butterfly Dance twice to start it.',
+      done: 'What a party! The shroomlings are still dancing.' },
+    { id: 'shroomgarden', title: 'Mushroom Garden', type: 'flower', need: 2, reward: 5, near: FOLK.Moss.house, nearR: 13, nearMsg: 'Closer to my mushroom house, please!',
+      ask: 'Mushrooms love flowers as neighbours. Cast Flower Field twice near my mushroom house!',
+      done: 'A garden fit for a mushroom king. Thank you, friend!' },
+  ],
+});
+for (const [name, L] of Object.entries(FOLK)) for (const q of QUESTS[name]) q.isle = L.isle;
+
+// ---------- which island is open ----------
+// the quest givers of an island (your own character's quests on Starvale don't count)
+function isleGivers(id) {
+  return id === 'main' ? Object.keys(CHARACTERS).filter(n => playerIsCustom || n !== playerName)
+    : Object.keys(FOLK).filter(n => FOLK[n].isle === id);
+}
+function isleProgress(id) {
+  let done = 0, total = 0;
+  for (const n of isleGivers(id)) { const L = (QUESTS[n] || []).length; total += L; done += Math.min(save.qidx[n] || 0, L); }
+  return { done, total };
+}
+const isleDone = id => { const p = isleProgress(id); return p.done >= p.total; };
+const isleOpen = i => i === 0 || isleDone(ISLES[i - 1].id);
+function updateIsleRow() {
+  const any = ISLES.some((I, i) => i > 0 && isleOpen(i));
+  document.getElementById('isleRow').style.display = any || curIsle ? '' : 'none';
+  document.getElementById('isleNow').textContent = curIsle ? curIsle.name : 'Starvale';
+}
+function checkIsleUnlocks() {
+  if (!started) return;
+  if (!Array.isArray(save.isles)) save.isles = [];
+  ISLES.forEach((I, i) => {
+    if (i === 0 || !isleOpen(i) || save.isles.includes(I.id)) return;
+    save.isles.push(I.id); storeSave();
+    const from = ISLES[i - 1];
+    toast(`You finished every quest on ${from.name}! The Star Portal is glowing: ${I.name} is open!`, 5500, 'portal');
+    setTimeout(() => toast(i === 1 ? "Find the Star Portal near Dusty's red house and press E to travel." : 'Step into the Star Portal to travel there.', 4500, 'portal'), 3000);
+    sfx('fanfare');
+  });
+  if (isleDone(ISLES[ISLES.length - 1].id) && !save.isles.includes('all')) {
+    save.isles.push('all'); save.stars += 10; storeSave(); updateStarsUI();
+    setTimeout(() => { toast('You helped every wizard on every island! +10 bonus stars', 5500, 'star'); sfx('fanfare'); }, 1500);
+  }
+  updateIsleRow();
+}
+
+// ---------- the sky follows you: sky dome, sun, moon and the shadow area centre on your island ----------
+scene.add(sun.target);
+const skyParts = [sky, starPts, sunSprite, moon, moonGlow, sun].map(o => [o, o.position.clone()]);
+function setSkyCenter(x, z) {
+  skyO.set(x, 0, z);
+  for (const [o, p] of skyParts) o.position.set(p.x + x, p.y, p.z + z);
+  sun.target.position.set(x, 0, z);
+}
+
+// ---------- the travel panel ----------
+const travelEl = document.getElementById('travel');
+const travelOpen = () => !travelEl.classList.contains('hidden');
+function openTravel() {
+  if (!started) return;
+  renderTravel(); travelEl.classList.remove('hidden');
+  for (const k in keys) keys[k] = false;
+  sfx('door');
+}
+function closeTravel() { travelEl.classList.add('hidden'); }
+function renderTravel() {
+  const here = curIsle ? curIsle.id : 'main', open = ISLES.filter((I, i) => isleOpen(i)).length;
+  document.getElementById('travelSub').textContent = open === ISLES.length
+    ? 'Every island is open. Where shall we go?'
+    : `Finish every quest on an island to open the next one (${open} of ${ISLES.length} open).`;
+  const box = document.getElementById('travelList'); box.innerHTML = '';
+  ISLES.forEach((I, i) => {
+    const ok = isleOpen(i), row = document.createElement('div');
+    row.className = 'item' + (I.id === here ? ' here' : ok ? '' : ' locked');
+    let info = I.sub;
+    if (!ok) {
+      const prev = ISLES[i - 1], p = isleProgress(prev.id);
+      info = isleOpen(i - 1) ? `Finish every quest on ${prev.name} (${p.done} / ${p.total})<div class="tbar"><i style="width:${p.total ? p.done / p.total * 100 : 0}%"></i></div>` : `First open ${prev.name}`;
+    } else if (i > 0 || isleGivers(I.id).length) {
+      const p = isleProgress(I.id);
+      info += ` · quests ${p.done} / ${p.total}`;
+    }
+    row.innerHTML = `<div class="ico">${I.icon}</div><div class="txt"><b>${I.name}</b><span>${info}</span></div>`;
+    const b = document.createElement('button');
+    if (I.id === here) { b.textContent = 'You are here'; b.disabled = true; b.className = 'owned'; }
+    else if (!ok) { b.innerHTML = 'Locked'; b.disabled = true; }
+    else { b.innerHTML = `Travel ${iconHTML('sparkle')}`; b.addEventListener('click', () => travelTo(I.id)); }
+    row.appendChild(b); box.appendChild(row);
+  });
+}
+document.getElementById('travelClose').addEventListener('click', () => closeTravel());
+travelEl.addEventListener('click', e => { if (e.target === travelEl) closeTravel(); });
+
+let warping = false;
+function travelTo(id) {
+  if (warping) return;
+  closeTravel(); warping = true;
+  const warpEl = document.getElementById('warp'), nameEl = document.getElementById('isleName');
+  warpEl.classList.add('on'); sfx('warp');
+  setTimeout(() => {
+    const I = id === 'main' ? null : ISLE(id), pt = PORTALS.find(p => p.isle === id);
+    curIsle = I;
+    player.position.copy(pt.arrive); pState.vy = 0; pState.grounded = true; pVel.set(0, 0, 0); selfLev = 0;
+    pState.heading = player.rotation.y = pt.rot; camYaw = pt.rot + Math.PI - 1.1;   // a bit to the side, so the portal doesn't block the view
+    moveTarget = petTarget = null;
+    setSkyCenter(I ? I.x : 0, I ? I.z : 0);
+    camTarget.set(player.position.x, 1.4, player.position.z);
+    applyTime(); renderFriends(); updateIsleRow();
+    warpEl.classList.remove('on');
+    const name = I ? I.name : 'Starvale';
+    nameEl.innerHTML = `${name}<small>${I ? I.sub : 'Home sweet home'}</small>`; nameEl.classList.add('on');
+    setTimeout(() => nameEl.classList.remove('on'), 2600);
+    burst(player.position.clone().add(new THREE.Vector3(0, 1, 0)), 40, { speed: 5, colors: ['#ffffff', '#d8c4ff', '#ffd1f0', '#fff09a'], size: .5, life: 1.3, gravity: -.5 });
+    if (I) {
+      save.visited = save.visited || {};
+      const first = !save.visited[id]; save.visited[id] = true; storeSave();
+      const folk = isleGivers(id);
+      if (first) setTimeout(() => toast(`Welcome to ${name}! ${folk.join(' and ')} live here and have quests for you.`, 5000, 'portal'), 1200);
+    }
+    warping = false;
+  }, 520);
+}
+function nearPortal() {
+  if (!started || player.position.y > 1.5) return null;
+  for (const p of PORTALS) if (distXZ(p.front) < 2.4 || distXZ(p) < 2.6) return p;
+  return null;
+}
+
+// ---------- every frame ----------
+let farFxT = 0;
+function updateFar(dt, time) {
+  for (const p of PORTALS) {
+    if (distXZ(p) > 80) continue;
+    p.disc.rotation.z -= dt * 1.4;
+    p.disc.material.opacity = .8 + Math.sin(time * 2) * .08;
+    p.star.position.y = 4.75 + Math.sin(time * 2) * .12; p.star.rotation.y += dt * 1.5;
+    p.halo.material.opacity = .45 + Math.sin(time * 2.4) * .12;
+    if (Math.random() < dt * 8) {
+      const a = Math.random() * Math.PI * 2, r = Math.random() * 1.5;
+      const q = new THREE.Vector3(Math.cos(a) * r, 2.05 + Math.sin(a) * r * 1.25, .1).applyAxisAngle(new THREE.Vector3(0, 1, 0), p.rot).add(p.g.position);
+      emit({ pos: q, vel: new THREE.Vector3(0, rr(.2, .7), 0), life: 1.1, size: rr(.15, .35), color: rpick(['#ffffff', '#d8c4ff', '#ffd1f0', '#fff09a']), tex: starTex, spin: 2 });
+    }
+  }
+  // lanterns fade in and out
+  for (const l of lanterns) {
+    if (l.lit > 0) l.lit -= dt;
+    const on = l.lit > 0 ? Math.min(1, l.lit / 3) : 0;
+    l.mat.emissiveIntensity = lerp(l.mat.emissiveIntensity, on * 2.2, damp(4, dt));
+    l.halo.material.opacity = lerp(l.halo.material.opacity, on * (.75 + Math.sin(time * 3 + l.pos.x) * .1), damp(4, dt));
+  }
+  // snow only falls on Starvale and Frostvale
+  snow.visible = !curIsle || curIsle.id === 'frost';
+  if (!curIsle) return;
+  farFxT -= dt;
+  const I = curIsle;
+  if (I.id === 'frost' && farFxT <= 0) {
+    farFxT = .4;
+    emit({ pos: I.chimney.clone().add(new THREE.Vector3(rr(-.1, .1), 0, rr(-.1, .1))), vel: new THREE.Vector3(rr(-.2, .3), rr(.8, 1.2), rr(-.2, .2)), life: 3, size: .7, grow: 2.2, color: night > .5 ? '#9d93c9' : '#ffffff', add: false });
+  }
+  if (I.id === 'ember') {
+    if (farFxT <= 0) {
+      farFxT = .3;
+      emit({ pos: I.crater.clone().add(new THREE.Vector3(rr(-.8, .8), 0, rr(-.8, .8))), vel: new THREE.Vector3(rr(-.3, .3), rr(1.2, 2), rr(-.3, .3)), life: 4, size: 1.4, grow: 2.6, color: night > .5 ? '#8a6a8f' : '#f4ecef', add: false });
+    }
+    if (Math.random() < dt * 6) emit({ pos: I.crater.clone().add(new THREE.Vector3(rr(-1, 1), 0, rr(-1, 1))), vel: new THREE.Vector3(rr(-1, 1), rr(2, 4), rr(-1, 1)), life: 1.2, size: rr(.2, .35), color: rpick(['#ffb347', '#ff8a3d', '#ffd84d']), gravity: 3 });
+    if (Math.random() < dt * 4) {
+      const a = Math.random() * Math.PI * 2, r = Math.random() * I.lava.r * .85;
+      emit({ pos: new THREE.Vector3(I.lava.x + Math.cos(a) * r, .2, I.lava.z + Math.sin(a) * r), vel: new THREE.Vector3(0, rr(.5, 1.2), 0), life: .8, size: rr(.25, .45), color: rpick(['#ffb347', '#ffd84d']) });
+    }
+  }
+  if (I.id === 'shroom') {
+    for (const sp of I.spores) {
+      sp.s.position.set(sp.x + Math.sin(time * .4 + sp.ph) * 1.4, sp.y + Math.sin(time * .9 + sp.ph * 2) * .5, sp.z + Math.cos(time * .35 + sp.ph) * 1.4);
+      sp.s.material.opacity = (.25 + night * .65) * (.6 + .4 * Math.sin(time * 2.5 + sp.ph * 4));
+    }
+  }
+}
+
 // ================= loop =================
 const clock = new THREE.Clock();
 let time = 0;
@@ -4752,6 +5448,7 @@ function frame() {
   updatePond(dt, time);
   updateFishing(dt, time);
   updateSky(dt, time);
+  updateFar(dt, time);
   updateChristmas(dt, time);
   updateCamera(dt);
   updateParticles(dt);

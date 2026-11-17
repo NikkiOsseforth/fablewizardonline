@@ -4,7 +4,7 @@ Een 3D-spelletje in één bestand (`index.html`, Three.js). Ideeën staan in `ID
 
 ## Wegwijzer in `index.html`
 
-Lees niet het hele bestand (bijna 5000 regels). Het script is opgedeeld in secties met een kop als `// ================= spells =================`. Zoek met Grep op de kop en lees alleen die sectie. Regelnummers verschuiven steeds, de koppen niet.
+Lees niet het hele bestand (ruim 5000 regels). Het script is opgedeeld in secties met een kop als `// ================= spells =================`. Zoek met Grep op de kop en lees alleen die sectie. Regelnummers verschuiven steeds, de koppen niet.
 
 | Kop | Wat staat er |
 | --- | --- |
@@ -31,6 +31,7 @@ Lees niet het hele bestand (bijna 5000 regels). Het script is opgedeeld in secti
 | `multiplayer` | `SUPABASE`, aanwezigheid, andere spelers tekenen, spreuken doorsturen |
 | `christmas` | kerstboom, lichtjes, sneeuwpop, sneeuw |
 | `pond life & fishing` | golfjes, `FISH`, het vis-spelletje, visboek |
+| `far islands & the Star Portal` | `ISLES` (Frostvale, Emberpeak, Glowshroom Wood), `FOLK` (bewoners) en hun `QUESTS`, `makePenguin`/`makeLizard`/`makeShroom`, lantaarns, `PORTALS`, `travelTo`, `checkIsleUnlocks`, `updateFar` |
 | `loop` | `frame()`: roept alle `update…`-functies aan |
 
 De HTML en CSS van de interface staan bovenaan het bestand, vóór het script.
@@ -42,6 +43,7 @@ De HTML en CSS van de interface staan bovenaan het bestand, vóór het script.
 - **Iets dat 's nachts gloeit:** maak het materiaal met `glow(toon(...), dag, nacht)`.
 - **Spreuk, quest, recept, vis, winkelartikel, dagtaak:** voeg een regel toe aan de bijbehorende lijst (`SPELLS`, `QUESTS`, `RECIPES`, `FISH`, `SHOP`, `DAILY_TASKS`) en volg het patroon van de bestaande regels.
 - **Melding of geluid:** `toast(tekst, ms, icoon)` en `sfx(naam)`.
+- **Iets op een ander eiland:** de verre eilanden staan ver weg in dezelfde wereld (`I.x`, `I.z`; de mist verbergt ze voor elkaar). Bouw er in hun eigen blok in `far islands` met `fr`/`FR`/`fpick` (eigen startwaarde) en houd plekken vrij met `block`/`freeSpot`. Een nieuwe bewoner krijgt een regel in `FOLK` en missies in `QUESTS`; een eiland gaat open als alle missies van het vorige klaar zijn.
 - **Tikbaar oppervlak:** `onTap` raakt alleen de vlakken in zijn eigen lijst (eiland, vloeren, zwevende eilanden). Voeg een nieuwe loopvloer daar toe.
 
 ## Afspraken
