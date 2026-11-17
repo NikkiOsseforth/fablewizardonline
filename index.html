@@ -242,6 +242,12 @@
   #fishbook h2{margin:0;font-size:34px;display:flex;align-items:center;justify-content:center;gap:8px}
   #fishbook h2 .ic{width:34px;height:34px}
   #fishList{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;text-align:left}
+  #bookTabs{display:flex;gap:8px;justify-content:center;margin:10px 0 4px;flex-wrap:wrap}
+  #bookTabs button{font-family:inherit;font-weight:800;font-size:15px;display:flex;align-items:center;gap:5px;border:3px solid var(--edge);border-radius:12px;padding:5px 12px;cursor:pointer;color:var(--ink);background:var(--paper-2);box-shadow:0 3px 0 var(--edge)}
+  #bookTabs button .ic{width:20px;height:20px}
+  #bookTabs button.on{background:var(--gold-soft);border-color:var(--gold-d);box-shadow:0 3px 0 var(--gold-d)}
+  #bookTabs button small{font-size:12px;font-weight:700;color:var(--ink-soft)}
+  .bookhead{font-weight:800;font-size:14px;color:var(--ink-soft);margin:6px 2px -2px}
   .rar{font-size:11px;font-weight:800;font-style:normal;border-radius:6px;padding:1px 6px;color:#fff;margin-left:6px;vertical-align:1px;text-shadow:0 1px 0 rgba(0,0,0,.25)}
   @media (max-width:640px){ #fishing{bottom:178px} }
   /* star portal & other islands */
@@ -311,7 +317,7 @@
     <button class="roundbtn" id="townBtn" title="Town Hall" style="display:none"><span class="ic" data-ic="hall"></span></button>
     <button class="roundbtn" id="shopBtn" title="Star Shop (B)"><span class="ic" data-ic="bag"></span></button>
     <button class="roundbtn" id="muteBtn" title="Sound (M)"><span class="ic" data-ic="soundOn"></span></button>
-    <button class="roundbtn" id="fishBookBtn" title="Fish Book (F)"><span class="ic" data-ic="fish"></span></button>
+    <button class="roundbtn" id="fishBookBtn" title="Collection Book (F)"><span class="ic" data-ic="book"></span></button>
     <button class="roundbtn" id="helpBtn" title="Show/hide keys (H)"><span class="ic" data-ic="help"></span></button>
   </div>
   <div id="potionBelt" class="panel"></div>
@@ -322,7 +328,7 @@
     <kbd>E</kbd><span>pet · talk · wave · use</span>
     <kbd>Q</kbd><span>drink a potion</span>
     <kbd>B</kbd><span>Star Shop</span>
-    <kbd>F</kbd><span>Fish Book</span>
+    <kbd>F</kbd><span>Collection Book</span>
     <kbd>M</kbd><span>sound on/off</span>
     <kbd>H</kbd><span>hide these keys</span>
   </div>
@@ -374,7 +380,8 @@
 
 <div id="fishbook" class="hidden">
   <div class="card panel">
-    <h2><span class="ic" data-ic="fish"></span> Fish Book</h2>
+    <h2><span class="ic" data-ic="book"></span> Collection Book</h2>
+    <div id="bookTabs"></div>
     <p class="shopsub" id="fishSub"></p>
     <div id="fishList"></div>
     <button class="bigbtn ghost" id="fishBookClose">Close</button>
@@ -501,6 +508,7 @@ ICON.robeSunset = robeSVG('#ffb38a', '#e8673e', '#fff09a');
 ICON.petBunny = svg('<ellipse cx="9" cy="6" rx="1.8" ry="4.2" fill="#ffd1f0" stroke="#d9579b" stroke-width="1.2"/><ellipse cx="15" cy="6" rx="1.8" ry="4.2" fill="#ffd1f0" stroke="#d9579b" stroke-width="1.2"/><circle cx="12" cy="14" r="6.6" fill="#ffd1f0" stroke="#d9579b" stroke-width="1.3"/><path d="M12 4.2l1 3.6h-2z" fill="#ffe066" stroke="#e0a800" stroke-width=".8"/><circle cx="9.6" cy="13.4" r="1" fill="#2b1d3a"/><circle cx="14.4" cy="13.4" r="1" fill="#2b1d3a"/><ellipse cx="12" cy="16" rx=".9" ry=".6" fill="#ff6fae"/>');
 ICON.petSpirit = svg('<path d="M12 3.5c3.8 0 6.5 3 6.5 7.2 0 4.6-3 8.3-6.5 9.8-3.5-1.5-6.5-5.2-6.5-9.8 0-4.2 2.7-7.2 6.5-7.2z" fill="#e2d0ff" stroke="#9b6bff" stroke-width="1.3"/><circle cx="9.8" cy="11" r="1" fill="#2b1d3a"/><circle cx="14.2" cy="11" r="1" fill="#2b1d3a"/><path d="M10.6 13.6q1.4 1.2 2.8 0" stroke="#2b1d3a" stroke-width="1"/><circle cx="20" cy="5" r="1" fill="#ffd84d"/><circle cx="4" cy="7" r=".8" fill="#ffd84d"/>');
 ICON.petDragon = svg('<path d="M4 10l4.5 1.5L7 15zM20 10l-4.5 1.5L17 15z" fill="#fff3c4" stroke="#e0a800" stroke-width="1"/><circle cx="12" cy="13" r="6.4" fill="#9fdcff" stroke="#4a9fd8" stroke-width="1.3"/><ellipse cx="12" cy="15.6" rx="3" ry="2.2" fill="#fff3c4"/><path d="M9 7.4l-.6-2.6 2 1.6M15 7.4l.6-2.6-2 1.6" fill="#fff3c4" stroke="#e0a800" stroke-width=".9"/><circle cx="9.8" cy="12" r="1" fill="#2b1d3a"/><circle cx="14.2" cy="12" r="1" fill="#2b1d3a"/>');
+ICON.book = svg('<path d="M12 6.2C9.6 4.6 6.6 4.3 3.6 5v13.4c3-.7 6-.4 8.4 1.2 2.4-1.6 5.4-1.9 8.4-1.2V5c-3-.7-6-.4-8.4 1.2z" fill="#ffe3f0" stroke="#d96aa0" stroke-width="1.4"/><path d="M12 6.2v13.4" stroke="#d96aa0" stroke-width="1.3"/><path d="M6 9.2c1.5-.3 2.9-.1 4 .5M6 12.2c1.5-.3 2.9-.1 4 .5" stroke="#e8a5c4" stroke-width="1.1"/><path d="M16.6 8.6l.7 1.4 1.5.2-1.1 1 .3 1.5-1.4-.7-1.3.7.2-1.5-1.1-1 1.6-.2z" fill="#ffd84d" stroke="#e0a800" stroke-width=".8"/>');
 const iconHTML = (name, cls = 'ic') => `<span class="${cls}">${ICON[name] || ''}</span>`;
 document.querySelectorAll('[data-ic]').forEach(el => { el.innerHTML = ICON[el.dataset.ic] || ''; });
 
@@ -2169,6 +2177,7 @@ function makeHappy(c) {
     c.label.innerHTML = iconHTML('heart') + ' ' + c.name;
     renderFriends();
     toast(`${c.name} is now your friend!`, 3300, 'heart');
+    setTimeout(() => bookAdd('c', c.name, c.name), 1300);
     const mates = creatures.filter(q => q.isle === c.isle);
     if (mates.every(q => q.friend)) setTimeout(() => celebrate(c.isle), 900);
   }
@@ -2370,13 +2379,23 @@ function updateProjectiles(dt) {
 const flowerStem = new CylGeo(.03, .03, .5, 5), petalGeo = new SphGeo(.2, 10, 6);
 const stemMat2 = toon('#5cbf5c'), centerMat = toon('#ffd84d'), petalMats = PASTELS.concat(['#ffffff']).map(c => toon(c));
 const flowers = [];
-function spawnFlower(x, z, delay) {
-  const g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(.001); g.rotation.y = Math.random() * 6; scene.add(g);
+function spawnFlower(x, z, delay, sp = null, y = 0) {
+  const g = new THREE.Group(); g.position.set(x, y, z); g.scale.setScalar(.001); g.rotation.y = Math.random() * 6; scene.add(g);
   mk(flowerStem, stemMat2, 0, .25, 0, g, false);
-  const pt = mk(petalGeo, rpick(petalMats), 0, .52, 0, g, false); pt.scale.set(1, .38, 1);
-  ball(centerMat, 0, .59, 0, .08, .05, .08, g, false);
+  if (sp) {   // a special flower from the Collection Book: five round petals, maybe glowing
+    sp.mats ||= (sp.cols || [sp.col]).map(c => toon(c, sp.glow ? { emissive: c, emissiveIntensity: .45 } : {}));
+    for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; ball(sp.mats[i % sp.mats.length], Math.cos(a) * .15, .53, Math.sin(a) * .15, .12, .06, .12, g, false); }
+    ball(toon(sp.mid, { emissive: sp.mid, emissiveIntensity: .35 }), 0, .56, 0, .08, .06, .08, g, false);
+    if (sp.glow) {
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: sp.col, transparent: true, opacity: .6, blending: THREE.AdditiveBlending, depthWrite: false }));
+      halo.scale.setScalar(1.1); halo.position.y = .55; g.add(halo);
+    }
+  } else {
+    const pt = mk(petalGeo, rpick(petalMats), 0, .52, 0, g, false); pt.scale.set(1, .38, 1);
+    ball(centerMat, 0, .59, 0, .08, .05, .08, g, false);
+  }
   const leaf = ball(stemMat2, .08, .2, 0, .1, .03, .05, g, false); leaf.rotation.z = .5;
-  flowers.push({ g, t: -delay, s: rr(.9, 1.5), done: false });
+  flowers.push({ g, t: -delay, s: sp ? 1.8 : rr(.9, 1.5), done: false });
   if (flowers.length > 280) { const old = flowers.shift(); scene.remove(old.g); }
 }
 function castFlowers() {
@@ -2388,6 +2407,18 @@ function castFlowers() {
     if (!onLand(x, z) || Math.hypot(x - POND.x, z - POND.z) < POND.r || inLava(x, z)) continue;
     spawnFlower(x, z, i * .05);
   }
+  // special flowers for the Collection Book grow in special places and at special times
+  const sky = isleUnder(player.position), found = [FLOWER_BY_ID.get('meadow')];
+  const here = curIsle && FLOWERS.find(q => q.isle === curIsle.id);
+  if (here) found.push(here);
+  if (sky) found.push(FLOWER_BY_ID.get('cloud'));
+  if (rainbow) found.push(FLOWER_BY_ID.get('rainbow'));
+  if (night > .5) found.push(FLOWER_BY_ID.get('moon'));
+  found.slice(1).forEach((sp, i) => {
+    const a = i * 2.1 + .5, x = sky ? player.position.x + f.x * 1.3 + Math.cos(a) * .5 : cx + Math.cos(a) * .7, z = sky ? player.position.z + f.z * 1.3 + Math.sin(a) * .5 : cz + Math.sin(a) * .7;
+    if (sky || onLand(x, z)) spawnFlower(x, z, .5 + i * .15, sp, sky ? sky.top : 0);
+  });
+  found.forEach((sp, i) => setTimeout(() => bookAdd('fl', sp.id, sp.name), 900 + i * 1400));
   sfx('flower');
   questEvent('flower', null, { x: cx, z: cz });
 }
@@ -3058,7 +3089,7 @@ function updateSky(dt, time) {
 const keys = {};
 addEventListener('keydown', e => {
   if (shopOpen()) { if (e.code === 'KeyB' || e.code === 'Escape') toggleShop(); return; }
-  if (fishBookOpen()) { if (e.code === 'KeyF' || e.code === 'Escape') toggleFishBook(); return; }
+  if (bookOpen()) { if (e.code === 'KeyF' || e.code === 'Escape') toggleBook(); return; }
   if (travelOpen()) { if (!e.repeat && (e.code === 'KeyE' || e.code === 'Escape')) closeTravel(); return; }
   if (fishing.state && started && overlay.classList.contains('hidden') && (e.code === 'KeyE' || e.code === 'Space')) {
     e.preventDefault();
@@ -3083,7 +3114,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyH') toggleHelp();
   if (e.code === 'KeyB') toggleShop();
   if (e.code === 'KeyQ') drinkQuick();
-  if (e.code === 'KeyF') toggleFishBook();
+  if (e.code === 'KeyF') toggleBook();
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
@@ -3446,7 +3477,7 @@ const BOX_ONLY = [
   { id: 'petspirit', icon: 'petSpirit', name: 'Mini Star Spirit', desc: 'A tiny glowing pet that floats by your side', kind: 'pet', val: 'spirit' },
   { id: 'petdragon', icon: 'petDragon', name: 'Mini Dragon', desc: 'A tiny dragon pet that flaps along with you', kind: 'pet', val: 'dragon' },
 ];
-const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, pet: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null, fish: {}, daily: null, streak: 0, lastDay: null, wisps: {}, isles: [], room: null, at: 0 };
+const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, pet: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null, fish: {}, daily: null, streak: 0, lastDay: null, wisps: {}, isles: [], room: null, book: null, at: 0 };
 const activeQ = {};          // giver name -> { q, progress, ready, target }
 const questItems = [];       // collectible things in the world
 const bugs = [];
@@ -3457,6 +3488,8 @@ function loadSave() {
   const d = acctOn() ? acctPick(saveSlot()) : readLocal(saveKey());
   if (d && typeof d === 'object' && !Array.isArray(d)) Object.assign(save, d);
   if (!Array.isArray(save.owned)) save.owned = [];
+  if (!save.book || typeof save.book !== 'object') save.book = {};   // the Collection Book: critters (c) and flowers (fl) you found
+  for (const k of ['c', 'fl']) if (!save.book[k] || typeof save.book[k] !== 'object') save.book[k] = {};
   if (save.room && (!Array.isArray(save.room.items) || !Array.isArray(save.room.up))) save.room = null;   // your own room in the Town Hall
   for (const id of save.owned) { const sp = SPELLS.findIndex(s => s.id === id); if (sp >= 0) unlockSpell(sp); }
   if (!Object.hasOwn(PET_DEFS, save.pet) || !save.owned.includes('pet' + save.pet)) save.pet = null;   // pet ids are 'pet' + type
@@ -4128,6 +4161,7 @@ function pickIngredient(i) {
   burst(it.g.position.clone().setY(it.baseY + .5), 14, { speed: 3, colors: [it.col, '#ffffff', '#fff09a'], size: .32, life: .8, gravity: 0 });
   scene.remove(it.g); ingredients.splice(i, 1);
   save.ing[it.kind] = (save.ing[it.kind] || 0) + 1;
+  if (it.kind === 'flower') setTimeout(() => bookAdd('fl', 'blossom', 'Star Blossom'), 1200);
   sfx('pickup'); dailyEvent('ing');
   if (!save.seenIng.includes(it.kind)) {
     save.seenIng.push(it.kind);
@@ -6195,7 +6229,7 @@ function finishCatch() {
   questEvent('fish'); dailyEvent('fish');
   if (f.id === 'wish') { mana = 100; setTimeout(() => toast('The Golden Wishfish grants you a wish: your magic is full!', 4000, 'sparkle'), 900); }
   storeSave();
-  if (fishBookOpen()) renderFishBook();
+  if (bookOpen()) renderBook();
   if (net && f.rarity >= 1) Promise.resolve().then(() => net.emit('spell', { id: 'fish', f: f.id, x: r2(player.position.x), y: r2(player.position.y), z: r2(player.position.z), h: r2(player.rotation.y) })).catch(() => {});
 }
 function updateFishing(dt, time) {
@@ -6243,31 +6277,129 @@ function updateFishing(dt, time) {
   p.needsUpdate = true;
 }
 
-// --- the Fish Book ---
-const fishBookEl = document.getElementById('fishbook');
-const fishBookOpen = () => !fishBookEl.classList.contains('hidden');
-function toggleFishBook() {
-  if (!started) return;
-  fishBookEl.classList.toggle('hidden');
-  if (fishBookOpen()) { if (fishing.state) stopFishing(null); renderFishBook(); for (const k in keys) keys[k] = false; }
+// --- the Collection Book: critters, flowers and fish you found ---
+const FLOWERS = [
+  { id: 'meadow', name: 'Meadow Daisy', col: '#ffffff', mid: '#ffd84d', desc: 'A happy little flower that pops up wherever magic lands.', tip: 'Cast the Flower Field spell anywhere.' },
+  { id: 'blossom', name: 'Star Blossom', col: '#ffb3d9', mid: '#ffd84d', glow: true, desc: 'A glowing pink blossom. Lovely in potions!', tip: 'Pick up a glowing pink blossom on Starvale.' },
+  { id: 'moon', name: 'Moonpetal', col: '#9fc4ff', mid: '#fff6c9', glow: true, desc: 'Its petals glow softly, just like the moon.', tip: 'Cast Flower Field at night.' },
+  { id: 'rainbow', name: 'Rainbow Bloom', col: '#ff8fc7', cols: ['#ff7a8a', '#ffd84d', '#7fe0a0', '#8fd0ff', '#c9a0ff'], mid: '#ffffff', desc: 'Every petal has a different colour.', tip: 'Cast Flower Field while a rainbow shines in the sky.' },
+  { id: 'cloud', name: 'Cloud Puff', col: '#f4f9ff', mid: '#bfe8ff', desc: 'Soft as a cloud and light as a feather.', tip: 'Cast Flower Field on a floating sky island.' },
+  { id: 'snow', name: 'Snowbell', col: '#dff3ff', mid: '#8fd0ff', isle: 'frost', desc: 'A frosty flower that never melts.', tip: 'Cast Flower Field on a snowy island far away.' },
+  { id: 'ember', name: 'Ember Lily', col: '#ffa04d', mid: '#ffe066', glow: true, isle: 'ember', desc: 'Warm to the touch, like a tiny campfire.', tip: 'Cast Flower Field on a warm volcano island far away.' },
+  { id: 'glowbell', name: 'Glowbell', col: '#7dffe0', mid: '#c9a0ff', glow: true, isle: 'shroom', desc: 'It lights up the dark forest like a lantern.', tip: 'Cast Flower Field in a glowing forest far away.' },
+];
+const FLOWER_BY_ID = new Map(FLOWERS.map(f => [f.id, f]));
+const CRITTER_DESC = {
+  bunny: 'A fluffy unicorn bunny that hops through the grass.',
+  spirit: 'A little star spirit that floats and twinkles.',
+  dragon: 'A tiny friendly dragon with flappy wings.',
+  corgi: "Dusty's corgi. He never wanders far from his doghouse.",
+  cat: "Nikki's black cat. She prowls around the cottage garden.",
+  penguin: 'A round penguin that loves sliding on the ice.',
+  lizard: 'A warm little fire lizard. Toasty to cuddle!',
+  shroom: 'A shy mushroom critter with a glowing cap.',
+};
+const DAYS = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'];
+const GREY = '#e4dcf3', GREY_LINE = '#b9a8dc';
+function critterSVG(type, col, line = '#5a3f8f') {
+  const sh = col === GREY, dark = sh ? GREY_LINE : new THREE.Color(col).getHSL({}).l < .3 ? '#c6ff4d' : '#3a2a55';
+  let back = '', front = '';
+  if (type === 'bunny') back = `<ellipse cx="9" cy="6" rx="1.9" ry="4.4" fill="${col}" stroke="${line}" stroke-width="1.2"/><ellipse cx="15" cy="6" rx="1.9" ry="4.4" fill="${col}" stroke="${line}" stroke-width="1.2"/>`;
+  if (type === 'cat' || type === 'corgi') back = `<path d="M5.6 11.5L6.4 4.8l4.4 3.6zM18.4 11.5l-.8-6.7-4.4 3.6z" fill="${col}" stroke="${line}" stroke-width="1.2" stroke-linejoin="round"/>`;
+  if (type === 'dragon') back = `<path d="M5 12L1.8 8.6l1.2 5.2zM19 12l3.2-3.4-1.2 5.2z" fill="${sh ? col : '#fff3c4'}" stroke="${line}" stroke-width="1.1" stroke-linejoin="round"/>`;
+  if (type === 'lizard') back = `<circle cx="9" cy="8.4" r="1.4" fill="${col}" stroke="${line}"/><circle cx="12" cy="7.6" r="1.4" fill="${col}" stroke="${line}"/><circle cx="15" cy="8.4" r="1.4" fill="${col}" stroke="${line}"/>`;
+  if (type === 'shroom') front = `<path d="M3.6 11.6a8.4 6.6 0 0 1 16.8 0z" fill="${col}" stroke="${line}" stroke-width="1.3"/>${sh ? '' : '<circle cx="9" cy="8.6" r="1.1" fill="#fff"/><circle cx="14.6" cy="7.8" r="1" fill="#fff"/>'}`;
+  const floaty = type === 'spirit' || type === 'wisp';
+  const body = floaty
+    ? `<path d="M12 4c3.8 0 6.4 3 6.4 7 0 4.4-3 7.8-6.4 9.4-3.4-1.6-6.4-5-6.4-9.4 0-4 2.6-7 6.4-7z" fill="${col}" stroke="${line}" stroke-width="1.3"/>`
+    : `<ellipse cx="12" cy="14" rx="7.4" ry="6.4" fill="${type === 'shroom' && !sh ? '#fff4e0' : col}" stroke="${line}" stroke-width="1.3"/>`;
+  const belly = type === 'penguin' && !sh ? '<ellipse cx="12" cy="16.4" rx="4.2" ry="3.4" fill="#fff"/>' : '';
+  const ey = floaty ? 11.5 : 13.6;
+  const face = sh ? `<text x="12" y="${ey + 3}" font-size="8" font-weight="800" text-anchor="middle" fill="${GREY_LINE}">?</text>`
+    : `<circle cx="9.6" cy="${ey}" r="1.1" fill="${dark}"/><circle cx="14.4" cy="${ey}" r="1.1" fill="${dark}"/><circle cx="8" cy="${ey + 2}" r="1" fill="#ff9ec7" opacity=".7"/><circle cx="16" cy="${ey + 2}" r="1" fill="#ff9ec7" opacity=".7"/>`;
+  return svg(back + body + belly + front + face);
 }
-function renderFishBook() {
-  const n = FISH.filter(f => save.fish[f.id]).length;
-  document.getElementById('fishSub').textContent = n === FISH.length
-    ? `You found all ${n} fish. What a great angler!`
-    : `You found ${n} of ${FISH.length} fish. Go fishing at the end of the pier by the pond!`;
-  const box = document.getElementById('fishList'); box.innerHTML = '';
-  for (const f of FISH) {
-    const c = save.fish[f.id] || 0, R = RARITY[f.rarity];
-    const row = document.createElement('div'); row.className = 'item' + (c ? '' : ' unknown');
-    row.innerHTML = `<div class="ico">${c ? fishSVG(f.color) : fishSVG('#e4dcf3', '#b9a8dc')}</div>`
-      + `<div class="txt"><b>${c ? f.name : '???'}<em class="rar" style="background:${R.col}">${R.name}</em></b><span>${c ? f.desc : f.tip}</span></div>`
-      + `<div class="cnt">${c ? '×' + c : ''}</div>`;
-    box.appendChild(row);
+function flowerSVG(f, known) {
+  const cols = known ? (f.cols || [f.col]) : [GREY], line = known ? '#b98ab0' : GREY_LINE;
+  let p = '';
+  for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i / 5 * Math.PI * 2; p += `<circle cx="${(12 + Math.cos(a) * 4.8).toFixed(1)}" cy="${(11 + Math.sin(a) * 4.8).toFixed(1)}" r="3.5" fill="${cols[i % cols.length]}" stroke="${line}" stroke-width="1.1"/>`; }
+  return svg(`<path d="M12 15v7" stroke="#5cbf5c" stroke-width="1.6"/>${p}<circle cx="12" cy="11" r="2.6" fill="${known ? f.mid : '#fff'}" stroke="${line}" stroke-width="1.1"/>`);
+}
+// a first find gives a star; a full page gives a bonus
+function bookAdd(cat, id, name) {
+  const page = save.book[cat];
+  if (page[id]) { page[id]++; storeSave(); return false; }
+  page[id] = 1;
+  save.stars += 1; updateStarsUI(); sfx('coin');
+  toast(`New in your Collection Book: ${name}! +1 star`, 3600, 'book');
+  const all = cat === 'c' ? creatures.map(c => c.name) : FLOWERS.map(f => f.id);
+  if (all.every(k => page[k])) {
+    save.stars += 5; updateStarsUI();
+    setTimeout(() => { toast(`Your ${cat === 'c' ? 'critter' : 'flower'} page is complete! +5 bonus stars`, 5000, 'star'); sfx('fanfare'); }, 1400);
+  }
+  storeSave();
+  if (bookOpen()) renderBook();
+  return true;
+}
+const bookEl = document.getElementById('fishbook');
+const bookOpen = () => !bookEl.classList.contains('hidden');
+let bookTab = 'c';
+function toggleBook() {
+  if (!started) return;
+  bookEl.classList.toggle('hidden');
+  if (bookOpen()) { if (fishing.state) stopFishing(null); renderBook(); for (const k in keys) keys[k] = false; }
+}
+function bookRow(box, known, ico, name, tag, text, cnt) {
+  const row = document.createElement('div'); row.className = 'item' + (known ? '' : ' unknown');
+  row.innerHTML = `<div class="ico">${ico}</div><div class="txt"><b>${name}${tag}</b><span>${text}</span></div><div class="cnt">${cnt}</div>`;
+  box.appendChild(row);
+}
+function bookHead(box, text) { const h = document.createElement('div'); h.className = 'bookhead'; h.textContent = text; box.appendChild(h); }
+function renderBook() {
+  const nC = creatures.filter(c => save.book.c[c.name]).length + WISPS.filter(w => save.wisps[w.id]).length, totC = creatures.length + WISPS.length;
+  const nF = FLOWERS.filter(f => save.book.fl[f.id]).length, nFi = FISH.filter(f => save.fish[f.id]).length;
+  const tabs = [['c', 'heart', 'Critters', nC, totC], ['fl', 'flower', 'Flowers', nF, FLOWERS.length], ['fish', 'fish', 'Fish', nFi, FISH.length]];
+  const tb = document.getElementById('bookTabs'); tb.innerHTML = '';
+  for (const [id, ic, label, n, tot] of tabs) {
+    const b = document.createElement('button'); b.className = id === bookTab ? 'on' : '';
+    b.innerHTML = `${iconHTML(ic)} ${label} <small>${n}/${tot}</small>`;
+    b.addEventListener('click', e => { bookTab = id; renderBook(); e.currentTarget.blur(); });
+    tb.appendChild(b);
+  }
+  const sub = document.getElementById('fishSub'), box = document.getElementById('fishList'); box.innerHTML = '';
+  if (bookTab === 'c') {
+    sub.textContent = nC === totC ? `You befriended all ${totC} critters. Everyone loves you!` : `You befriended ${nC} of ${totC} critters. Pet them to make friends!`;
+    for (const I of [{ id: null, name: 'Starvale' }, ...ISLES.slice(1)]) {
+      const open = !I.id || save.isles.includes(I.id);
+      bookHead(box, open ? I.name : 'A faraway island');
+      for (const c of creatures.filter(q => q.isle === I.id)) {
+        const k = save.book.c[c.name];
+        bookRow(box, k, critterSVG(c.type, k ? c.color : GREY, k ? '#5a3f8f' : GREY_LINE), k ? c.name : '???', '',
+          k ? CRITTER_DESC[c.type] : open ? `Lives somewhere on ${I.name}. Make friends with it!` : 'Lives on an island you have not visited yet.', k ? '×' + k : '');
+      }
+    }
+    bookHead(box, 'Rare visitors');
+    WISPS.forEach((w, i) => {
+      const k = save.wisps[w.id];
+      bookRow(box, k, critterSVG('wisp', k ? w.col : GREY, k ? '#8a73b8' : GREY_LINE), k ? w.name : '???', '',
+        k ? `A rare visitor that only comes on ${DAYS[i]}.` : `Only visits on ${DAYS[i]}. Catch it when it shows up!`, k ? '×' + k : '');
+    });
+  } else if (bookTab === 'fl') {
+    sub.textContent = nF === FLOWERS.length ? `You found all ${nF} flowers. What a gardener!` : `You found ${nF} of ${FLOWERS.length} flowers. Special flowers grow in special places and at special times.`;
+    for (const f of FLOWERS) {
+      const k = save.book.fl[f.id];
+      bookRow(box, k, flowerSVG(f, k), k ? f.name : '???', '', k ? f.desc : f.tip, k ? '×' + k : '');
+    }
+  } else {
+    sub.textContent = nFi === FISH.length ? `You found all ${nFi} fish. What a great angler!` : `You found ${nFi} of ${FISH.length} fish. Go fishing at the end of the pier by the pond!`;
+    for (const f of FISH) {
+      const c = save.fish[f.id] || 0, R = RARITY[f.rarity];
+      bookRow(box, c, c ? fishSVG(f.color) : fishSVG(GREY, GREY_LINE), c ? f.name : '???', `<em class="rar" style="background:${R.col}">${R.name}</em>`, c ? f.desc : f.tip, c ? '×' + c : '');
+    }
   }
 }
-document.getElementById('fishBookBtn').addEventListener('click', e => { toggleFishBook(); e.currentTarget.blur(); });
-document.getElementById('fishBookClose').addEventListener('click', () => toggleFishBook());
+document.getElementById('fishBookBtn').addEventListener('click', e => { toggleBook(); e.currentTarget.blur(); });
+document.getElementById('fishBookClose').addEventListener('click', () => toggleBook());
 
 // ================= far islands & the Star Portal =================
 // Three more islands, far away across the sky (so far that the fog hides each from the others).
