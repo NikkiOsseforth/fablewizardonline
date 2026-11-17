@@ -80,6 +80,8 @@
   #quests .q b{color:var(--ink)}
   #quests .q span{color:var(--ink-soft);font-size:13px}
   #quests .q.ready span{color:#2fa36b;font-weight:600}
+  #quests .q.daily{background:linear-gradient(90deg,#fff6d6,#fff0f8);border-radius:10px;padding:5px 8px;margin:4px -6px 6px}
+  #quests .q.daily .ic{width:15px;height:15px;vertical-align:-2px}
   #shop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(120,90,190,.45);z-index:11;padding:16px}
   #shop.hidden{display:none}
   #shop h2{margin:0;font-size:30px;display:flex;align-items:center;justify-content:center;gap:8px}
@@ -198,6 +200,7 @@
     <div class="title"><span class="ic" data-ic="sparkle"></span> Starvale</div>
     <div class="row"><span class="ic sm" data-ic="heart"></span> Friends: <b id="friends">0 / 10</b></div>
     <div class="row"><span class="ic sm" data-ic="star"></span> Stars: <b id="stars">0</b></div>
+    <div class="row" id="streakRow" style="display:none"><span class="ic sm" data-ic="flame"></span> Streak: <b id="streak">1 day</b></div>
     <div class="row" id="ingRow"></div>
     <div class="row" id="fxRow"></div>
     <div class="mana"><div id="manaFill"></div><div id="manaText">100</div></div>
@@ -270,6 +273,7 @@
       <span><kbd>1</kbd> – <kbd>7</kbd></span><span>cast spells</span>
       <span><kbd>E</kbd></span><span>pet a critter · talk to a wizard</span>
       <span><kbd>B</kbd></span><span>Star Shop</span>
+      <span>Every day</span><span>a new daily task, a gift for coming back and a rare visitor hiding somewhere</span>
       <span>Sky islands</span><span>cast <b>Rainbow</b> near the edge for a bridge, or <b>Levitate</b> yourself</span>
       <span><kbd>E</kbd> at the cauldron</span><span>brew potions from ingredients you find</span>
       <span><kbd>E</kbd> at the end of the pier</span><span>go fishing · <kbd>F</kbd> Fish Book</span>
@@ -336,6 +340,10 @@ const ICON = {
 };
 const potionSVG = (col) => svg(`<rect x="9.6" y="1.8" width="4.8" height="2.6" rx=".9" fill="#c9906a" stroke="#9c6b48" stroke-width="1"/><path d="M10.2 4.4v4.4a6.4 6.4 0 1 0 3.6 0V4.4z" fill="#ffffff" fill-opacity=".8" stroke="#8a73b8" stroke-width="1.4"/><path d="M6.02 14.5A6 6 0 1 0 17.98 14.5Z" fill="${col}" stroke="${col}" stroke-width=".8"/><ellipse cx="9.4" cy="12.6" rx="1" ry="1.8" fill="#fff" opacity=".8"/><circle cx="14" cy="17" r=".9" fill="#fff" opacity=".7"/>`);
 ICON.potion = potionSVG('#c9a0ff');
+ICON.flame = svg('<path d="M12 2.8c.6 3.2 4.8 5.4 4.8 10.4a4.8 4.8 0 0 1-9.6 0c0-2.4 1.2-3.8 2.2-4.8.2 1.6 1 2.6 1.8 2.8-.4-3.2-.2-5.8.8-8.4z" fill="#ff8a3d" stroke="#e0561a" stroke-width="1.3"/><path d="M12 13c1 1.2 2 2.2 2 3.6a2 2 0 0 1-4 0c0-1.2.9-2.2 2-3.6z" fill="#ffd84d"/>');
+ICON.gift = svg('<rect x="3.5" y="9" width="17" height="11" rx="1.6" fill="#ff8fc7" stroke="#d9579b" stroke-width="1.3"/><rect x="2.5" y="6.5" width="19" height="4" rx="1.2" fill="#ffb3d9" stroke="#d9579b" stroke-width="1.3"/><path d="M12 6.5V20" stroke="#ffd84d" stroke-width="2.4"/><path d="M12 6.5C10 3 6.5 3.5 7.6 5.6 8.4 7 12 6.5 12 6.5zM12 6.5c2-3.5 5.5-3 4.4-.9-.8 1.4-4.4.9-4.4.9z" fill="#ffd84d" stroke="#e0a800" stroke-width="1.1"/>');
+ICON.sun = svg('<circle cx="12" cy="12" r="4.6" fill="#ffd84d" stroke="#e0a800" stroke-width="1.3"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" stroke="#f0a000" stroke-width="1.6"/>');
+document.querySelectorAll('[data-ic="flame"]').forEach(el => { el.innerHTML = ICON.flame; });
 const fishSVG = (col, line = '#5a3f8f') => svg(`<path d="M3.2 12c2.6-4.4 6.4-6 10-5.4 2.6.4 4.4 2.4 5.4 5.4-1 3-2.8 5-5.4 5.4-3.6.6-7.4-1-10-5.4z" fill="${col}" stroke="${line}" stroke-width="1.3" stroke-opacity=".7"/><path d="M18.4 12l3.2-3.6v7.2z" fill="${col}" stroke="${line}" stroke-width="1.3" stroke-opacity=".7"/><path d="M10.5 7.2c.6 1.6.6 3.2 0 4.8" stroke="#ffffff" stroke-width="1.2" opacity=".7"/><circle cx="7.4" cy="11" r="1.15" fill="#2b1d3a"/><circle cx="7.8" cy="10.6" r=".4" fill="#fff"/>`);
 ICON.fish = fishSVG('#8fd0ff');
 const iconHTML = (name, cls = 'ic') => `<span class="${cls}">${ICON[name] || ''}</span>`;
@@ -1905,7 +1913,7 @@ function makeHappy(c) {
   c.happy = 2.2; c.lev = 0;
   hearts(creatureCenter(c, new THREE.Vector3()).add(new THREE.Vector3(0, .6, 0)), 7);
   sfx(c.type === 'corgi' ? 'woof' : c.type === 'cat' ? 'meow' : 'happy');
-  questEvent('happy');
+  questEvent('happy'); dailyEvent('happy');
   if (!c.friend) {
     c.friend = true; friends++;
     c.label.innerHTML = iconHTML('heart') + ' ' + c.name;
@@ -2031,6 +2039,7 @@ function castSpell(i) {
   const floated = s.id === 'float' && !nearSkyIsle(player.position, 22) && player.position.y < .3 ? nearestCreature(16) : null;
   ({ star: castStar, flower: castFlowers, float: () => floated ? castFloat(floated) : castSelfFloat(), butterfly: () => castButterflies(), rainbow: () => castRainbow(), night: castNight, fireworks: () => castFireworks() })[s.id]();
   mpCast(s.id, floated);
+  questEvent('spell', s.id); dailyEvent('cast', s.id);
   setTimeout(() => burst(wandWorld(), 10, { speed: 2.5, colors: ['#ffd1f0', '#fff09a', '#c9a0ff'], size: .3, life: .6, gravity: 0 }), 120);
 }
 
@@ -2430,6 +2439,7 @@ startBtn.addEventListener('click', () => {
     spawnNPCs();
     refreshQuestUI();
     initPotions();
+    initDaily();
     mpStart();
     if (playerIsCustom) setTimeout(() => toast(`Welcome to Starvale, ${playerName}! Every wizard on the island has a quest for you.`, 4000, 'wand'), 400);
     else setTimeout(() => toast(`Welcome to Starvale, ${playerName}! Your house is right in front of you.`, 4000, 'home'), 400);
@@ -3042,6 +3052,9 @@ const QUESTS = {
     { id: 'usb', title: 'Lost USB Stick', type: 'collect', item: 'usb', need: 1, reward: 4,
       ask: 'I dropped my USB stick with all my game saves somewhere on the island. Can you find it?',
       done: 'My game saves! You are a lifesaver!' },
+    { id: 'signal', title: 'Rainbow Wi-Fi', type: 'spell', item: 'rainbow', need: 2, reward: 5,
+      ask: 'My Wi-Fi is so slow! I read that rainbows boost the signal. Can you cast Rainbow twice?',
+      done: 'Full bars! I knew rainbows were the answer.' },
   ],
   Ryan: [
     { id: 'herbs', title: 'Curry Herbs', type: 'collect', item: 'starflower', need: 4, reward: 5,
@@ -3053,6 +3066,9 @@ const QUESTS = {
     { id: 'herbpotion', title: 'Herb Potion', type: 'potion', item: 'herb', need: 1, reward: 6,
       ask: 'My next curry needs a magic Herb Potion! Brew one in {cauldron}: two Star Blossoms and a Crystal Shard.',
       done: 'A Herb Potion! Smell that... this curry is going to be legendary!' },
+    { id: 'fishcurry', title: 'Fish Curry', type: 'fish', need: 2, reward: 6,
+      ask: 'Time for something new: fish curry! Can you catch 2 fish at the end of the pier?',
+      done: 'Two fresh fish! Fish curry for everyone tonight!' },
   ],
   Dusty: [
     { id: 'bone', title: "Dexter's Bone", type: 'collect', item: 'bone', need: 1, reward: 4,
@@ -3061,6 +3077,9 @@ const QUESTS = {
     { id: 'roses', title: 'Flower Garden', type: 'flower', need: 3, reward: 5,
       ask: 'My garden needs more flowers! Cast Flower Field 3 times near my red house.',
       done: 'It looks so pretty now. Thank you!' },
+    { id: 'ball', title: "Dexter's Ball", type: 'collect', item: 'ball', need: 1, reward: 4,
+      ask: 'Dexter threw his red ball so far that nobody can find it. Can you bring it back?',
+      done: 'Woof woof! Dexter wants to play fetch with you now!' },
   ],
   Nikki: [
     { id: 'shards', title: 'Cauldron Crystals', type: 'collect', item: 'shard', need: 3, reward: 5,
@@ -3069,6 +3088,9 @@ const QUESTS = {
     { id: 'friends', title: 'Critter Cuddles', type: 'happy', need: 3, reward: 4,
       ask: 'The critters look a bit lonely today. Make 3 of them happy!',
       done: 'Aww, look at all those happy critters!' },
+    { id: 'nunufish', title: "Nunu's Dinner", type: 'fish', need: 1, reward: 4,
+      ask: 'Nunu keeps meowing at the pond. Could you catch a fish for her?',
+      done: 'Nunu is purring so loudly! Thank you!' },
   ],
 };
 const SHOP = [
@@ -3077,7 +3099,7 @@ const SHOP = [
   { id: 'rainbowhat', icon: 'hatRainbow', name: 'Rainbow Hat', desc: 'A hat that keeps changing colour', price: 8, kind: 'hat', val: 'rainbow' },
   { id: 'galaxyrobe', icon: 'robe', name: 'Galaxy Robe', desc: 'A deep blue robe that glows like the night sky', price: 6, kind: 'robe', val: 'galaxy' },
 ];
-const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null, fish: {} };
+const save = { stars: 0, sky: {}, qidx: {}, owned: [], hat: null, robe: null, ing: {}, potions: {}, recipes: [], seenIng: [], lastPotion: null, fish: {}, daily: null, streak: 0, lastDay: null, wisps: {} };
 const activeQ = {};          // giver name -> { q, progress, ready, target }
 const questItems = [];       // collectible things in the world
 const bugs = [];
@@ -3114,6 +3136,9 @@ function makeQuestItem(kind, giver) {
   } else if (kind === 'usb') {
     mk(Box(.18, .08, .42), toon('#29d9ff', { emissive: '#29d9ff', emissiveIntensity: .4 }), 0, .45, 0, inner, false);
     mk(Box(.12, .06, .14), toon('#d8dde6'), 0, .45, .27, inner, false); col = '#29d9ff';
+  } else if (kind === 'ball') {
+    ball(toon('#ff4d5e'), 0, .38, 0, .3, .3, .3, inner, false);
+    ball(toon('#ffffff'), 0, .38, 0, .305, .07, .305, inner, false); col = '#ff7a8a';
   } else if (kind === 'curry') {
     mk(new THREE.CylinderGeometry(.18, .13, .12, 14), toon('#ffffff'), 0, 0, 0, inner, false);
     ball(toon('#c8751a'), 0, .05, 0, .15, .04, .15, inner, false);
@@ -3254,6 +3279,8 @@ function refreshQuestUI() {
     else status = `${a.progress} / ${q.need}`;
     return `<div class="q${a.ready ? ' ready' : ''}"><b>${q.title}</b> <span>(${giver})</span><br><span>${status}</span></div>`;
   });
+  const d = save.daily, dt = d && DAILY_BY_ID.get(d.task);
+  if (dt) rows.unshift(`<div class="q daily${d.done ? ' ready' : ''}"><b>${iconHTML('sun')} Today: ${dt.text}</b><br><span>${d.done ? 'Done! See you tomorrow' : `${Math.min(d.progress, dt.need)} / ${dt.need} · +${dt.reward} stars`}</span></div>`);
   questsEl.style.display = rows.length ? 'block' : 'none';
   questsEl.innerHTML = `<h3>${iconHTML('scroll')} Quests</h3>` + rows.join('');
 }
@@ -3304,6 +3331,151 @@ function updateQuests(dt, time) {
   }
 }
 let carried = null;
+
+// ================= daily things: task, gift, streak & today's visitor =================
+const DAILY_TASKS = [
+  { id: 'fish2', text: 'Catch 2 fish', ev: 'fish', need: 2, reward: 4 },
+  { id: 'happy4', text: 'Make 4 critters happy', ev: 'happy', need: 4, reward: 3 },
+  { id: 'ing6', text: 'Pick up 6 ingredients', ev: 'ing', need: 6, reward: 3 },
+  { id: 'brew2', text: 'Brew 2 potions', ev: 'brew', need: 2, reward: 4 },
+  { id: 'spells15', text: 'Cast 15 spells', ev: 'cast', need: 15, reward: 3 },
+  { id: 'flowers3', text: 'Cast Flower Field 3 times', ev: 'cast', item: 'flower', need: 3, reward: 3 },
+  { id: 'rainbow2', text: 'Make 2 rainbows', ev: 'cast', item: 'rainbow', need: 2, reward: 3 },
+  { id: 'butterfly3', text: 'Cast Butterfly Dance 3 times', ev: 'cast', item: 'butterfly', need: 3, reward: 3 },
+  { id: 'stars10', text: 'Shoot 10 Star Shots', ev: 'cast', item: 'star', need: 10, reward: 3 },
+];
+const DAILY_BY_ID = new Map(DAILY_TASKS.map(t => [t.id, t]));
+// one rare visitor per weekday (Sunday first)
+const WISPS = [
+  { id: 'dream', name: 'Dream Bunny', col: '#c9a0ff', col2: '#ffffff' },
+  { id: 'moon', name: 'Moon Moth', col: '#9fc4ff', col2: '#fff6c9' },
+  { id: 'clover', name: 'Clover Imp', col: '#6fdc8c', col2: '#e8ffd6' },
+  { id: 'candy', name: 'Candy Wisp', col: '#ff8fc7', col2: '#fff0f8' },
+  { id: 'frost', name: 'Frost Fairy', col: '#8fe8ff', col2: '#ffffff' },
+  { id: 'ember', name: 'Ember Sprite', col: '#ffa04d', col2: '#ffe066' },
+  { id: 'sun', name: 'Sun Sprite', col: '#ffd84d', col2: '#fffbe0' },
+];
+const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const dayHash = k => { let h = 7; for (const ch of k) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; };
+const todayWisp = () => WISPS[new Date().getDay()];
+let wisp = null, dailyCheckT = 0, curDay = null;
+
+function initDaily() {
+  const today = dayKey();
+  curDay = today;
+  if (!save.daily || save.daily.day !== today) {
+    // the task is the same for everyone today, but never the same as yesterday's
+    let t = DAILY_TASKS[dayHash(today) % DAILY_TASKS.length];
+    if (save.daily && save.daily.task === t.id) t = DAILY_TASKS[(DAILY_TASKS.indexOf(t) + 1) % DAILY_TASKS.length];
+    save.daily = { day: today, task: t.id, progress: 0, done: false, wisp: false };
+  }
+  // streak and the daily gift
+  if (save.lastDay !== today) {
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    save.streak = save.lastDay === dayKey(y) ? (save.streak || 0) + 1 : 1;
+    save.lastDay = today;
+    const gift = 2 + Math.min(save.streak, 5), k = rpick(ING_KEYS);
+    save.stars += gift; save.ing[k] = (save.ing[k] || 0) + 1;
+    if (save.streak % 7 === 0) save.stars += 10;
+    const weekBonus = save.streak % 7 === 0;
+    setTimeout(() => {
+      toast(save.streak > 1 ? `Day ${save.streak} in a row! Your daily gift: +${gift} stars and a ${INGREDIENTS[k].name}` : `Your daily gift: +${gift} stars and a ${INGREDIENTS[k].name}. Come back tomorrow for a bigger one!`, 5200, 'gift');
+      sfx('coin'); hearts(player.position.clone().add(new THREE.Vector3(0, 2.4, 0)), 4);
+    }, 7800);
+    if (weekBonus) setTimeout(() => { toast(`${save.streak} days in a row! +10 bonus stars`, 5000, 'flame'); sfx('fanfare'); }, 13000);
+    renderIngRow();
+  }
+  storeSave(); updateStarsUI(); renderStreak(); refreshQuestUI();
+  const t = DAILY_BY_ID.get(save.daily.task);
+  if (!save.daily.done) setTimeout(() => toast(`Today's task: ${t.text}. Reward: +${t.reward} stars`, 4500, 'sun'), 10400);
+  if (!save.daily.wisp) {
+    spawnWisp();
+    setTimeout(() => toast(`Psst… a rare ${todayWisp().name} is visiting Starvale today only. Can you find it?`, 5000, 'sparkle'), 15600);
+  }
+}
+function renderStreak() {
+  document.getElementById('streakRow').style.display = save.streak ? '' : 'none';
+  document.getElementById('streak').textContent = `${save.streak} ${save.streak === 1 ? 'day' : 'days'}`;
+}
+function dailyEvent(ev, item) {
+  if (!started) return;
+  const d = save.daily, t = d && DAILY_BY_ID.get(d.task);
+  if (!t || d.done || t.ev !== ev || (t.item && t.item !== item)) return;
+  d.progress++;
+  if (d.progress >= t.need) {
+    d.done = true; save.stars += t.reward; updateStarsUI();
+    toast(`Daily task done: ${t.text}! +${t.reward} stars`, 4500, 'sun'); sfx('fanfare');
+    for (let i = 0; i < 14; i++) emit({ pos: player.position.clone().add(new THREE.Vector3(0, 2.4, 0)), vel: new THREE.Vector3(rr(-2, 2), rr(2, 5), rr(-2, 2)), life: 1.4, size: rr(.35, .55), color: '#ffd84d', tex: starTex, gravity: 4, spin: 4 });
+  }
+  storeSave(); refreshQuestUI();
+}
+
+// --- today's rare visitor: a glowing little creature that drifts around the island ---
+function spawnWisp() {
+  const w = todayWisp();
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const mat = toon(w.col, { emissive: w.col, emissiveIntensity: .7 });
+  ball(mat, 0, 0, 0, .32, .3, .32, body, false);
+  ball(mat, 0, .3, .05, .22, .2, .2, body, false);
+  for (const sx of [-1, 1]) {
+    ball(new THREE.MeshBasicMaterial({ color: '#3a2a55' }), sx * .08, .34, .22, .035, .045, .02, body, false);
+    ball(toon(w.col2, { transparent: true, opacity: .75, emissive: w.col2, emissiveIntensity: .5 }), sx * .32, .15, -.12, .28, .14, .05, body, false).rotation.z = sx * .5;
+  }
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: w.col, transparent: true, opacity: .8, blending: THREE.AdditiveBlending, depthWrite: false }));
+  halo.scale.setScalar(2.8); body.add(halo);
+  let pos = randomTarget();
+  for (let i = 0; i < 20 && distXZ(pos) < 15; i++) pos = randomTarget();
+  g.position.copy(pos);
+  scene.add(g);
+  wisp = { w, g, body, target: randomTarget(), t: Math.random() * 6, wait: 0 };
+}
+function catchWisp() {
+  const W2 = wisp; wisp = null;
+  burst(W2.g.position.clone(), 36, { speed: 4.5, colors: [W2.w.col, W2.w.col2, '#ffffff', '#fff09a'], size: .45, life: 1.3, gravity: 0 });
+  scene.remove(W2.g);
+  save.daily.wisp = true;
+  const first = !save.wisps[W2.w.id];
+  save.wisps[W2.w.id] = (save.wisps[W2.w.id] || 0) + 1;
+  const met = Object.keys(save.wisps).length, allNow = first && met >= WISPS.length;
+  const k = rpick(ING_KEYS), k2 = rpick(ING_KEYS);
+  save.stars += 3 + (allNow ? 10 : 0); save.ing[k] = (save.ing[k] || 0) + 1; save.ing[k2] = (save.ing[k2] || 0) + 1;
+  storeSave(); updateStarsUI(); renderIngRow();
+  hearts(player.position.clone().add(new THREE.Vector3(0, 2.4, 0)), 6);
+  sfx('fanfare');
+  toast(`You befriended the ${W2.w.name}! It left you +3 stars and 2 ingredients.`, 4800, 'heart');
+  setTimeout(() => toast(allNow ? 'You have met all 7 rare visitors! +10 bonus stars'
+    : `Rare visitors met: ${met} / ${WISPS.length}. A different one comes every day of the week!`, 4500, 'sparkle'), 1600);
+}
+function updateDaily(dt, time) {
+  if (!started) return;
+  // a new day started while playing
+  dailyCheckT -= dt;
+  if (dailyCheckT <= 0) {
+    dailyCheckT = 20;
+    if (curDay && dayKey() !== curDay) {
+      if (wisp) { scene.remove(wisp.g); wisp = null; }
+      initDaily();
+    }
+  }
+  if (!wisp) return;
+  const p = wisp.g.position;
+  wisp.t += dt;
+  // it shyly drifts away when you come close, but slower than you can run
+  const pd = distXZ(p);
+  if (pd < 5) {
+    const away = new THREE.Vector3(p.x - player.position.x, 0, p.z - player.position.z).normalize().multiplyScalar(4);
+    wisp.target = p.clone().add(away); wisp.wait = 0;
+  }
+  const dx = wisp.target.x - p.x, dz = wisp.target.z - p.z, d = Math.hypot(dx, dz);
+  if (wisp.wait > 0) wisp.wait -= dt;
+  else if (d < .3) { wisp.target = randomTarget(); wisp.wait = rr(1, 3); }
+  else { const sp = pd < 5 ? 2.4 : 1.4; p.x += dx / d * sp * dt; p.z += dz / d * sp * dt; wisp.g.rotation.y = angleLerp(wisp.g.rotation.y, Math.atan2(dx, dz), damp(6, dt)); }
+  if (Math.hypot(p.x, p.z) > 38) wisp.target = randomTarget();
+  p.y = 1.3 + Math.sin(wisp.t * 2.2) * .3;
+  wisp.body.rotation.z = Math.sin(wisp.t * 3) * .12;
+  if (Math.random() < dt * 6) emit({ pos: p.clone().add(new THREE.Vector3(rr(-.4, .4), rr(-.3, .3), rr(-.4, .4))), vel: new THREE.Vector3(0, -.3, 0), life: 1.2, size: .25, color: wisp.w.col2, tex: starTex, spin: 2 });
+  if (pd < 1.7 && Math.abs(player.position.y + 1 - p.y) < 2.2) catchWisp();
+}
 
 // --- star shop ---
 const shopEl = document.getElementById('shop');
@@ -3452,7 +3624,7 @@ function pickIngredient(i) {
   burst(it.g.position.clone().setY(it.baseY + .5), 14, { speed: 3, colors: [it.col, '#ffffff', '#fff09a'], size: .32, life: .8, gravity: 0 });
   scene.remove(it.g); ingredients.splice(i, 1);
   save.ing[it.kind] = (save.ing[it.kind] || 0) + 1;
-  sfx('pickup');
+  sfx('pickup'); dailyEvent('ing');
   if (!save.seenIng.includes(it.kind)) {
     save.seenIng.push(it.kind);
     toast(`You found a ${d.name}! Brew it into a potion at the cauldron.`, 4200, d.icon);
@@ -3550,7 +3722,7 @@ function finishBrew() {
   if (isNew) { toast(`New recipe: ${r.name}! It's in your recipe book now.`, 4200, 'scroll'); sfx('fanfare'); }
   else sfx('coin');
   setTimeout(() => toast(r.drink === false ? `You brewed a ${r.name}! Bring it to Ryan.` : `You brewed a ${r.name}! Tap it on the right or press Q to drink it.`, 4000, 'potion'), isNew ? 900 : 0);
-  syncPotionQuests();
+  syncPotionQuests(); dailyEvent('brew');
 }
 function syncPotionQuests() {
   for (const giver in activeQ) {
@@ -4288,6 +4460,7 @@ function finishCatch() {
       setTimeout(() => { toast('You caught every fish in Starvale! +10 bonus stars', 5000, 'star'); sfx('fanfare'); }, 1200);
     }
   } else { toast(`You caught a ${f.name}! (${save.fish[f.id]} so far)`, 2600, 'fish'); sfx('catch'); }
+  questEvent('fish'); dailyEvent('fish');
   if (f.id === 'wish') { mana = 100; setTimeout(() => toast('The Golden Wishfish grants you a wish: your magic is full!', 4000, 'sparkle'), 900); }
   storeSave();
   if (fishBookOpen()) renderFishBook();
@@ -4379,6 +4552,7 @@ function frame() {
   for (const n of npcs) updateNPC(n, dt, time);
   updateRemotes(dt, time);
   updateQuests(dt, time);
+  updateDaily(dt, time);
   updatePotions(dt, time);
   updateRockets(dt);
   updateProjectiles(dt); updateFlowers(dt); updateButterflies(dt, time); updateRainbow(dt); updateBridges(dt);
