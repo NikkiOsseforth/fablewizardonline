@@ -2524,6 +2524,7 @@ function pickCharacter(name) {
   camYaw = pState.heading + Math.PI;
   charsEl.querySelectorAll('.char').forEach(el => el.classList.toggle('sel', el.dataset.name === name));
   makerEl.hidden = true; startBtn.disabled = false;
+  document.getElementById('nickWrap').style.display = '';
   startBtn.innerHTML = `Play as ${name}! ${iconHTML('wand')}`;
   remember(name);
 }
@@ -2570,6 +2571,8 @@ function refreshMaker(rebuild = true) {
 function pickCustom() {
   charsEl.querySelectorAll('.char').forEach(el => el.classList.toggle('sel', el === mineBtn));
   makerEl.hidden = false;
+  // your own wizard's name is your player name, so no second name box
+  document.getElementById('nickWrap').style.display = 'none';
   refreshMaker();
   camYaw = pState.heading + Math.PI;
   remember('*custom');
@@ -2591,8 +2594,11 @@ const nickEl = document.getElementById('nick');
 try { nickEl.value = localStorage.getItem('starvale-nick') || ''; } catch (e) { /* no storage */ }
 nickEl.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') startBtn.click(); });
 startBtn.addEventListener('click', () => {
-  myNick = cleanNick(nickEl.value);
-  try { localStorage.setItem('starvale-nick', myNick); } catch (e) { /* ignore */ }
+  if (mineBtn.classList.contains('sel')) myNick = cleanNick(myWizard.name);
+  else {
+    myNick = cleanNick(nickEl.value);
+    try { localStorage.setItem('starvale-nick', myNick); } catch (e) { /* ignore */ }
+  }
   if (started) mpStart();
   initAudio(); if (actx && actx.state === 'suspended') actx.resume();
   overlay.classList.add('hidden');
