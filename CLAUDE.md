@@ -12,7 +12,7 @@ Lees niet het hele bestand (ruim 5000 regels). Het script is opgedeeld in sectie
 | `hand-drawn icon set` | `ICON` (SVG-icoontjes voor de interface), `iconHTML` |
 | `renderer / scene` | renderer, camera, `toon`, `mk`, `ball`, `Box`, de zachte vormen, `canvasTex`, `glow` |
 | `sky, lights` | lucht, sterren, zon, maan, `hemi`, `sun` |
-| `world layout / colliders` | waar alles staat (`ISLAND_R`, `HOUSE`, `POND`, `PIER`, `PORTAL`, `FRIENDS`, `PATHS`), `isFree`, `findSpot`, `collide` |
+| `world layout / colliders` | waar alles staat (`ISLAND_R`, `HOUSE`, `POND`, `PIER`, `PORTAL`, `HILL` + `hillH`, `FRIENDS`, `PATHS`), `isFree`, `findSpot`, `collide` |
 | `island` | grond, graspollen, vijver, steiger, boot, bomen, paddenstoelen, kristallen, lantaarns, wolken |
 | `the house` | Nikki's huisje, buiten en binnen |
 | `friends' houses` | `buildHouse`, daarna per huis een blok: `Kevin's mancave`, `Ryan's Japanese house`, `Dusty's red house` |
@@ -37,6 +37,7 @@ Lees niet het hele bestand (ruim 5000 regels). Het script is opgedeeld in sectie
 | `weather` | regen, sneeuw, mist (`wxAt`, `wxHere`, `updateWeather`); het weer volgt de klok, zodat iedereen hetzelfde ziet. De toestand staat in `wx` (bij de spreuken) en kleurt de lucht in `applyTime` |
 | `emotes & sitting` | `EMOTES`, `startEmote`, `actPose`/`actFx`, zitplekken (`nearestSeat`, `sitDown`); een emote of zitten staat in `pState.act` en gaat mee in de aanwezigheid (`a`) |
 | `garden` | de gedeelde moestuin (`GARDEN`, `SEEDS`, `PLOTS`), gedeelde plekjes (`gardenPlots`, `gardenMerge`, `gardenSet`), planten/water/plukken (`gardenAct`), zaadjespaneel |
+| `Starry Hill: crystal cave & observatory` | de beloopbare heuvel (`hillG`, eigen startwaarde `hr`/`HR`), sterrenwacht met telescoop (`SCOPE`), sterrenkaart (`CONSTS`, `openStargaze`, `sgTry`) en sterrenbeelden in de hemel (`buildSkyConsts`); de donkere grot (`CAVE`, `dark: true`, in `FAR`): `caveLook`, sterlampjes (`starLanded`), kristallen wekken (`wakeCrystal`), scherven (`placeShards`), in en uit (`caveWarp`) |
 | `loop` | `frame()`: roept alle `update…`-functies aan |
 
 De HTML en CSS van de interface staan bovenaan het bestand, vóór het script.
@@ -50,6 +51,7 @@ De HTML en CSS van de interface staan bovenaan het bestand, vóór het script.
 - **Melding of geluid:** `toast(tekst, ms, icoon)` en `sfx(naam)`.
 - **Iets op een ander eiland:** de verre eilanden staan ver weg in dezelfde wereld (`I.x`, `I.z`; de mist verbergt ze voor elkaar). Bouw er in hun eigen blok in `far islands` met `fr`/`FR`/`fpick` (eigen startwaarde) en houd plekken vrij met `block`/`freeSpot`. Een nieuwe bewoner krijgt een regel in `FOLK` en missies in `QUESTS`; een eiland gaat open als alle missies van het vorige klaar zijn.
 - **Zitplek:** `addSeat(groep, [[x, y, z, kijkrichting]], tikbareMeshes)` in de eigen ruimte van die groep; een meubel in `FURNI` krijgt een veld `seats`.
+- **Hoogte:** de grond is overal 0, behalve op Starry Hill (`hillH(x, z)`, zit in `supportAt`). Zet iets dat op de heuvel moet staan op die hoogte.
 - **Tikbaar oppervlak:** `onTap` raakt alleen de vlakken in zijn eigen lijst (eiland, vloeren, zwevende eilanden). Voeg een nieuwe loopvloer daar toe.
 
 ## Afspraken

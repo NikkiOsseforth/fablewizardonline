@@ -270,6 +270,20 @@
   #travelList .item.here{border-color:var(--gold-d);background:var(--gold-soft);box-shadow:0 3px 0 var(--gold-d)}
   #travelList .item.locked{background:var(--paper-2);border-style:dashed;box-shadow:none}
   #travelList .item.locked .ico{filter:grayscale(.85);opacity:.6}
+  /* observatory: connect the stars */
+  #stargaze{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(43,28,60,.45);z-index:11;padding:16px}
+  #stargaze.hidden{display:none}
+  #stargaze .card{max-width:640px;width:100%}
+  #stargaze h2{margin:0;font-size:34px;display:flex;align-items:center;justify-content:center;gap:8px}
+  #stargaze h2 .ic{width:34px;height:34px}
+  #sgCanvas{display:block;width:100%;height:auto;aspect-ratio:600/420;border-radius:16px;border:3px solid var(--line);background:#1b1640;touch-action:none;cursor:pointer;margin:4px 0 12px}
+  #sgList{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px}
+  #sgList button{font:inherit;font-size:14px;font-weight:700;color:var(--ink);background:var(--paper);border:2px solid var(--edge);border-radius:12px;padding:5px 10px;box-shadow:0 2px 0 var(--drop);cursor:pointer;display:flex;align-items:center;gap:4px}
+  #sgList button .ic{width:16px;height:16px}
+  #sgList button.on{border-color:var(--plum);background:var(--plum-soft);box-shadow:0 2px 0 var(--plum)}
+  #sgList button.done{background:var(--gold-soft);border-color:var(--gold-d);box-shadow:0 2px 0 var(--gold-d)}
+  #sgList button.done.on{border-color:var(--plum);box-shadow:0 2px 0 var(--plum)}
+  #sgList button:disabled{opacity:.5;cursor:default;border-style:dashed;box-shadow:none}
   /* town hall */
   #town{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(43,28,60,.45);z-index:11;padding:16px}
   #town.hidden{display:none}
@@ -420,6 +434,15 @@
     <button class="bigbtn ghost" id="travelClose">Close</button>
   </div>
 </div>
+<div id="stargaze" class="hidden">
+  <div class="card panel">
+    <h2><span class="ic" data-ic="telescope"></span> <span id="sgTitle">Star Chart</span></h2>
+    <p class="shopsub" id="sgSub"></p>
+    <canvas id="sgCanvas" width="600" height="420"></canvas>
+    <div id="sgList"></div>
+    <button class="bigbtn ghost" id="sgClose">Close</button>
+  </div>
+</div>
 <div id="town" class="hidden">
   <div class="card panel">
     <h2 id="townTitle"></h2>
@@ -545,6 +568,8 @@ const cloudPath = '<path d="M7 16.2a3.9 3.9 0 0 1-.4-7.8 5.2 5.2 0 0 1 10-.6 3.7
 ICON.rain = svg(cloudPath.replace('16.2', '13.6').replace('8.4z', '5.8z') + '<path d="M8 16.5l-1 2.6M12 16.5l-1 2.6M16 16.5l-1 2.6" stroke="#5cb8ff" stroke-width="1.7"/>');
 ICON.snow = svg('<g stroke="#7fc8ff" stroke-width="1.7"><path d="M12 3.5v17M4.6 7.7l14.8 8.6M4.6 16.3l14.8-8.6"/><path d="M10 5.2l2 1.8 2-1.8M10 18.8l2-1.8 2 1.8" stroke-width="1.3"/></g><circle cx="12" cy="12" r="2" fill="#ffffff" stroke="#7fc8ff" stroke-width="1.2"/>');
 ICON.fog = svg('<g stroke="#a7b3d6" stroke-width="1.8"><path d="M4 8.5h11.5"/><path d="M7 12h13"/><path d="M4 15.5h10"/><path d="M8.5 19h8"/></g>');
+ICON.telescope = svg('<path d="M4.2 11.8l11.6-6.3 1.9 3.5-11.6 6.3z" fill="#b48cff" stroke="#7b5cff" stroke-width="1.4"/><path d="M15.8 5.5l2.6-1.4 1.9 3.5-2.6 1.4" fill="#ffd84d" stroke="#e0a800" stroke-width="1.3"/><path d="M11 12.6l-3.2 8M11 12.6l3.2 8M11 12.6v8" stroke="#8a6bb8" stroke-width="1.5"/><path d="M5 4.5v2M4 5.5h2" stroke="#ffd84d" stroke-width="1.2"/>');
+ICON.cave = svg('<path d="M2.8 19.5c.4-7.4 4-12.8 9.2-12.8s8.8 5.4 9.2 12.8z" fill="#c9b8ef" stroke="#8a73b8" stroke-width="1.4"/><path d="M8 19.5c0-4.4 1.7-7.2 4-7.2s4 2.8 4 7.2z" fill="#4a3a6b" stroke="#3a2c58" stroke-width="1.2"/><path d="M12 14.4l1 1.8-1 1.8-1-1.8z" fill="#8fe8ff"/><path d="M18 4.2l.6 1.2 1.2.6-1.2.6-.6 1.2-.6-1.2-1.2-.6 1.2-.6z" fill="#ffd84d"/>');
 const iconHTML = (name, cls = 'ic') => `<span class="${cls}">${ICON[name] || ''}</span>`;
 document.querySelectorAll('[data-ic]').forEach(el => { el.innerHTML = ICON[el.dataset.ic] || ''; });
 
@@ -734,6 +759,15 @@ function waveH(x, z, t) {
 // that the fog hides them, so each one feels like its own little world. null / 'main' = Starvale itself.
 const FAR = [];
 const PORTAL = { x: -9, z: 31 };   // the Star Portal on Starvale
+// Starry Hill: a soft round hill with the observatory on top and the Crystal Cave in its side
+// (built in the "Starry Hill" section). r = foot of the hill, top = radius of the flat top, h = height.
+const HILL = { x: -26, z: 22, r: 8.5, top: 3.2, h: 2.6 };
+function hillH(x, z) {
+  const d = Math.hypot(x - HILL.x, z - HILL.z);
+  if (d >= HILL.r) return 0;
+  if (d <= HILL.top) return HILL.h;
+  return HILL.h * .5 * (1 + Math.cos(Math.PI * (d - HILL.top) / (HILL.r - HILL.top)));
+}
 function isleAt(x, z) { for (const I of FAR) if (Math.hypot(x - I.x, z - I.z) < I.r + 40) return I; return null; }
 function onLand(x, z) {
   if (Math.hypot(x, z) <= ISLAND_R - 2) return true;
@@ -774,8 +808,10 @@ function segDist(x, z, ax, az, bx, bz) {
   return Math.hypot(x - ax - dx * t, z - az - dz * t);
 }
 let TOWN_FOOT = null;   // the Town Hall's footprint, set once it is built (after the trees and the grass)
+let HILL_FOOT = false;  // true once Starry Hill is built (at the very end, so the seeded world stays put)
 function nearHouse(x, z, m) {
   if (TOWN_FOOT && TOWN_FOOT(x, z, m)) return true;
+  if (HILL_FOOT && Math.hypot(x - HILL.x, z - HILL.z) < HILL.r + m) return true;
   if (x > HOUSE.x - HOUSE.hw - m && x < HOUSE.x + HOUSE.hw + m && z > HOUSE.z - HOUSE.hd - m && z < HOUSE.z + HOUSE.hd + m) return true;
   for (const d of Object.values(FRIENDS)) { const f = d.foot; if (x > f.x0 - m && x < f.x1 + m && z > f.z0 - m && z < f.z1 + m) return true; }
   return false;
@@ -2513,7 +2549,7 @@ function castStar() {
     const a = f.angleTo(new THREE.Vector3(to.x, 0, to.z));
     if (a < bestA) { bestA = a; dir = to.normalize(); }
   }
-  for (const q of [...bugs.map(b => b.g.position.clone().setY(.3)), ...lanternAims()]) {
+  for (const q of [...bugs.map(b => b.g.position.clone().setY(.3)), ...lanternAims(), ...caveAims()]) {
     const to = q.sub(start);
     if (to.length() > 26) continue;
     const a = f.angleTo(new THREE.Vector3(to.x, 0, to.z));
@@ -2536,11 +2572,13 @@ function updateProjectiles(dt) {
     let hit = null;
     if (!pr.remote) for (const c of creatures) if (creatureCenter(c, tmpV).distanceTo(pr.mesh.position) < 1.3) { hit = c; break; }
     let wall = pr.mesh.position.y < .1;
+    if (!wall && !pr.remote) wall = caveWall(pr.mesh.position);
     if (!wall) { for (const b of playerBoxes) { const q = pr.mesh.position; if (q.x > b.x0 && q.x < b.x1 && q.z > b.z0 && q.z < b.z1 && q.y < 4.5) { wall = true; break; } } }
-    const zapped = !hit && !pr.remote && (zapBugAt(pr.mesh.position) || lightLantern(pr.mesh.position));
+    const zapped = !hit && !pr.remote && (zapBugAt(pr.mesh.position) || lightLantern(pr.mesh.position) || wakeCrystal(pr.mesh.position));
     if (hit || zapped || wall || pr.life <= 0) {
       burst(pr.mesh.position, 18, { speed: 4, colors: ['#ffe066', '#ff8fc7', '#c9a0ff', '#8fd0ff'], size: .4, life: 1 });
       if (hit) makeHappy(hit); else if (!zapped) sfx('pop');
+      if (!pr.remote) starLanded(pr.mesh.position);
       scene.remove(pr.mesh); projectiles.splice(i, 1);
     }
   }
@@ -2551,7 +2589,7 @@ const flowerStem = new CylGeo(.03, .03, .5, 5), petalGeo = new SphGeo(.2, 10, 6)
 const stemMat2 = toon('#5cbf5c'), centerMat = toon('#ffd84d'), petalMats = PASTELS.concat(['#ffffff']).map(c => toon(c));
 const flowers = [];
 function spawnFlower(x, z, delay, sp = null, y = 0, ci = -1) {
-  const g = new THREE.Group(); g.position.set(x, y, z); g.scale.setScalar(.001); g.rotation.y = Math.random() * 6; scene.add(g);
+  const g = new THREE.Group(); g.position.set(x, y || hillH(x, z), z); g.scale.setScalar(.001); g.rotation.y = Math.random() * 6; scene.add(g);
   mk(flowerStem, stemMat2, 0, .25, 0, g, false);
   if (sp) {   // a special flower from the Collection Book: five round petals, maybe glowing
     sp.mats ||= (sp.cols || [sp.col]).map(c => toon(c, sp.glow ? { emissive: c, emissiveIntensity: .45 } : {}));
@@ -2796,6 +2834,7 @@ function applyTime() {
   }
   scene.fog.near = lerp(70, 4, wx.fog) * (1 - wx.rain * .3);
   scene.fog.far = lerp(230, 48, wx.fog) * (1 - wx.rain * .25);
+  if (curIsle && curIsle.dark) caveLook();   // the Crystal Cave is dark whatever the time (Starry Hill)
 }
 const wxC = new THREE.Color();
 const WX_GREY = { top: C('#aab4cc'), bottom: C('#dfe1ee'), fog: C('#e4e7f2'), ntop: C('#1c1c30'), nbottom: C('#35304a'), nfog: C('#2c2a42') };
@@ -3126,7 +3165,7 @@ function bridgeY(b, x, z) {
 function supportAt(x, z, y) {
   let best = -Infinity;
   const cand = h => { if (h <= y + STEP && h > best) best = h; };
-  if (Math.hypot(x, z) <= ISLAND_R - 2) cand(0);
+  if (Math.hypot(x, z) <= ISLAND_R - 2) cand(hillH(x, z));
   if (onPier(x, z)) cand(PIER.y);
   for (const s of skyIsles) if (Math.hypot(x - s.x, z - s.z) <= s.r - .5) cand(s.top);
   for (const I of FAR) if (Math.hypot(x - I.x, z - I.z) <= I.r - 2) cand(0);
@@ -3307,6 +3346,7 @@ addEventListener('keydown', e => {
   if (shopOpen()) { if (e.code === 'KeyB' || e.code === 'Escape') toggleShop(); return; }
   if (bookOpen()) { if (e.code === 'KeyF' || e.code === 'Escape') toggleBook(); return; }
   if (travelOpen()) { if (!e.repeat && (e.code === 'KeyE' || e.code === 'Escape')) closeTravel(); return; }
+  if (stargazeOpen()) { if (!e.repeat && (e.code === 'KeyE' || e.code === 'Escape')) closeStargaze(); return; }
   if (fishing.state && started && overlay.classList.contains('hidden') && (e.code === 'KeyE' || e.code === 'Space')) {
     e.preventDefault();
     if (!e.repeat) fishAction();
@@ -3390,6 +3430,8 @@ function onTap(x, y) {
   if (townTap(ray)) return;
   // the garden plots
   if (gardenTap(ray)) return;
+  // Starry Hill: the telescope, the cave door and the crystal shards inside
+  if (hillTap(ray)) return;
   // benches, sofas and chairs: sit down (walk there first when it is further away)
   const sg = seatGroups().filter(q => shownInScene(q.g));
   const sh = ray.intersectObjects(sg.flatMap(q => q.hit), true);
@@ -3424,7 +3466,7 @@ function onTap(x, y) {
     petTarget = null; moveTimer = 0;
     return;
   }
-  const gh = ray.intersectObjects([island, houseFloor, ...friendHouses.map(h => h.floor), ...skyTops, ...FAR.map(I => I.top), ...townFloors], false);
+  const gh = ray.intersectObjects([island, houseFloor, ...friendHouses.map(h => h.floor), ...skyTops, ...FAR.map(I => I.top), ...townFloors, hillMesh], false);
   if (gh.length) {
     moveTarget = gh[0].point.clone(); moveTarget.y = 0; petTarget = null; moveTimer = 0;
     burst(moveTarget.clone().setY(.2), 6, { speed: 1.5, colors: ['#ffffff', '#c9a0ff'], size: .25, life: .6, gravity: -1 });
@@ -3440,6 +3482,7 @@ function tryPet() {
   if (nearPortal()) { openTravel(); return; }
   if (townAct(townStation())) return;
   if (gardenAct()) return;
+  if (hillAct()) return;
   const c = nearestCreature(2.8), n = nearestNPC(2.8), rp = nearestRemote(2.8), seat = nearestSeat(1.6);
   if (seat && [c, n, rp].every(q => !q || distXZ(seat.pos) < distXZ(q.g.position))) { sitDown(seat); return; }
   if (rp && (!c || distXZ(rp.g.position) < distXZ(c.g.position)) && (!n || distXZ(rp.g.position) < distXZ(n.g.position))) { waveAt(rp); return; }
@@ -3565,6 +3608,11 @@ function updateCamera(dt) {
     camTarget.y + Math.sin(curPitch) * curDist,
     camTarget.z + Math.cos(camYaw) * Math.cos(curPitch) * curDist);
   if (camera.position.y < .6) camera.position.y = .6;
+  if (curIsle && curIsle.dark) {   // stay inside the cave: under the ceiling and within the walls
+    const I = curIsle;
+    for (let i = 0; i < 12 && Math.hypot(camera.position.x - I.x, camera.position.z - I.z) > I.r; i++) camera.position.lerp(camTarget, .2);
+    if (camera.position.y > 10) camera.position.y = 10;
+  }
   camera.lookAt(camTarget);
 }
 
@@ -3619,7 +3667,7 @@ function updateUI() {
   const rpNear = started ? nearestRemote(2.8) : null;
   const station = started ? nearStation() : null;
   const skyH = started && !station ? (nearPortal() ? `${iconHTML('portal')} Press <b>E</b> or tap the portal to travel to other islands` : skyHint()) : null;
-  const townH = started && !station ? (townHint() || gardenHint()) : null;
+  const townH = started && !station ? (townHint() || gardenHint() || hillHint()) : null;
   const sitting = started && pState.act && (pState.act.id === 'sit' || pState.act.id === 'sleep');
   const seatNear = started && !pState.act ? nearestSeat(1.6) : null;
   if (fishing.state || deco || emoteOpen()) hintEl.style.display = 'none';
@@ -3734,6 +3782,9 @@ function loadSave() {
   if (!save.book || typeof save.book !== 'object') save.book = {};   // the Collection Book: critters (c) and flowers (fl) you found
   for (const k of ['c', 'fl']) if (!save.book[k] || typeof save.book[k] !== 'object') save.book[k] = {};
   if (!Array.isArray(save.combos)) save.combos = [];   // spell combos you found with other players
+  if (!Array.isArray(save.consts)) save.consts = [];   // constellations you connected at the observatory
+  if (!save.cave || typeof save.cave !== 'object') save.cave = {};   // the Crystal Cave: done (every crystal awake once), day + got (shards picked that day)
+  if (!Array.isArray(save.cave.got)) save.cave.got = [];
   if (save.room && (!Array.isArray(save.room.items) || !Array.isArray(save.room.up))) save.room = null;   // your own room in the Town Hall
   for (const id of save.owned) { const sp = SPELLS.findIndex(s => s.id === id); if (sp >= 0) unlockSpell(sp); }
   if (!Object.hasOwn(PET_DEFS, save.pet) || !save.owned.includes('pet' + save.pet)) save.pet = null;   // pet ids are 'pet' + type
@@ -4011,6 +4062,7 @@ const DAILY_TASKS = [
   { id: 'rainbow2', text: 'Make 2 rainbows', ev: 'cast', item: 'rainbow', need: 2, reward: 3 },
   { id: 'butterfly3', text: 'Cast Butterfly Dance 3 times', ev: 'cast', item: 'butterfly', need: 3, reward: 3 },
   { id: 'stars10', text: 'Shoot 10 Star Shots', ev: 'cast', item: 'star', need: 10, reward: 3 },
+  { id: 'crystal4', text: 'Wake 4 crystals in the Crystal Cave', ev: 'crystal', need: 4, reward: 4 },
 ];
 const DAILY_BY_ID = new Map(DAILY_TASKS.map(t => [t.id, t]));
 // one rare visitor per weekday (Sunday first)
@@ -7618,7 +7670,7 @@ function wxBase(slot) { const v = wxHash(slot); return v < .48 ? 'clear' : v < .
 const wxAt = slot => wxBase(slot) !== 'rain' && wxBase(slot - 1) === 'rain' ? 'clear' : wxBase(slot);
 // each place has its own taste: snow instead of rain on Frostvale, no snow on the volcano, mist in the mushroom wood
 function wxHere(w) {
-  if (curIsle === ROOM) return 'clear';
+  if (curIsle === ROOM || (curIsle && curIsle.dark)) return 'clear';
   const id = curIsle && curIsle.id;
   if (id === 'frost' && w === 'rain') return 'snow';
   if (id === 'ember' && w === 'snow') return 'clear';
@@ -7667,7 +7719,7 @@ function updateWeather(dt, time) {
       else if (w === 'fog') toast('A soft, sleepy fog rolls in…', 3500, 'fog');
       else if (was === 'rain') {
         toast('The rain stopped. Look, a rainbow!', 4000, 'rainbow');
-        if (curIsle !== ROOM) setTimeout(() => {
+        if (curIsle !== ROOM && !(curIsle && curIsle.dark)) setTimeout(() => {
           spawnRainbow(player.position.x, player.position.z, new THREE.Vector3(-Math.sin(camYaw), 0, -Math.cos(camYaw)), { dist: 42, size: 2.4, life: 26 });
           sfx('rainbow');
         }, 2500);
@@ -8169,6 +8221,653 @@ function updateGarden(dt, time) {
   }
 }
 
+// ================= Starry Hill: crystal cave & observatory =================
+// A soft round hill on the west side of Starvale (HILL; you can walk up it: hillH in supportAt).
+// On top stands a little observatory: at night its telescope opens the Star Chart, where you connect stars
+// into pictures (CONSTS). Every picture you find shines in your own night sky afterwards.
+// In the side of the hill is the Crystal Cave (CAVE, far away like the other islands). It is dark inside:
+// Star Shot leaves little floating star lamps (the Glow Potion helps too) and wakes the sleeping crystals.
+// Crystal Shards lie on the cave floor, new ones every day. Everything here is your own (not shared).
+// Built last, with its own seeded random (hr), so nothing else in the world moves.
+let hseed = 4242;
+const hr = () => (hseed = (hseed * 16807) % 2147483647, (hseed - 1) / 2147483646);
+const HR = (a, b) => a + hr() * (b - a);
+const HF = Math.atan2(-HILL.x, -HILL.z);   // the hill's front (local +z) looks at the island centre
+// hill-local spot -> world
+const hillW = (lx, lz, y = 0) => new THREE.Vector3(HILL.x + lx * Math.cos(HF) + lz * Math.sin(HF), y, HILL.z - lx * Math.sin(HF) + lz * Math.cos(HF));
+const rockMats = ['#8f7fb0', '#9c8cbc', '#8273a6'].map(c => toon(c));
+// a little wooden sign with a word and a tiny picture on it
+function hillSign(parent, x, z, rot, text, draw) {
+  const s = new THREE.Group(); s.position.set(x, 0, z); s.rotation.y = rot; parent.add(s);
+  const postM = toon('#8c5e3c');
+  mk(new CylGeo(.06, .07, 1.1, 8), postM, 0, .55, -.05, s);
+  mk(Box(1.5, .5, .08), toon('#fff4d6'), 0, 1.12, 0, s);
+  const tex = canvasTex(384, 128, g => {
+    g.fillStyle = '#fff4d6'; g.fillRect(0, 0, 384, 128);
+    draw(g);
+    g.fillStyle = '#5a3f8f'; g.font = 'bold 40px Delius, sans-serif'; g.textBaseline = 'middle'; g.fillText(text, 104, 66);
+  });
+  mk(new THREE.PlaneGeometry(1.42, .46), new THREE.MeshBasicMaterial({ map: tex }), 0, 1.12, .045, s, false);
+  return s;
+}
+
+// ---------- the hill ----------
+const hillG = new THREE.Group(); hillG.position.set(HILL.x, 0, HILL.z); hillG.rotation.y = HF; scene.add(hillG);
+let hillMesh;
+{
+  // make room: trees and mushrooms that stood here move out; grass and tiny flowers climb onto the hill
+  const inZone = (x, z, m = 0) => Math.hypot(x - HILL.x, z - HILL.z) < HILL.r + m;
+  for (const o of islandDeco) if (inZone(o.position.x, o.position.z, 1.5)) scene.remove(o);
+  for (let i = islandCircles[1] - 1; i >= islandCircles[0]; i--) { const c = circles[i]; if (c && inZone(c.x, c.z, 1)) circles.splice(i, 1); }
+  const m4 = new THREE.Matrix4(), p3 = new THREE.Vector3(), q4 = new THREE.Quaternion(), s3 = new THREE.Vector3();
+  for (const o of scene.children) {
+    if (!o.isInstancedMesh) continue;
+    let ch = false;
+    for (let i = 0; i < o.count; i++) {
+      o.getMatrixAt(i, m4); m4.decompose(p3, q4, s3);
+      if (!inZone(p3.x, p3.z)) continue;
+      p3.y += hillH(p3.x, p3.z);
+      if (Math.hypot(p3.x - HILL.x, p3.z - HILL.z) < HILL.top + .2) s3.setScalar(0);   // keep the top tidy for the observatory
+      o.setMatrixAt(i, m4.compose(p3, q4, s3)); ch = true;
+    }
+    if (ch) o.instanceMatrix.needsUpdate = true;
+  }
+  placed.push({ x: HILL.x, z: HILL.z, r: HILL.r + 1 });
+  creatureBoxes.push({ x0: HILL.x - HILL.r * .8, x1: HILL.x + HILL.r * .8, z0: HILL.z - HILL.r * .8, z1: HILL.z + HILL.r * .8 });
+
+  // the hill itself: a smooth bump (same shape as hillH, a hair higher so feet don't sink in)
+  const prof = [new THREE.Vector2(HILL.r + .7, -.1)];
+  for (let i = 0; i <= 32; i++) { const d = HILL.r * (1 - i / 32); prof.push(new THREE.Vector2(d, hillH(HILL.x + d, HILL.z) + .02)); }
+  const ht = groundTex.clone(); ht.repeat.set(10, 2); ht.needsUpdate = true;
+  hillMesh = mk(new THREE.LatheGeometry(prof, 72), toon('#ffffff', { map: ht }), 0, 0, 0, hillG);
+
+  // a stepping-stone path up the front, with two little lanterns at the bottom
+  const stoneMat = toon('#e4dcef');
+  for (let d = HILL.r + .4, k = 0; d > HILL.top - .4; d -= .95, k++) {
+    const s = ball(stoneMat, Math.sin(k * 2.3) * .25, hillH(HILL.x + d, HILL.z) + .03, d, HR(.5, .65), .09, HR(.42, .55), hillG, false);
+    s.rotation.y = HR(0, 3);
+  }
+  for (const sx of [-1, 1]) {
+    const x = sx * 1.3, z = HILL.r + 1.2;
+    mk(new CylGeo(.07, .1, 1.6, 8), toon('#6a5584'), x, .8, z, hillG);
+    mk(new ConeGeo(.28, .26, 12), toon('#8a6bb8'), x, 1.85, z, hillG);
+    ball(lanternMat, x, 1.65, z, .18, .21, .18, hillG, false);
+    const w = hillW(x, z); circles.push({ x: w.x, z: w.z, r: .22 });
+  }
+  hillSign(hillG, 2.2, HILL.r + 1.6, .25, 'Starry Hill', g => {
+    g.fillStyle = '#ffd84d'; g.beginPath();
+    for (let i = 0; i < 10; i++) { const r = i % 2 ? 13 : 32, a = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(54 + Math.cos(a) * r, 66 + Math.sin(a) * r); }
+    g.closePath(); g.fill();
+  });
+  { const w = hillW(2.2, HILL.r + 1.6); circles.push({ x: w.x, z: w.z, r: .2 }); }
+}
+
+// ---------- the observatory on top ----------
+const OBS = { lx: 0, lz: -1.1, r: 1.75 };
+const obsG = new THREE.Group(); obsG.position.set(OBS.lx, HILL.h, OBS.lz); hillG.add(obsG);
+const obsDome = new THREE.Group(); obsDome.position.y = 2.4; obsG.add(obsDome);
+const hillScopeG = new THREE.Group(); hillG.add(hillScopeG);
+let scopeTube = null;
+const SCOPE = hillW(1.55, 1.25, HILL.h);           // the telescope on its tripod
+const SCOPE_FRONT = hillW(.9, 2.3, HILL.h);        // where you stand to look through it
+{
+  // a round stone patio
+  mk(new CylGeo(HILL.top - .15, HILL.top - .05, .1, 48), toon('#efe6f7'), 0, HILL.h + .03, 0, hillG, false);
+  mk(new TorGeo(HILL.top - .1, .08, 8, 64), toon('#ddd0ec'), 0, HILL.h + .06, 0, hillG, false).rotation.x = Math.PI / 2;
+  // the round tower
+  const wallM = toon('#f6efff'), trimM = toon('#c9b8ef');
+  mk(new CylGeo(OBS.r, OBS.r + .1, 2.4, 40), wallM, 0, 1.2, 0, obsG);
+  mk(new TorGeo(OBS.r + .1, .12, 10, 56), trimM, 0, .08, 0, obsG).rotation.x = Math.PI / 2;
+  mk(new TorGeo(OBS.r + .02, .13, 10, 56), trimM, 0, 2.4, 0, obsG).rotation.x = Math.PI / 2;
+  door(obsG, OBS.r - .02, .95, 1.65, '#7b5bab');
+  for (const a of [1.35, -1.35]) {   // round glowing windows
+    const w = mk(new CircGeo(.3, 24), windowGlow, Math.sin(a) * (OBS.r + .03), 1.55, Math.cos(a) * (OBS.r + .03), obsG, false);
+    w.rotation.y = a;
+    const f = mk(new TorGeo(.3, .06, 8, 28), trimM, Math.sin(a) * (OBS.r + .03), 1.55, Math.cos(a) * (OBS.r + .03), obsG, false);
+    f.rotation.y = a;
+  }
+  // the dome with a slit and a big telescope peeking out
+  const domeM = toon('#a9bfff');
+  mk(new SphGeo(OBS.r + .05, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2), domeM, 0, 0, 0, obsDome);
+  const slit = mk(new TorGeo(OBS.r + .06, .2, 8, 40, Math.PI * .62), toon('#4a3a6b'), 0, 0, 0, obsDome, false);
+  slit.rotation.set(0, Math.PI / 2, Math.PI * .19);
+  const big = new THREE.Group(); big.position.set(0, .55, 0); big.rotation.x = .75; obsDome.add(big);
+  mk(new CylGeo(.26, .34, 2.6, 24), toon('#ffd27a'), 0, 1.0, 0, big);
+  mk(new TorGeo(.27, .07, 8, 24), toon('#c98a3c'), 0, 2.28, 0, big, false).rotation.x = Math.PI / 2;
+  ball(toon('#c98a3c'), 0, -.2, 0, .32, .32, .32, big, false);
+  const vane = mk(new THREE.OctahedronGeometry(.22), glow(toon('#ffd84d', { emissive: '#ffb800', emissiveIntensity: .4 }), .4, 1.6), 0, OBS.r + .35, -.3, obsDome, false);
+  vane.scale.z = .5;
+  const ow = hillW(OBS.lx, OBS.lz); circles.push({ x: ow.x, z: ow.z, r: OBS.r + .2 });
+
+  // the little telescope you look through, on a tripod
+  hillScopeG.position.set(1.55, HILL.h, 1.25); hillScopeG.rotation.y = .5;
+  const legM = toon('#8c5e3c'), brass = toon('#ffd27a');
+  for (let i = 0; i < 3; i++) {
+    const a = i / 3 * Math.PI * 2, leg = mk(new CylGeo(.04, .05, 1.35, 8), legM, Math.sin(a) * .28, .62, Math.cos(a) * .28, hillScopeG);
+    leg.rotation.set(Math.cos(a) * .3, 0, -Math.sin(a) * .3);
+    ball(legM, Math.sin(a) * .5, .04, Math.cos(a) * .5, .07, .05, .07, hillScopeG, false);
+  }
+  ball(brass, 0, 1.28, 0, .13, .13, .13, hillScopeG);
+  const tube = scopeTube = new THREE.Group(); tube.position.y = 1.33; tube.rotation.x = -.7; hillScopeG.add(tube);
+  mk(new CylGeo(.12, .16, 1.1, 20), toon('#b48cff'), 0, 0, .1, tube).rotation.x = Math.PI / 2;
+  mk(new TorGeo(.15, .04, 8, 24), brass, 0, 0, .66, tube, false);
+  mk(new CylGeo(.05, .06, .2, 12), brass, 0, 0, -.52, tube, false).rotation.x = Math.PI / 2;
+  circles.push({ x: SCOPE.x, z: SCOPE.z, r: .45 });
+}
+
+// ---------- the cave door in the side of the hill ----------
+const CAVE_A = .95;   // how far round from the front the door sits
+const caveDoorG = new THREE.Group(); hillG.add(caveDoorG);
+const CAVE_DOOR = hillW(Math.sin(CAVE_A) * (HILL.r + 1.1), Math.cos(CAVE_A) * (HILL.r + 1.1));   // stand here to go in
+{
+  const d0 = HILL.r - 1.9;
+  caveDoorG.position.set(Math.sin(CAVE_A) * d0, 0, Math.cos(CAVE_A) * d0); caveDoorG.rotation.y = CAVE_A;
+  // a dark opening framed by an arch of round rocks
+  const hole = mk(new CircGeo(1.15, 40), new THREE.MeshBasicMaterial({ color: '#1d1433' }), 0, 1.0, .55, caveDoorG, false);
+  hole.scale.y = 1.15;
+  ball(new THREE.MeshBasicMaterial({ color: '#160f28' }), 0, .2, .3, 1.1, .3, .6, caveDoorG, false);
+  const arch = mk(new TorGeo(1.3, .42, 12, 40, Math.PI), rockMats[0], 0, 1.0, .65, caveDoorG);
+  arch.scale.y = 1.15;
+  for (const sx of [-1, 1]) {
+    ball(rockMats[1], sx * 1.3, .55, .65, .5, .7, .5, caveDoorG);
+    ball(rockMats[2], sx * 1.85, .3, .3, .65, .5, .6, caveDoorG);
+  }
+  ball(rockMats[2], 0, 2.65, .2, 1.1, .45, .7, caveDoorG);
+  // a few glowing crystals outside, to show what is waiting inside
+  const cm = glow(toon('#d4b0ff', { emissive: '#a66bff', emissiveIntensity: .4, flatShading: true }), .4, 1.8);
+  for (const [x, y, z, s, rz] of [[-2.1, .5, 1.1, .9, -.4], [-2.45, .4, .7, .6, -.7], [2.2, .45, 1.05, .75, .5], [.9, 2.75, .45, .55, .3]]) {
+    const c = mk(new THREE.OctahedronGeometry(.4), cm, x, y, z, caveDoorG, false); c.scale.set(.6 * s, 1.6 * s, .6 * s); c.rotation.z = rz;
+  }
+  const w = hillW(Math.sin(CAVE_A) * (HILL.r - .7), Math.cos(CAVE_A) * (HILL.r - .7)); circles.push({ x: w.x, z: w.z, r: 1.35 });
+  hillSign(hillG, Math.sin(CAVE_A + .42) * (HILL.r + .9), Math.cos(CAVE_A + .42) * (HILL.r + .9), CAVE_A + .2, 'Crystal Cave', g => {
+    g.fillStyle = '#c9a0ff'; g.beginPath(); g.moveTo(54, 26); g.lineTo(76, 66); g.lineTo(54, 106); g.lineTo(32, 66); g.closePath(); g.fill();
+    g.fillStyle = '#fff'; g.globalAlpha = .6; g.beginPath(); g.moveTo(54, 34); g.lineTo(62, 62); g.lineTo(48, 62); g.closePath(); g.fill(); g.globalAlpha = 1;
+  });
+  const sw = hillW(Math.sin(CAVE_A + .42) * (HILL.r + .9), Math.cos(CAVE_A + .42) * (HILL.r + .9)); circles.push({ x: sw.x, z: sw.z, r: .2 });
+}
+HILL_FOOT = true;
+
+// ---------- the Crystal Cave: a dark round cavern far away ----------
+const CAVE = { id: 'cave', name: 'Crystal Cave', x: -2600, z: 0, r: 19, dark: true,
+  day: { top: C('#0c0820'), bottom: C('#1b1236'), fog: C('#120c26') } };
+CAVE.night = CAVE.day;
+FAR.push(CAVE);
+const CAVE_N = 8;               // sleeping crystals
+const caveCrystals = [], caveLamps = [], caveShards = [];
+const caveLights = [0, 1, 2].map(() => { const l = new THREE.PointLight('#ffe8a8', 0, 16, 1.4); l.visible = false; scene.add(l); return { l, used: 0 }; });
+let caveLit = 0, caveAwake = 0;
+const caveG = new THREE.Group(); caveG.position.set(CAVE.x, 0, CAVE.z); scene.add(caveG);
+const CAVE_EXIT = new THREE.Vector3(CAVE.x, 0, CAVE.z + CAVE.r - 2.6);   // stand here to go back out
+const CAVE_IN = new THREE.Vector3(CAVE.x, 0, CAVE.z + CAVE.r - 7);       // where you arrive
+const caveExitG = new THREE.Group();
+{
+  const R0 = CAVE.r;
+  // floor, walls of round boulders and a low dome for a ceiling
+  CAVE.top = new THREE.Mesh(new CylGeo(R0 + 4, R0 + 4, 3, 64), [toon('#4a3d66'), toon('#7a6aa0', { map: groundTex }), toon('#4a3d66')]);
+  CAVE.top.position.y = -1.5; CAVE.top.receiveShadow = true; caveG.add(CAVE.top);
+  const dome = mk(new SphGeo(R0 + 6, 48, 20, 0, Math.PI * 2, 0, Math.PI / 2), toon('#3a2f58', { side: THREE.BackSide }), 0, 0, 0, caveG, false);
+  dome.scale.y = .62; dome.receiveShadow = false;
+  const ceil = d => .62 * Math.sqrt(Math.max(0, (R0 + 6) ** 2 - d * d));
+  for (let i = 0; i < 30; i++) {
+    const a = i / 30 * Math.PI * 2 + HR(-.06, .06), d = R0 + HR(1.2, 2.6);
+    if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a)) - Math.PI / 2) < .2) continue;   // keep the way out open
+    ball(rockMats[i % 3], Math.cos(a) * d, HR(.8, 2.5), Math.sin(a) * d, HR(2.4, 3.6), HR(3, 6), HR(2.4, 3.6), caveG);
+  }
+  // stalactites hanging from the ceiling, stalagmites growing from the floor (soft and round)
+  for (let i = 0; i < 26; i++) {
+    const a = HR(0, 6.28), d = Math.sqrt(hr()) * (R0 + 2), s = HR(.35, .8), h = HR(1.6, 3.6);
+    const c = mk(new ConeGeo(s, h, 14), rockMats[i % 3], Math.cos(a) * d, ceil(d) - h * .45, Math.sin(a) * d, caveG, false);
+    c.rotation.x = Math.PI;
+  }
+  const mites = [];
+  for (let i = 0; i < 40 && mites.length < 12; i++) {
+    const a = HR(0, 6.28), d = HR(5, R0 - 3), x = Math.cos(a) * d, z = Math.sin(a) * d;
+    if (Math.hypot(x, z - (R0 - 4)) < 6 || mites.some(m => Math.hypot(m.x - x, m.z - z) < 4)) continue;
+    const s = HR(.45, .8), h = HR(1.4, 2.8);
+    mk(new ConeGeo(s, h, 14), rockMats[i % 3], x, h / 2, z, caveG);
+    ball(rockMats[(i + 1) % 3], x, .1, z, s * 1.3, .3, s * 1.3, caveG, false);
+    mites.push({ x, z }); circles.push({ x: CAVE.x + x, z: CAVE.z + z, r: s + .15 });
+  }
+  // a little pool of glowing water
+  const pool = { x: -7, z: -6 };
+  const water = mk(new CircGeo(2.6, 40), new THREE.MeshBasicMaterial({ color: '#58c8ff', transparent: true, opacity: .85, fog: false }), pool.x, .05, pool.z, caveG, false);
+  water.rotation.x = -Math.PI / 2; CAVE.pool = water;
+  mk(new TorGeo(2.65, .3, 8, 40), rockMats[1], pool.x, .05, pool.z, caveG, false).rotation.x = Math.PI / 2;
+  circles.push({ x: CAVE.x + pool.x, z: CAVE.z + pool.z, r: 2.9 });
+  // little glowing mushrooms here and there
+  const capM = toon('#7fdcff', { emissive: '#4cc3ff', emissiveIntensity: .9, fog: false });
+  for (let i = 0; i < 9; i++) {
+    const a = HR(0, 6.28), d = HR(6, R0 - 1.5), x = Math.cos(a) * d, z = Math.sin(a) * d;
+    if (Math.hypot(x, z - (R0 - 4)) < 4) continue;
+    for (let k = 0; k < 3; k++) {
+      const ox = x + HR(-.5, .5), oz = z + HR(-.5, .5), s = HR(.5, 1);
+      mk(new CylGeo(.06 * s, .08 * s, .3 * s, 8), stemMat, ox, .15 * s, oz, caveG, false);
+      const cp = mk(capGeo, capM, ox, .28 * s, oz, caveG, false); cp.scale.set(s * .5, s * .4, s * .5);
+    }
+  }
+  // the way out: a bright opening back to Starvale
+  caveExitG.position.set(0, 0, R0 - .6); caveExitG.rotation.y = Math.PI; caveG.add(caveExitG);
+  const out = mk(new CircGeo(1.3, 40), new THREE.MeshBasicMaterial({ color: '#e8f3ff', fog: false }), 0, 1.15, -.15, caveExitG, false);
+  out.scale.y = 1.2; out.rotation.y = Math.PI;
+  const arch = mk(new TorGeo(1.45, .45, 12, 40, Math.PI), rockMats[0], 0, 1.15, 0, caveExitG);
+  arch.scale.y = 1.2;
+  for (const sx of [-1, 1]) ball(rockMats[1], sx * 1.45, .6, 0, .55, .75, .55, caveExitG);
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#cfe6ff', transparent: true, opacity: .55, fog: false, blending: THREE.AdditiveBlending, depthWrite: false }));
+  halo.scale.setScalar(5); halo.position.set(0, 1.2, .3); caveExitG.add(halo);
+  circles.push({ x: CAVE.x - 2.1, z: CAVE.z + R0 - .6, r: .7 }, { x: CAVE.x + 2.1, z: CAVE.z + R0 - .6, r: .7 });
+
+  // the sleeping crystals, spread round the cave
+  const COLS = [['#d4b0ff', '#a66bff'], ['#a8f0ff', '#4cd3ff'], ['#ffc2e6', '#ff6bbf'], ['#fff3a8', '#ffc94a']];
+  for (let i = 0; i < CAVE_N; i++) {
+    let x = 0, z = 0;
+    for (let k = 0; k < 30; k++) {
+      const a = i / CAVE_N * Math.PI * 2 + HR(-.3, .3), d = HR(8, R0 - 2.5);
+      x = Math.cos(a) * d; z = Math.sin(a) * d;
+      if (Math.hypot(x, z - (R0 - 4)) > 5 && Math.hypot(x - pool.x, z - pool.z) > 4.5 && mites.every(m => Math.hypot(m.x - x, m.z - z) > 2.5)) break;
+    }
+    const col = COLS[i % COLS.length], g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = HR(0, 6.28); caveG.add(g);
+    const mat = toon(col[0], { emissive: col[1], emissiveIntensity: .25, flatShading: true, fog: false });
+    const n = 4 + (i % 2);
+    for (let k = 0; k < n; k++) {
+      const a = k / n * Math.PI * 2, big = k === 0, c = mk(new THREE.OctahedronGeometry(.5), mat, big ? 0 : Math.cos(a) * .55, big ? 1.2 : .7, big ? 0 : Math.sin(a) * .55, g);
+      c.scale.set(big ? .9 : .55, big ? 2.6 : HR(1.3, 1.9), big ? .9 : .55);
+      if (!big) { c.rotation.z = Math.cos(a) * .45; c.rotation.x = -Math.sin(a) * .45; }
+    }
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: col[1], transparent: true, opacity: .12, fog: false, blending: THREE.AdditiveBlending, depthWrite: false }));
+    halo.scale.setScalar(4.5); halo.position.y = 1.3; g.add(halo);
+    circles.push({ x: CAVE.x + x, z: CAVE.z + z, r: 1 });
+    caveCrystals.push({ g, mat, halo, col: col[1], pos: new THREE.Vector3(CAVE.x + x, 1.2, CAVE.z + z), awake: false, ph: i * 1.7 });
+  }
+  // spots where Crystal Shards can lie (three of them each day)
+  CAVE.spots = [];
+  for (let k = 0; k < 200 && CAVE.spots.length < 12; k++) {
+    const a = HR(0, 6.28), d = HR(3, R0 - 2.5), x = CAVE.x + Math.cos(a) * d, z = CAVE.z + Math.sin(a) * d;
+    if (circles.some(c => Math.hypot(c.x - x, c.z - z) < c.r + .9) || CAVE.spots.some(p => Math.hypot(p.x - x, p.z - z) < 4)) continue;
+    CAVE.spots.push(new THREE.Vector3(x, 0, z));
+  }
+}
+const inCave = () => curIsle === CAVE;
+// the Crystal Cave stays dark: only star lamps, a glowing potion and awake crystals make it lighter
+function caveLook() {
+  const L = caveLit;
+  hemi.color.set('#b0a4ff'); hemi.groundColor.set('#2c2252');
+  hemi.intensity = lerp(.05, .75, L);
+  sun.intensity = 0; starMat.opacity = 0; sunSprite.material.opacity = 0; moon.material.opacity = 0; moonGlow.material.opacity = 0;
+  scene.fog.near = curDist * lerp(.8, 1.4, L);
+  scene.fog.far = curDist + lerp(5, 34, L);
+}
+function caveAims() { return inCave() ? caveCrystals.filter(c => !c.awake).map(c => c.pos.clone()) : []; }
+// Star Shot in the cave stops after a short way (or at the wall) and leaves a star lamp there
+function caveWall(p) { return inCave() && (Math.hypot(p.x - CAVE.x, p.z - CAVE.z) > CAVE.r - 1 || distXZ(p) > 16); }
+function starLanded(p) {
+  if (!inCave()) return;
+  const pos = p.clone(); pos.y = clamp(pos.y, 1.3, 3);
+  if (caveLamps.length >= caveLights.length) dropLamp(caveLamps[0]);
+  const L = caveLights.reduce((a, b) => (a.used <= b.used ? a : b));
+  L.used = time; L.l.position.copy(pos); L.l.intensity = 0;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: starTex, color: '#ffe066', transparent: true, fog: false, blending: THREE.AdditiveBlending, depthWrite: false }));
+  s.scale.setScalar(.7); s.position.copy(pos); scene.add(s);
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#fff0b0', transparent: true, opacity: 0, fog: false, blending: THREE.AdditiveBlending, depthWrite: false }));
+  halo.scale.setScalar(3.4); s.add(halo); halo.scale.setScalar(4.6);
+  caveLamps.push({ s, halo, L, pos, t: 0, life: 24 });
+}
+function dropLamp(lp) {
+  scene.remove(lp.s); lp.L.l.intensity = 0;
+  caveLamps.splice(caveLamps.indexOf(lp), 1);
+}
+function wakeCrystal(p) {
+  if (!inCave()) return false;
+  const c = caveCrystals.find(q => !q.awake && Math.hypot(q.pos.x - p.x, q.pos.z - p.z) < 1.7);
+  if (!c) return false;
+  c.awake = true; caveAwake++;
+  burst(c.pos.clone().setY(1.6), 34, { speed: 4, colors: [c.col, '#ffffff', '#fff09a'], size: .45, life: 1.3, gravity: -.4 });
+  sfx('lantern'); dailyEvent('crystal');
+  if (caveAwake < CAVE_N) toast(`A crystal woke up! (${caveAwake} of ${CAVE_N})`, 2200, 'cave');
+  else if (!save.cave.done) {
+    save.cave.done = true; save.stars += 5; storeSave(); updateStarsUI();
+    setTimeout(() => { toast('Every crystal is awake! The whole Crystal Cave is sparkling. +5 stars', 5000, 'star'); sfx('fanfare'); }, 600);
+  } else setTimeout(() => { toast('Every crystal is awake! The whole cave is sparkling again.', 4000, 'cave'); sfx('fanfare'); }, 600);
+  return true;
+}
+// today's Crystal Shards: three of the spots, a different three every day
+function placeShards() {
+  for (const s of caveShards) scene.remove(s.g);
+  caveShards.length = 0;
+  const day = dayKey();
+  if (save.cave.day !== day) { save.cave.day = day; save.cave.got = []; }
+  let h = 7; for (const ch of day) h = (h * 31 + ch.charCodeAt(0)) % 100003;
+  const idx = [];
+  while (idx.length < 3) { h = (h * 16807 + 11) % 2147483647; const i = h % CAVE.spots.length; if (!idx.includes(i)) idx.push(i); }
+  for (const i of idx) {
+    if (save.cave.got.includes(i)) continue;
+    const { g, inner } = makeIngredientMesh('crystal', rpick(['#a66bff', '#4cd3ff', '#ff6bbf']));
+    g.position.copy(CAVE.spots[i]); scene.add(g);
+    caveShards.push({ i, g, inner, ph: Math.random() * 6 });
+  }
+}
+function nearShard() { return inCave() ? caveShards.find(s => distXZ(s.g.position) < 1.6) || null : null; }
+function pickShard(s) {
+  burst(s.g.position.clone().setY(.6), 16, { speed: 3, colors: ['#d4b0ff', '#ffffff', '#fff09a'], size: .32, life: .8, gravity: 0 });
+  scene.remove(s.g); caveShards.splice(caveShards.indexOf(s), 1);
+  save.cave.got.push(s.i); save.ing.crystal = (save.ing.crystal || 0) + 1;
+  sfx('pickup'); dailyEvent('ing'); storeSave(); renderIngRow();
+  toast(caveShards.length ? `+1 Crystal Shard (${save.ing.crystal}). ${caveShards.length} more hiding in the dark!` : `+1 Crystal Shard (${save.ing.crystal}). That was the last one today!`, 2600, 'ingCrystal');
+}
+
+// ---------- going in and out ----------
+let caveWarping = false;
+function caveWarp(into) {
+  if (caveWarping) return;
+  caveWarping = true;
+  if (deco) decoCancel();
+  closeStargaze();
+  const warpEl = document.getElementById('warp'), nameEl = document.getElementById('isleName');
+  warpEl.classList.add('on'); sfx('warp');
+  setTimeout(() => {
+    for (const c of caveCrystals) c.awake = false;
+    caveAwake = 0;
+    while (caveLamps.length) dropLamp(caveLamps[0]);
+    for (const L of caveLights) L.l.visible = into;
+    let h;
+    if (into) {
+      curIsle = CAVE; caveLit = 0;
+      player.position.copy(CAVE_IN); h = Math.PI;
+      setSkyCenter(CAVE.x, CAVE.z); placeShards();
+    } else {
+      curIsle = null;
+      player.position.copy(CAVE_DOOR); h = Math.atan2(CAVE_DOOR.x - HILL.x, CAVE_DOOR.z - HILL.z);
+      setSkyCenter(0, 0);
+    }
+    pState.vy = 0; pState.grounded = true; pVel.set(0, 0, 0); selfLev = 0;
+    pState.heading = player.rotation.y = h; camYaw = into ? h + Math.PI : h + .5;   // outside: look back at the cave door, not into the hill
+    moveTarget = petTarget = null;
+    camTarget.set(player.position.x, 1.4, player.position.z);
+    applyTime(); updateIsleRow(); renderFriends();
+    warpEl.classList.remove('on');
+    if (into) {
+      nameEl.innerHTML = 'Crystal Cave<small>Deep inside Starry Hill</small>'; nameEl.classList.add('on');
+      setTimeout(() => nameEl.classList.remove('on'), 2400);
+      if (!save.cave.seen) {
+        save.cave.seen = true; storeSave();
+        setTimeout(() => toast("It's so dark in here! Cast Star Shot to light the way and wake up the sleeping crystals.", 6000, 'star'), 1600);
+        setTimeout(() => toast('Crystal Shards hide on the floor too. New ones every day!', 4500, 'ingCrystal'), 8000);
+      }
+    }
+    burst(player.position.clone().add(new THREE.Vector3(0, 1, 0)), 30, { speed: 4, colors: ['#ffffff', '#d8c4ff', '#ffd1f0', '#fff09a'], size: .45, life: 1.1, gravity: -.5 });
+    caveWarping = false;
+  }, 520);
+}
+const nearScope = () => started && !curIsle && distXZ(SCOPE) < 2.3 && Math.abs(player.position.y - HILL.h) < 1;
+const nearCaveDoor = () => started && !curIsle && distXZ(CAVE_DOOR) < 2.2 && player.position.y < 1.5;
+const nearCaveExit = () => started && inCave() && distXZ(CAVE_EXIT) < 2.6;
+function lookThroughScope() {
+  pState.heading = Math.atan2(SCOPE.x - player.position.x, SCOPE.z - player.position.z);
+  if (night < .5) {
+    toast('The stars are hiding in the daytime. Come back at night, or cast Day & Night!', 3800, 'moon');
+    sfx('nomana');
+    return;
+  }
+  openStargaze();
+}
+function hillHint() {
+  if (nearScope()) return `${iconHTML('telescope')} Press <b>E</b> or tap the telescope to look at the stars`;
+  if (nearCaveDoor()) return `${iconHTML('cave')} Press <b>E</b> or tap to go into the Crystal Cave`;
+  if (nearCaveExit()) return `${iconHTML('cave')} Press <b>E</b> or tap the light to go back outside`;
+  if (nearShard()) return `${iconHTML('ingCrystal')} Press <b>E</b> or tap to pick up the Crystal Shard`;
+  return null;
+}
+function hillAct() {
+  if (nearScope()) { lookThroughScope(); return true; }
+  if (nearCaveDoor()) { caveWarp(true); return true; }
+  if (nearCaveExit()) { caveWarp(false); return true; }
+  const s = nearShard(); if (s) { pickShard(s); return true; }
+  return false;
+}
+function hillTap(ray) {
+  const walk = p => { moveTarget = p.clone().setY(0); petTarget = null; moveTimer = 0; return true; };
+  if (!curIsle) {
+    if (ray.intersectObject(hillScopeG, true).length) return nearScope() ? (lookThroughScope(), true) : walk(SCOPE_FRONT);
+    if (ray.intersectObject(caveDoorG, true).length) return nearCaveDoor() ? (caveWarp(true), true) : walk(CAVE_DOOR);
+  } else if (inCave()) {
+    if (ray.intersectObject(caveExitG, true).length) return nearCaveExit() ? (caveWarp(false), true) : walk(CAVE_EXIT);
+    for (const s of caveShards) if (ray.intersectObject(s.g, true).length) return distXZ(s.g.position) < 1.6 ? (pickShard(s), true) : walk(s.g.position);
+  }
+  return false;
+}
+
+// ---------- the Star Chart: connect the stars into pictures ----------
+// pts on a 100 × 70 chart (y goes down), edges are the lines that make the picture
+const CONSTS = [
+  { id: 'heart', name: 'The Heart', pts: [[50, 64], [16, 28], [28, 10], [50, 22], [72, 10], [84, 28]], edges: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0]] },
+  { id: 'crown', name: 'The Crown', pts: [[20, 56], [80, 56], [18, 22], [35, 40], [50, 10], [65, 40], [82, 22]], edges: [[0, 1], [0, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 1]] },
+  { id: 'fish', name: 'The Fish', pts: [[12, 36], [38, 18], [38, 54], [66, 36], [84, 20], [84, 52], [48, 8]], edges: [[0, 1], [1, 3], [0, 2], [2, 3], [3, 4], [4, 5], [5, 3], [1, 6]] },
+  { id: 'hat', name: 'The Wizard Hat', pts: [[42, 4], [58, 14], [36, 46], [64, 46], [16, 54], [84, 54], [50, 62]], edges: [[0, 1], [1, 3], [0, 2], [2, 3], [2, 4], [3, 5], [4, 6], [6, 5]] },
+  { id: 'cat', name: 'The Cat', pts: [[26, 26], [30, 6], [44, 18], [56, 18], [70, 6], [74, 26], [72, 48], [50, 60], [28, 48]], edges: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 0]] },
+  { id: 'bunny', name: 'The Bunny', pts: [[32, 4], [46, 6], [40, 24], [26, 32], [38, 40], [62, 34], [78, 44], [68, 62], [40, 62]], edges: [[0, 2], [1, 2], [2, 3], [3, 4], [2, 5], [5, 6], [6, 7], [7, 8], [8, 4]] },
+  { id: 'teacup', name: 'The Teacup', pts: [[24, 20], [66, 20], [32, 50], [58, 50], [82, 26], [70, 42], [16, 60], [84, 60], [42, 4], [48, 12]], edges: [[0, 1], [0, 2], [2, 3], [3, 1], [1, 4], [4, 5], [5, 3], [6, 7], [8, 9]] },
+  { id: 'mushroom', name: 'The Mushroom', pts: [[12, 36], [26, 14], [50, 6], [74, 14], [88, 36], [40, 36], [60, 36], [38, 62], [62, 62]], edges: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 6], [6, 5], [5, 0], [5, 7], [7, 8], [8, 6]] },
+];
+const sgEl = document.getElementById('stargaze'), sgCv = document.getElementById('sgCanvas'), sgCtx = sgCv.getContext('2d');
+const stargazeOpen = () => !sgEl.classList.contains('hidden');
+const ek = (a, b) => a < b ? a + '-' + b : b + '-' + a;
+const sgXY = ([x, y]) => [40 + x * 5.2, 28 + y * 5.2];
+const sgBg = Array.from({ length: 90 }, () => [rr(0, 600), rr(0, 420), rr(.6, 1.8), rr(0, 6)]);
+let sg = null, sgRaf = 0;
+const sgFirstOpen = () => { const i = CONSTS.findIndex(c => !save.consts.includes(c.id)); return i < 0 ? CONSTS.length : i; };
+function openStargaze() {
+  if (!started) return;
+  sgShow(Math.min(sgFirstOpen(), CONSTS.length - 1));
+  sgEl.classList.remove('hidden');
+  for (const k in keys) keys[k] = false;
+  sfx('door');
+  if (!sgRaf) sgRaf = requestAnimationFrame(sgDraw);
+}
+function closeStargaze() { sgEl.classList.add('hidden'); }
+function sgShow(i) {
+  const c = CONSTS[i], done = save.consts.includes(c.id);
+  sg = { i, c, lines: new Set(done ? c.edges.map(([a, b]) => ek(a, b)) : []), sel: -1, ptr: null, down: -1, done, doneT: done ? 9 : 0, wrong: 0, hint: null, shake: null };
+  sgText(); renderSgList();
+}
+function sgText() {
+  const n = save.consts.length;
+  document.getElementById('sgTitle').textContent = sg.done ? sg.c.name : 'Star Chart';
+  document.getElementById('sgSub').textContent = sg.done
+    ? (n >= CONSTS.length ? `You found every picture in the sky! They all shine in your night sky now.` : `It shines in your night sky now. ${n} of ${CONSTS.length} found.`)
+    : 'What picture is hiding in the stars? Tap one star, then the next, along the faint lines.';
+}
+function renderSgList() {
+  const box = document.getElementById('sgList'); box.innerHTML = '';
+  const first = sgFirstOpen();
+  CONSTS.forEach((c, i) => {
+    const b = document.createElement('button'), done = save.consts.includes(c.id);
+    b.className = (done ? 'done' : '') + (sg && sg.i === i ? ' on' : '');
+    b.innerHTML = done ? `${iconHTML('star')}${c.name.replace('The ', '')}` : '???';
+    if (!done && i !== first) b.disabled = true;
+    else b.addEventListener('click', () => { sgShow(i); sfx('pop'); });
+    box.appendChild(b);
+  });
+}
+function sgPos(e) {
+  const r = sgCv.getBoundingClientRect();
+  return [(e.clientX - r.left) * sgCv.width / r.width, (e.clientY - r.top) * sgCv.height / r.height];
+}
+function sgStarAt(p) {
+  let best = -1, bd = 26;
+  sg.c.pts.forEach((q, i) => { const [x, y] = sgXY(q), d = Math.hypot(x - p[0], y - p[1]); if (d < bd) { bd = d; best = i; } });
+  return best;
+}
+function sgTry(a, b) {
+  const key = ek(a, b), edge = sg.c.edges.some(([x, y]) => ek(x, y) === key);
+  if (!edge) {
+    sg.wrong++; sg.shake = { i: b, t: .4 };
+    if (actx && !muted) tone(220, actx.currentTime, .25, 'triangle', .06, 180);
+    if (sg.wrong % 3 === 0) {   // a little help: one missing line glows for a moment
+      const miss = sg.c.edges.find(([x, y]) => !sg.lines.has(ek(x, y)));
+      if (miss) sg.hint = { e: miss, t: 2.2 };
+    }
+    return;
+  }
+  sg.sel = b;
+  if (sg.lines.has(key)) return;
+  sg.lines.add(key);
+  if (actx && !muted) tone(MELODY[sg.lines.size % MELODY.length] * 1.5, actx.currentTime, .5, 'sine', .09);
+  if (sg.lines.size >= sg.c.edges.length) sgComplete();
+}
+function sgComplete() {
+  sg.done = true; sg.doneT = 0; sg.sel = -1;
+  const first = !save.consts.includes(sg.c.id);
+  if (first) {
+    save.consts.push(sg.c.id);
+    const all = save.consts.length >= CONSTS.length;
+    save.stars += 2 + (all ? 5 : 0); storeSave(); updateStarsUI();
+    toast(all ? `${sg.c.name}! That was the last picture in the sky. +7 stars` : `You found ${sg.c.name}! +2 stars`, 4200, 'star');
+    buildSkyConsts();
+  }
+  sfx('fanfare'); sgText(); renderSgList();
+}
+sgCv.addEventListener('pointerdown', e => {
+  if (!sg || sg.done) return;
+  const p = sgPos(e), i = sgStarAt(p);
+  sg.ptr = p;
+  if (i < 0) { sg.sel = -1; return; }
+  sgCv.setPointerCapture(e.pointerId);
+  if (sg.sel >= 0 && sg.sel !== i) sgTry(sg.sel, i);
+  else { sg.sel = i; if (actx && !muted) tone(988, actx.currentTime, .15, 'sine', .05); }
+  sg.down = sg.sel;
+});
+sgCv.addEventListener('pointermove', e => { if (sg) sg.ptr = sgPos(e); });
+sgCv.addEventListener('pointerup', e => {
+  if (!sg || sg.done || sg.down < 0) return;
+  const i = sgStarAt(sgPos(e));
+  if (i >= 0 && i !== sg.down) sgTry(sg.down, i);
+  sg.down = -1;
+});
+document.getElementById('sgClose').addEventListener('click', () => closeStargaze());
+sgEl.addEventListener('click', e => { if (e.target === sgEl) closeStargaze(); });
+let sgLast = 0;
+function sgDraw(now) {
+  sgRaf = 0;
+  if (!stargazeOpen() || !sg) return;
+  sgRaf = requestAnimationFrame(sgDraw);
+  const dt = Math.min(.05, (now - (sgLast || now)) / 1000), t = now / 1000; sgLast = now;
+  const g = sgCtx, W0 = sgCv.width, H0 = sgCv.height;
+  const bg = g.createRadialGradient(W0 / 2, H0 * .3, 20, W0 / 2, H0 / 2, W0 * .7);
+  bg.addColorStop(0, '#3a2f7a'); bg.addColorStop(1, '#141033');
+  g.fillStyle = bg; g.fillRect(0, 0, W0, H0);
+  for (const [x, y, r, ph] of sgBg) { g.globalAlpha = .35 + .3 * Math.sin(t * 1.5 + ph); g.fillStyle = '#fff6d8'; g.beginPath(); g.arc(x, y, r, 0, 6.29); g.fill(); }
+  g.globalAlpha = 1; g.lineCap = 'round';
+  const pts = sg.c.pts.map((q, i) => {
+    let [x, y] = sgXY(q);
+    if (sg.shake && sg.shake.i === i) x += Math.sin(sg.shake.t * 60) * 5 * sg.shake.t / .4;
+    return [x, y];
+  });
+  if (sg.shake && (sg.shake.t -= dt) <= 0) sg.shake = null;
+  if (sg.hint && (sg.hint.t -= dt) <= 0) sg.hint = null;
+  if (sg.done) sg.doneT += dt;
+  // faint guide lines, the lines you drew, and the hint
+  g.setLineDash([3, 9]); g.lineWidth = 2; g.strokeStyle = 'rgba(220,210,255,.22)';
+  if (!sg.done) for (const [a, b] of sg.c.edges) if (!sg.lines.has(ek(a, b))) { g.beginPath(); g.moveTo(...pts[a]); g.lineTo(...pts[b]); g.stroke(); }
+  g.setLineDash([]);
+  if (sg.hint) {
+    const [a, b] = sg.hint.e;
+    g.strokeStyle = `rgba(255,158,224,${.4 + .4 * Math.sin(t * 8)})`; g.lineWidth = 4;
+    g.beginPath(); g.moveTo(...pts[a]); g.lineTo(...pts[b]); g.stroke();
+  }
+  const gold = sg.done ? Math.min(1, sg.doneT / .8) : 0;
+  g.shadowColor = '#ffd84d'; g.shadowBlur = 10 + gold * 10 * (1 + .3 * Math.sin(t * 3));
+  g.strokeStyle = gold ? '#ffe27a' : '#fff1c2'; g.lineWidth = 3.5 + gold * 1.5;
+  for (const [a, b] of sg.c.edges) {
+    if (!sg.lines.has(ek(a, b))) continue;
+    g.beginPath(); g.moveTo(...pts[a]); g.lineTo(...pts[b]); g.stroke();
+  }
+  // the line you are drawing right now
+  if (!sg.done && sg.sel >= 0 && sg.ptr) {
+    g.strokeStyle = 'rgba(255,209,240,.7)'; g.lineWidth = 2.5;
+    g.beginPath(); g.moveTo(...pts[sg.sel]); g.lineTo(...sg.ptr); g.stroke();
+  }
+  // the stars
+  pts.forEach(([x, y], i) => {
+    const on = i === sg.sel, tw = 1 + .15 * Math.sin(t * 3 + i * 1.7);
+    g.shadowColor = on ? '#ff9ee0' : '#fff3b0'; g.shadowBlur = on ? 22 : 14;
+    g.fillStyle = on ? '#ffd1f0' : '#fff8dc';
+    g.beginPath();
+    for (let k = 0; k < 10; k++) { const r = (k % 2 ? 4 : 10) * tw * (on ? 1.35 : 1), a = -Math.PI / 2 + k * Math.PI / 5; g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); }
+    g.closePath(); g.fill();
+  });
+  g.shadowBlur = 0;
+  if (sg.done) {
+    g.globalAlpha = gold; g.fillStyle = '#fff1c2'; g.font = '30px "Cherry Swash", Georgia, serif'; g.textAlign = 'center';
+    g.fillText(sg.c.name, W0 / 2, H0 - 16); g.textAlign = 'left'; g.globalAlpha = 1;
+  }
+}
+
+// ---------- the pictures you found shine in your own night sky ----------
+const skyConstG = new THREE.Group(); scene.add(skyConstG);
+skyParts.push([skyConstG, new THREE.Vector3()]);
+const skyLineMat = new THREE.LineBasicMaterial({ color: '#ffe9a8', transparent: true, opacity: 0, fog: false, depthWrite: false });
+const skyDotMat = new THREE.PointsMaterial({ color: '#fff6c9', size: 4.5, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false });
+function buildSkyConsts() {
+  for (const o of [...skyConstG.children]) { skyConstG.remove(o); o.geometry.dispose(); }
+  CONSTS.forEach((c, k) => {
+    if (!save.consts.includes(c.id)) return;
+    const az = k / CONSTS.length * Math.PI * 2 + .35, el = .24 + (k % 3) * .08, Rr = 330, s = .95;   // low in the sky, so you see them over the trees
+    const dir = new THREE.Vector3(Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az));
+    const right = new THREE.Vector3(-Math.cos(az), 0, Math.sin(az)), up = new THREE.Vector3().crossVectors(right, dir).normalize();
+    const P = c.pts.map(([x, y]) => dir.clone().multiplyScalar(Rr).addScaledVector(right, (x - 50) * s).addScaledVector(up, (35 - y) * s));
+    const seg = [];
+    for (const [a, b] of c.edges) seg.push(P[a], P[b]);
+    skyConstG.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(seg), skyLineMat));
+    skyConstG.add(new THREE.Points(new THREE.BufferGeometry().setFromPoints(P), skyDotMat));
+  });
+}
+
+// ---------- every frame ----------
+let hillFxT = 0, skyConstFor = null;
+function updateHill(dt, time) {
+  if (started && skyConstFor !== playerName + playerIsCustom) { skyConstFor = playerName + playerIsCustom; buildSkyConsts(); }   // a different character: a different sky
+  // the pictures in the sky fade in with the night (not in the cave, not through rain)
+  const k = night * (inCave() ? 0 : 1) * (1 - wx.rain * .8 - wx.fog * .6);
+  skyConstG.visible = k > .01;
+  skyLineMat.opacity = k * (.55 + .12 * Math.sin(time * 1.3)); skyDotMat.opacity = k;
+  // the observatory: the dome turns slowly at night, and stars sparkle from the telescope
+  if (!curIsle && distXZ(SCOPE) < 70) {
+    obsDome.rotation.y += dt * .08 * night;
+    hillFxT -= dt;
+    if (hillFxT <= 0 && night > .5) {
+      hillFxT = .5;
+      const tip = new THREE.Vector3(0, .1, .7).applyMatrix4(scopeTube.matrixWorld);
+      emit({ pos: tip, vel: new THREE.Vector3(rr(-.2, .2), rr(.6, 1), rr(-.2, .2)), life: 1.4, size: rr(.15, .3), color: rpick(['#fff09a', '#ffffff', '#d8c4ff']), tex: starTex, spin: 2 });
+    }
+  }
+  if (!inCave()) return;
+  // star lamps glow for a while and fade
+  let want = caveAwake / CAVE_N * .45;
+  for (let i = caveLamps.length - 1; i >= 0; i--) {
+    const lp = caveLamps[i];
+    lp.t += dt;
+    const f = Math.min(1, lp.t / .4) * Math.min(1, (lp.life - lp.t) / 3);
+    if (lp.t >= lp.life) { dropLamp(lp); continue; }
+    lp.s.position.y = lp.pos.y + Math.sin(time * 2 + i) * .15;
+    lp.s.material.rotation += dt; lp.halo.material.opacity = f * .7;
+    lp.L.l.position.copy(lp.s.position); lp.L.l.intensity = f * 26;
+    want = Math.max(want, (1 - distXZ(lp.s.position) / 16) * f);
+    if (Math.random() < dt * 3) emit({ pos: lp.s.position, vel: new THREE.Vector3(rr(-.3, .3), rr(-.4, 0), rr(-.3, .3)), life: 1, size: .2, color: rpick(['#fff09a', '#ffffff']), tex: starTex, spin: 2 });
+  }
+  if (pfx.id === 'glow') want = Math.max(want, .75);
+  for (const c of caveCrystals) {
+    c.mat.emissiveIntensity = lerp(c.mat.emissiveIntensity, c.awake ? 1.5 + .25 * Math.sin(time * 2 + c.ph) : .22 + .06 * Math.sin(time * 1.3 + c.ph), damp(3, dt));
+    c.halo.material.opacity = lerp(c.halo.material.opacity, c.awake ? .75 : .1, damp(3, dt));
+    if (c.awake) {
+      want = Math.max(want, (1 - distXZ(c.pos) / 11) * .8);
+      if (Math.random() < dt * 2) emit({ pos: c.pos.clone().add(new THREE.Vector3(rr(-.8, .8), rr(0, 1.4), rr(-.8, .8))), vel: new THREE.Vector3(0, .4, 0), life: 1.4, size: .25, color: c.col, tex: starTex, spin: 2 });
+    }
+  }
+  if (caveAwake >= CAVE_N) want = Math.max(want, .8);
+  caveLit = lerp(caveLit, clamp(want, 0, 1), damp(2.5, dt));
+  CAVE.pool.material.opacity = .7 + .15 * Math.sin(time * 1.5);
+  for (const s of caveShards) { s.inner.rotation.y += dt * 1.5; s.inner.position.y = .1 + Math.sin(time * 2 + s.ph) * .08; }
+}
+
 // ================= loop =================
 const clock = new THREE.Clock();
 let time = 0;
@@ -8196,6 +8895,7 @@ function frame() {
   updateFar(dt, time);
   updateTown(dt, time);
   updateGarden(dt, time);
+  updateHill(dt, time);
   updateChristmas(dt, time);
   updateWeather(dt, time);
   updateMeteors(dt);
